@@ -1,0 +1,1978 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>놀이의발견 숙박사업실 KPI 대시보드</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{
+  --bg:#0A0F1A;
+  --panel:#111827;
+  --panel-2:#161F30;
+  --line:#233047;
+  --text:#E7ECF5;
+  --sub:#8B98B0;
+  --teal:#2FD3C4;
+  --amber:#F0A93B;
+  --coral:#F0665C;
+  --violet:#8B7CF6;
+  --mono: 'IBM Plex Mono', 'Menlo', monospace;
+  --disp: 'Space Grotesk', 'Pretendard', sans-serif;
+  --body: 'Inter', 'Pretendard', sans-serif;
+}
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background:
+    radial-gradient(1200px 500px at 90% -10%, rgba(139,124,246,0.10), transparent 60%),
+    radial-gradient(900px 400px at 0% 0%, rgba(47,211,196,0.08), transparent 60%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--body);
+  min-height:100vh;
+  padding-bottom:60px;
+}
+.topbar{
+  position:sticky; top:0; z-index:50;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 28px;
+  background:rgba(10,15,26,0.88);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand .mark{
+  width:34px; height:34px; border-radius:8px;
+  background:linear-gradient(135deg, var(--teal), var(--violet));
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--disp); font-weight:700; color:#0A0F1A; font-size:15px;
+}
+.brand h1{font-family:var(--disp); font-size:16px; font-weight:600; letter-spacing:-0.01em;}
+.brand .eyebrow{font-size:10.5px; color:var(--sub); letter-spacing:0.14em; text-transform:uppercase; font-family:var(--mono);}
+.status-line{display:flex; align-items:center; gap:16px; font-size:12px; color:var(--sub); font-family:var(--mono);}
+.status-dot{width:7px; height:7px; border-radius:50%; background:var(--sub); display:inline-block; margin-right:6px;}
+.status-dot.live{background:var(--teal); box-shadow:0 0 8px var(--teal);}
+.status-dot.err{background:var(--coral); box-shadow:0 0 8px var(--coral);}
+.btn{
+  background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+  padding:8px 14px; border-radius:7px; font-size:12.5px; cursor:pointer;
+  font-family:var(--body); font-weight:600; transition:all .15s;
+}
+.btn:hover{border-color:var(--teal); color:var(--teal);}
+
+.filterbar{
+  display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap;
+  padding:14px 28px; background:rgba(17,24,39,0.6); border-bottom:1px solid var(--line);
+}
+.fgroup{display:flex; flex-direction:column; gap:5px;}
+.fgroup label{font-size:10.5px; color:var(--sub); font-family:var(--mono); text-transform:uppercase; letter-spacing:0.05em;}
+.fgroup input[type="date"], .fgroup select{
+  background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+  padding:7px 10px; border-radius:7px; font-size:12.5px; font-family:var(--body); min-width:120px;
+}
+.fgroup select{min-width:170px; cursor:pointer;}
+
+.ss-wrap{position:relative;}
+.ss-control{
+  background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+  padding:7px 10px; border-radius:7px; font-size:12.5px; font-family:var(--body);
+  min-width:180px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px;
+  user-select:none;
+}
+.ss-control:hover, .ss-control:focus{border-color:var(--teal); outline:none;}
+.ss-label{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.ss-arrow{color:var(--sub); font-size:10px; flex-shrink:0;}
+.ss-panel{
+  display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:80;
+  width:280px; max-width:80vw;
+  background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+  box-shadow:0 12px 32px rgba(0,0,0,0.45); overflow:hidden;
+}
+.ss-panel.open{display:block;}
+.ss-search{
+  width:100%; box-sizing:border-box; background:var(--panel); border:none; border-bottom:1px solid var(--line);
+  color:var(--text); padding:9px 12px; font-size:12.5px; font-family:var(--body); outline:none;
+}
+.ss-options{max-height:240px; overflow-y:auto;}
+.ss-option{
+  padding:8px 12px; font-size:12.5px; cursor:pointer; color:var(--text);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.ss-option:hover, .ss-option.active{background:rgba(47,211,196,0.12); color:var(--teal);}
+.ss-option.ss-all{color:var(--sub); border-bottom:1px solid var(--line); font-weight:600;}
+.ss-empty{padding:12px; font-size:12px; color:var(--sub); text-align:center;}
+.seg{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+.seg-btn{
+  background:var(--panel-2); border:none; color:var(--sub); padding:8px 14px; font-size:12px; font-weight:600;
+  cursor:pointer; font-family:var(--body); transition:all .15s;
+}
+.seg-btn.active{background:var(--teal); color:#04140F;}
+.seg-btn:not(.active):hover{color:var(--text);}
+.tabs{
+  display:flex; gap:4px; padding:14px 28px 0 28px; flex-wrap:wrap;
+  border-bottom:1px solid var(--line);
+}
+.tab{
+  padding:10px 16px; font-size:13px; font-weight:600; color:var(--sub);
+  cursor:pointer; border-bottom:2px solid transparent; user-select:none;
+  font-family:var(--body); white-space:nowrap;
+}
+.tab.active{color:var(--text); border-bottom-color:var(--teal);}
+.tab:hover{color:var(--text);}
+
+.wrap{padding:26px 28px; max-width:1440px; margin:0 auto;}
+.section{display:none;}
+.section.active{display:block; animation:fade .25s ease;}
+@keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+.section-title{
+  font-family:var(--disp); font-size:15px; font-weight:600; margin:28px 0 14px 0;
+  display:flex; align-items:center; gap:10px; color:var(--text);
+}
+.section-title .num{
+  font-family:var(--mono); font-size:11px; color:var(--teal); border:1px solid var(--line);
+  padding:2px 7px; border-radius:5px;
+}
+.section-title:first-child{margin-top:0;}
+
+.kpi-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:10px;}
+@media (max-width:1300px){.kpi-grid{grid-template-columns:repeat(4,1fr);}}
+@media (max-width:760px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+.kpi{
+  background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  padding:16px 16px 14px 16px; position:relative; overflow:hidden;
+}
+.kpi .label{font-size:11px; color:var(--sub); font-weight:600; letter-spacing:0.02em;}
+.kpi .value{font-family:var(--mono); font-size:21px; font-weight:600; margin-top:8px; letter-spacing:-0.02em;}
+.kpi .delta{font-size:11px; margin-top:6px; font-family:var(--mono); font-weight:600;}
+.kpi .delta.up{color:var(--teal);}
+.kpi .delta.down{color:var(--coral);}
+.kpi .delta.flat{color:var(--sub);}
+
+.grid2{display:grid; grid-template-columns:1.4fr 1fr; gap:14px;}
+.grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+@media (max-width:1000px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px;
+}
+.card h3{font-family:var(--disp); font-size:13.5px; font-weight:600; margin-bottom:4px;}
+.card .cap{font-size:11px; color:var(--sub); margin-bottom:14px;}
+.chart-box{position:relative; height:260px;}
+.chart-box.tall{height:340px;}
+
+table{width:100%; border-collapse:collapse; font-size:12.5px;}
+th{
+  text-align:left; padding:9px 10px; color:var(--sub); font-weight:600; font-size:11px;
+  border-bottom:1px solid var(--line); text-transform:uppercase; letter-spacing:0.03em;
+  font-family:var(--mono); position:sticky; top:0; background:var(--panel);
+  cursor:pointer; white-space:nowrap;
+}
+th:hover{color:var(--teal);}
+td{padding:9px 10px; border-bottom:1px solid rgba(35,48,71,0.5); font-family:var(--mono); font-size:12px;}
+tr:hover td{background:rgba(47,211,196,0.04);}
+.table-scroll{max-height:420px; overflow:auto;}
+.table-scroll table{min-width:560px;}
+@media (max-width:480px){
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .topbar{padding:12px 14px; flex-wrap:wrap; gap:8px;}
+  .status-line{flex-wrap:wrap; gap:8px; font-size:11px;}
+  .wrap{padding:14px;}
+  .filterbar{padding:12px 14px;}
+  .fgroup{flex:1 1 45%;}
+  .fgroup input[type="date"], .fgroup select{width:100%; min-width:0;}
+  .tabs{padding:10px 14px 0 14px; overflow-x:auto; flex-wrap:nowrap;}
+  .tab{padding:9px 12px; font-size:12px;}
+  .section-title{font-size:13px;}
+  .card{padding:14px;}
+}
+.badge{padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:600; font-family:var(--body);}
+.badge.ok{background:rgba(47,211,196,0.14); color:var(--teal);}
+.badge.warn{background:rgba(240,169,59,0.14); color:var(--amber);}
+.badge.bad{background:rgba(240,102,92,0.14); color:var(--coral);}
+
+.insight-list{display:flex; flex-direction:column; gap:10px;}
+.insight{
+  border:1px solid var(--line); border-left:3px solid var(--teal); border-radius:8px;
+  padding:12px 14px; background:var(--panel-2);
+}
+.insight.warn{border-left-color:var(--amber);}
+.insight.bad{border-left-color:var(--coral);}
+.insight .itag{font-family:var(--mono); font-size:10px; color:var(--sub); text-transform:uppercase; letter-spacing:0.06em;}
+.insight .ititle{font-weight:700; font-size:13px; margin:4px 0 4px 0;}
+.insight .ibody{font-size:12.5px; color:#C6CEDE; line-height:1.55;}
+.insight .iaction{margin-top:8px; font-size:12px; color:var(--teal); font-weight:600;}
+
+.goal-row{display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;}
+.goal-row input{
+  background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+  padding:8px 10px; border-radius:7px; font-family:var(--mono); font-size:13px; width:160px;
+}
+.progress-outer{width:100%; height:22px; background:var(--panel-2); border-radius:20px; overflow:hidden; border:1px solid var(--line);}
+.progress-inner{height:100%; background:linear-gradient(90deg, var(--teal), var(--violet)); display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:11px; font-family:var(--mono); font-weight:700; color:#04140F; transition:width .4s;}
+
+.loading-screen{
+  position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; z-index:100;
+}
+.spinner{width:36px; height:36px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--teal); animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-screen .lt{font-family:var(--mono); font-size:12px; color:var(--sub);}
+.err-box{
+  max-width:560px; background:var(--panel); border:1px solid var(--coral); border-radius:12px; padding:22px; margin:40px auto; text-align:left;
+}
+.err-box h3{color:var(--coral); font-family:var(--disp); margin-bottom:10px;}
+.err-box p{font-size:13px; color:var(--sub); line-height:1.6; margin-bottom:6px;}
+.err-box code{background:var(--panel-2); padding:2px 6px; border-radius:4px; font-size:11.5px;}
+.footnote{font-size:11px; color:var(--sub); margin-top:10px; line-height:1.6;}
+.pill-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+.pill{font-family:var(--mono); font-size:10.5px; padding:4px 9px; border:1px solid var(--line); border-radius:20px; color:var(--sub);}
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading-screen">
+  <div class="spinner"></div>
+  <div class="lt">SHEET_ID: 19YzCIYaKWh7BD5wWQqQZqouQMWIIt67Be7wBSOEHl5Y 데이터 불러오는 중…</div>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark">놀</div>
+      <div>
+        <div class="eyebrow">Stay Business · MD Control Tower</div>
+        <h1>숙박사업실 KPI 대시보드</h1>
+      </div>
+    </div>
+    <div class="status-line">
+      <span><span class="status-dot live" id="statusDot"></span><span id="statusText">LIVE</span></span>
+      <span id="rowCount">0 rows</span>
+      <span id="lastSync">-</span>
+      <button class="btn" onclick="loadData()">↻ 새로고침</button>
+    </div>
+  </div>
+
+  <div class="filterbar">
+    <div class="fgroup">
+      <label>시작일</label>
+      <input type="date" id="filterStart" onchange="onFilterChange()">
+    </div>
+    <div class="fgroup">
+      <label>종료일</label>
+      <input type="date" id="filterEnd" onchange="onFilterChange()">
+    </div>
+    <div class="fgroup ss-wrap" id="ssWrap-supplier">
+      <label>공급사</label>
+      <div class="ss-control" tabindex="0" onclick="toggleSearchSelect('supplier')" onkeydown="if(event.key==='Enter')toggleSearchSelect('supplier')">
+        <span class="ss-label" id="ss-label-supplier">전체 공급사</span>
+        <span class="ss-arrow">▾</span>
+      </div>
+      <div class="ss-panel" id="ss-panel-supplier">
+        <input type="text" class="ss-search" id="ss-search-supplier" placeholder="공급사 검색..." oninput="filterSearchSelect('supplier')" onkeydown="handleSearchSelectKey(event,'supplier')">
+        <div class="ss-options" id="ss-options-supplier"></div>
+      </div>
+    </div>
+    <div class="fgroup ss-wrap" id="ssWrap-region">
+      <label>지역</label>
+      <div class="ss-control" tabindex="0" onclick="toggleSearchSelect('region')" onkeydown="if(event.key==='Enter')toggleSearchSelect('region')">
+        <span class="ss-label" id="ss-label-region">전체 지역</span>
+        <span class="ss-arrow">▾</span>
+      </div>
+      <div class="ss-panel" id="ss-panel-region">
+        <input type="text" class="ss-search" id="ss-search-region" placeholder="지역 검색..." oninput="filterSearchSelect('region')" onkeydown="handleSearchSelectKey(event,'region')">
+        <div class="ss-options" id="ss-options-region"></div>
+      </div>
+    </div>
+    <button class="btn" onclick="resetFilters()">필터 초기화</button>
+    <div class="seg" style="margin-left:auto;">
+      <button id="btnCancelExclude" class="seg-btn active" onclick="setCancelMode(false)">취소 미포함</button>
+      <button id="btnCancelInclude" class="seg-btn" onclick="setCancelMode(true)">취소 포함</button>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-tab="exec">Executive Summary</div>
+    <div class="tab" data-tab="partner">연동사별 실적</div>
+    <div class="tab" data-tab="kpi">월별 KPI</div>
+    <div class="tab" data-tab="sales">매출 분석</div>
+    <div class="tab" data-tab="product">상품·공급사</div>
+    <div class="tab" data-tab="region">지역·채널</div>
+    <div class="tab" data-tab="customer">고객 분석</div>
+    <div class="tab" data-tab="goal">목표관리</div>
+    <div class="tab" data-tab="coupon">쿠폰 사용</div>
+    <div class="tab" data-tab="anomaly">이상징후·인사이트</div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- EXEC -->
+    <div class="section active" id="sec-exec">
+      <div class="section-title"><span class="num">01</span>Executive Summary</div>
+      <div class="kpi-grid" id="execKpis"></div>
+
+      <div class="section-title" style="margin-top:24px; font-size:13px;"><span class="num">01-A</span>매출(체크아웃 기준) · 취소 분석</div>
+      <div class="kpi-grid" id="execCheckoutKpis" style="grid-template-columns:repeat(4,1fr); margin-bottom:10px;"></div>
+      <div class="footnote" style="margin-bottom:14px;" id="execCheckoutFootnote"></div>
+      <div class="kpi-grid" id="execCancelKpis" style="grid-template-columns:repeat(3,1fr);"></div>
+
+      <div class="grid2" style="margin-top:14px;">
+        <div class="card">
+          <h3>일별 거래액 추이 (최근 60일)</h3>
+          <div class="cap">취소 제외 순거래액(GMV) 기준</div>
+          <div class="chart-box tall"><canvas id="chartExecTrend"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>이번 달 핵심 액션</h3>
+          <div class="cap">MD 팀장 5대 목표 기준 자동 진단</div>
+          <div class="insight-list" id="execActions"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARTNER (연동사별 실적) -->
+    <div class="section" id="sec-partner">
+      <div class="section-title"><span class="num">01-P</span>연동사별 실적</div>
+      <div class="footnote" style="margin-bottom:14px;">시트 <b>AV열(연동사)</b> 기준으로 집계합니다. 상단 조회기간·공급사·지역 필터, 취소포함여부 설정이 그대로 반영됩니다.</div>
+      <div class="footnote" style="margin-bottom:14px;">참고: <b>AU열은 "연동업체"</b>로 별개 컬럼입니다. 필요하시면 연동업체 기준 탭도 추가해드릴 수 있습니다.</div>
+      <div class="kpi-grid" id="partnerKpis" style="grid-template-columns:repeat(4,1fr);"></div>
+
+      <div class="grid2" style="margin-top:14px;">
+        <div class="card">
+          <h3>연동사별 거래액</h3>
+          <div class="chart-box tall"><canvas id="chartPartner"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>연동사별 거래액 비중</h3>
+          <div class="chart-box tall"><canvas id="chartPartnerShare"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <div class="table-scroll">
+          <table id="tblPartner"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:26px; font-size:13px;"><span class="num">01-P-M</span>월별 · 연동사별 실적</div>
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:4px;">
+          <h3 style="margin-bottom:0;">월별 × 연동사별 거래액</h3>
+          <div class="fgroup" style="flex-direction:row; align-items:center; gap:8px;">
+            <label style="margin-bottom:0;">연도</label>
+            <select id="partnerMonthlyYearSelect" onchange="computeAndRenderPartner()"></select>
+          </div>
+        </div>
+        <div class="cap">X축=월(연동사별로 나란히), Y축=거래액. 막대에 마우스를 올리면 거래액과 예약건수가 함께 표시됩니다. 이 그래프는 상단 조회기간(시작일/종료일) 필터와 무관하게 선택한 연도 전체를 기준으로 집계합니다 (공급사/지역 필터·취소포함여부는 반영).</div>
+        <div class="chart-box tall" style="height:420px;"><canvas id="chartPartnerMonthly"></canvas></div>
+      </div>
+    </div>
+
+    <!-- MONTHLY KPI -->
+    <div class="section" id="sec-kpi">
+      <div class="section-title"><span class="num">01-K</span>월별 KPI · 목표 달성 현황 (2026년)</div>
+      <div class="footnote" style="margin-bottom:14px;">거래액은 예약 생성일 기준, 매출(순이익)은 체크아웃일 기준 놀발수수료 합계입니다. <b>상단 "취소포함/취소미포함" 토글에 따라 거래액·매출(순이익)·목표달성율이 함께 바뀝니다.</b> 상단 공급사/지역 필터도 반영되며, 조회기간(시작일·종료일) 필터와는 무관하게 연중 전체 월을 표시합니다.</div>
+      <div class="footnote" id="kpiFieldMapping" style="margin-bottom:14px; font-family:var(--mono); font-size:11px;"></div>
+      <div class="card">
+        <div class="table-scroll">
+          <table id="tblMonthlyKpi"><thead></thead><tbody></tbody></table>
+        </div>
+        <div class="footnote" id="kpiMissingFootnote" style="margin-top:10px; color:var(--coral);"></div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>월별 거래액 vs 목표거래액</h3>
+        <div class="cap">막대: 실제 거래액(GMV) · 선: 목표거래액</div>
+        <div class="chart-box tall"><canvas id="chartMonthlyKpi"></canvas></div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>월별 매출(순이익) vs 목표매출(순이익, VAT별도)</h3>
+        <div class="cap">막대: 실제 매출(순이익, 체크아웃일 기준) · 선: 목표매출(순이익)</div>
+        <div class="chart-box tall"><canvas id="chartMonthlyProfitKpi"></canvas></div>
+      </div>
+    </div>
+
+    <!-- SALES -->
+    <div class="section" id="sec-sales">
+      <div class="section-title"><span class="num">02</span>매출 분석</div>
+      <div class="grid2">
+        <div class="card">
+          <h3>일별 거래액</h3>
+          <div class="chart-box"><canvas id="chartDaily"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>월별 거래액 &amp; 전월 대비</h3>
+          <div class="chart-box"><canvas id="chartMonthly"></canvas></div>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:14px;">
+        <div class="card">
+          <h3>요일별 거래액 / 예약건수</h3>
+          <div class="chart-box"><canvas id="chartWeekday"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>시간대별 예약 생성건수 (예약 접수 패턴)</h3>
+          <div class="chart-box"><canvas id="chartHour"></canvas></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>주별 거래액</h3>
+        <div class="chart-box"><canvas id="chartWeekly"></canvas></div>
+      </div>
+    </div>
+
+    <!-- PRODUCT / SUPPLIER -->
+    <div class="section" id="sec-product">
+      <div class="section-title"><span class="num">03</span>상품 · 공급사 분석</div>
+      <div class="card">
+        <h3>상품별 거래액 TOP 20</h3>
+        <div class="chart-box tall"><canvas id="chartTopProducts"></canvas></div>
+      </div>
+      <div class="section-title" style="margin-top:26px;"><span class="num">03-B</span>공급사별 성과</div>
+      <div class="card">
+        <div class="table-scroll">
+          <table id="tblSupplier"><thead></thead><tbody></tbody></table>
+        </div>
+        <div class="footnote">헤더 클릭 시 정렬됩니다. 취소율은 색상으로 경고(주황 10%↑ / 빨강 20%↑) 표시됩니다.</div>
+      </div>
+    </div>
+
+    <!-- REGION / CHANNEL -->
+    <div class="section" id="sec-region">
+      <div class="section-title"><span class="num">04</span>지역 분석</div>
+      <div class="grid2">
+        <div class="card">
+          <h3>지역별(시/도) 거래액</h3>
+          <div class="chart-box tall"><canvas id="chartRegion"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>지역별 객단가 vs 예약건수</h3>
+          <div class="cap">우상단 = 효자지역 / 좌상단(고단가·저건수) = 프로모션 필요지역</div>
+          <div class="chart-box tall"><canvas id="chartRegionScatter"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:26px;"><span class="num">05</span>채널 분석</div>
+      <div class="footnote" style="margin-bottom:10px;">⚠ 원본 데이터에 명시적 '채널' 컬럼이 없어 <b>공급사명(T열) 기준으로 자동 추정</b>했습니다 (온다 포함→온다, 아고다 포함→아고다, 호텔스토리 포함→호텔스토리, 그 외 개별 숙소·리조트 운영사명→직계약 추정). 웹투어 / TL링크 / 산하CMS를 정확히 분리하려면 공급사-채널 매핑 마스터 시트 추가를 권장합니다(코드 상단 CHANNEL_OVERRIDES에 추가). 표 하단 합계 교차검증 문구로 집계 정합성을 확인할 수 있습니다.</div>
+      <div class="grid2">
+        <div class="card">
+          <h3>채널별 거래액 비중</h3>
+          <div class="chart-box"><canvas id="chartChannel"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="table-scroll">
+            <table id="tblChannel"><thead></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMER -->
+    <div class="section" id="sec-customer">
+      <div class="section-title"><span class="num">06</span>고객 분석</div>
+      <div class="grid3">
+        <div class="card">
+          <h3>신규 / 재구매 비중</h3>
+          <div class="cap">예약자 연락처 기준 식별</div>
+          <div class="chart-box"><canvas id="chartRepeat"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>예약 Lead Time 분포</h3>
+          <div class="cap">생성일 → 체크인일 (일)</div>
+          <div class="chart-box"><canvas id="chartLeadtime"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>체크인 요일 분포</h3>
+          <div class="chart-box"><canvas id="chartCheckinDow"></canvas></div>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:14px;">
+        <div class="card">
+          <h3>숙박일수(박수) 분포</h3>
+          <div class="chart-box"><canvas id="chartNights"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>예약 인원 분포</h3>
+          <div class="chart-box"><canvas id="chartPax"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GOAL -->
+    <div class="section" id="sec-goal">
+      <div class="section-title"><span class="num">07</span>목표관리 Dashboard</div>
+      <div class="card">
+        <div class="goal-row">
+          <span style="font-size:12.5px; color:var(--sub);">이번 달 거래액(GMV) 목표</span>
+          <input type="number" id="monthlyGoalInput" placeholder="예: 300000000" oninput="renderGoal()">
+          <span style="font-size:12px; color:var(--sub);">원 · 값을 입력하면 아래 진행률이 자동 계산됩니다 (브라우저에만 저장, 새로고침 시 유지되지 않음)</span>
+        </div>
+        <div id="goalBody"></div>
+      </div>
+    </div>
+
+    <!-- COUPON -->
+    <div class="section" id="sec-coupon">
+      <div class="section-title"><span class="num">08</span>쿠폰 사용 분석</div>
+      <div class="footnote" style="margin-bottom:14px;">시트 <b>AK열(쿠폰금액)</b> 기준으로 집계합니다. 조회 기간·필터·취소포함여부 설정이 그대로 반영됩니다.</div>
+      <div class="kpi-grid" id="couponKpis" style="grid-template-columns:repeat(4,1fr);"></div>
+
+      <div class="card" style="margin-top:14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h3 style="margin-bottom:4px;">연도별 · 월별 쿠폰 사용 금액</h3>
+            <div class="cap" style="margin-bottom:0;">상단 조회기간(시작일/종료일) 필터와 무관하게 선택한 연도 전체를 집계합니다. (공급사/지역 필터·취소포함여부는 반영)</div>
+          </div>
+          <select id="couponYearSelect" onchange="computeAndRenderCoupon()"></select>
+        </div>
+        <div class="chart-box tall" style="margin-top:10px;"><canvas id="chartCouponYearly"></canvas></div>
+        <div id="couponYearlyTotal" style="margin-top:12px; display:flex; gap:24px; flex-wrap:wrap;"></div>
+      </div>
+
+      <div class="grid2" style="margin-top:14px;">
+        <div class="card">
+          <h3>일별 쿠폰 사용 금액</h3>
+          <div class="chart-box"><canvas id="chartCouponDaily"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>공급사별 쿠폰 사용 금액 TOP 10</h3>
+          <div class="chart-box"><canvas id="chartCouponSupplier"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>쿠폰 사용 상세 (공급사별)</h3>
+        <div class="cap">쿠폰을 1건이라도 사용한 예약 기준. 거래액 대비 %는 해당 공급사 총 거래액 대비 쿠폰금액 비중입니다.</div>
+        <div class="table-scroll">
+          <table id="tblCoupon"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANOMALY -->
+    <div class="section" id="sec-anomaly">
+      <div class="section-title"><span class="num">09</span>이상징후 자동 탐지</div>
+      <div class="insight-list" id="anomalyList"></div>
+
+      <div class="section-title" style="margin-top:26px;"><span class="num">10</span>추천 인사이트 · MD 액션 아이템</div>
+      <div class="insight-list" id="insightList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SHEET_ID = "19YzCIYaKWh7BD5wWQqQZqouQMWIIt67Be7wBSOEHl5Y";
+const GID = "0";
+// 웹에 게시된 CSV 링크 (파일 > 공유 > 웹에 게시). gviz 방식보다 CORS 허용이 안정적입니다.
+const PUBLISHED_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5pbA_GBfgV0yojqQv6uiBjEWq5pe-zfLK8oYHTI_avPSl431Muek_B0qQk2OizzKJmDh5sOQ2aQ_Q/pub?gid=0&single=true&output=csv";
+let RAW = [];
+let COLS = {};
+let CHARTS = {};
+
+const fmtWon = n => (isFinite(n)?Math.round(n):0).toLocaleString('ko-KR') + '원';
+// 모든 금액은 축약(만원/억) 없이 원 단위 그대로 표기합니다.
+const fmtWonShort = n => (isFinite(n)?Math.round(n):0).toLocaleString('ko-KR');
+const fmtPct = n => (isFinite(n)? (n*100).toFixed(1):'0.0') + '%';
+const fmtNum = n => (isFinite(n)?Math.round(n):0).toLocaleString('ko-KR');
+
+Chart.defaults.color = '#8B98B0';
+Chart.defaults.font.family = "'Inter','Pretendard',sans-serif";
+Chart.defaults.borderColor = '#233047';
+const PALETTE = ['#2FD3C4','#8B7CF6','#F0A93B','#F0665C','#5AA9E6','#E67CD1','#6FCF97','#BDBDBD'];
+// 모든 차트 위에 실제 수치를 라벨로 표시하기 위한 datalabels 플러그인 등록
+if(window.ChartDataLabels){ Chart.register(ChartDataLabels); Chart.defaults.set('plugins.datalabels', {display:false}); }
+
+function chartBase(){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{labels:{boxWidth:10, font:{size:11}}}, tooltip:{backgroundColor:'#161F30', borderColor:'#233047', borderWidth:1, padding:10, titleFont:{size:11}, bodyFont:{size:11}} },
+    scales:{ x:{grid:{color:'#1A2437'}, ticks:{font:{size:10}}}, y:{grid:{color:'#1A2437'}, ticks:{font:{size:10}}} }
+  };
+}
+
+let _loadTimeoutId = null;
+let _loadTickerId = null;
+
+// RFC4180-safe CSV parser: handles quoted fields containing commas, quotes,
+// and embedded newlines (this data has multi-line values like 투숙인원).
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for(let i=0; i<text.length; i++){
+    const c = text[i], next = text[i+1];
+    if(inQuotes){
+      if(c === '"' && next === '"'){ field += '"'; i++; }
+      else if(c === '"'){ inQuotes = false; }
+      else { field += c; }
+    } else {
+      if(c === '"'){ inQuotes = true; }
+      else if(c === ','){ row.push(field); field=''; }
+      else if(c === '\r'){ /* skip, handled by \n */ }
+      else if(c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else { field += c; }
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => !(r.length===1 && r[0]===''));
+}
+
+function loadData(){
+  document.getElementById('loading').innerHTML = `<div class="spinner"></div><div class="lt">데이터 불러오는 중… (<span id="loadElapsed">0</span>초 경과)</div>`;
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('app').style.display='none';
+  clearTimeout(_loadTimeoutId);
+  clearInterval(_loadTickerId);
+  const _loadStartedAt = Date.now();
+  _loadTickerId = setInterval(()=>{
+    const el = document.getElementById('loadElapsed');
+    if(el) el.textContent = Math.floor((Date.now()-_loadStartedAt)/1000);
+  }, 1000);
+
+  function showError(message){
+    clearInterval(_loadTickerId);
+    document.getElementById('loading').innerHTML = `
+      <div class="err-box">
+        <h3>⚠ 데이터를 불러오지 못했습니다</h3>
+        <p style="white-space:pre-wrap;">${(message||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</p>
+        <p>가장 흔한 원인은 시트 공유 설정입니다. 아래를 확인해주세요:</p>
+        <p>1) 시트 우측 상단 <b>공유</b> → "링크가 있는 모든 사용자" → <b>뷰어</b>로 설정<br>
+        2) 대상 탭의 gid 확인 (현재 gid=${GID}, 스프레드시트 하단 탭 클릭 시 주소창의 <code>#gid=숫자</code> 값과 비교)<br>
+        3) 헤더가 <b>1행</b>에 있는지 확인<br>
+        4) 이 파일을 Claude 화면, VS Code 내장 미리보기(Simple Browser/Live Preview) 등 <b>샌드박스 뷰어가 아니라 실제 브라우저(Chrome 등)</b>에서 직접 열었는지 확인</p>
+        <p><code>SHEET_ID: ${SHEET_ID}</code></p>
+        <p style="margin-top:14px; padding-top:10px; border-top:1px dashed var(--line);">
+          <b>⚠ 가장 중요한 체크:</b> 아래 "현재 주소"가 <code>claude.ai</code>, <code>claude.site</code>, <code>about:srcdoc</code>이거나 주소창 자체가 안 보이는 내장 미리보기 창이면,
+          외부 사이트 접속이 전면 차단된 샌드박스 화면을 보고 계신 것입니다.
+          이 경우 파일을 반드시 <b>다운로드한 뒤, Chrome 등 실제 브라우저 새 탭에 파일을 직접 드래그하거나 Ctrl+O로 열어야</b> 정상 작동합니다.
+        </p>
+        <p>현재 주소: <code id="curUrl"></code></p>
+        <button class="btn" onclick="loadData()" style="margin-top:12px;">다시 시도</button>
+      </div>`;
+    const curUrlEl = document.getElementById('curUrl');
+    if(curUrlEl) curUrlEl.textContent = window.location.href;
+  }
+
+  // JSONP load via <script> tag: this bypasses CORS entirely (unlike fetch()),
+  // because <script src> requests are not subject to the same-origin/CORS policy.
+  // Google's gviz endpoint supports wrapping its JSON response in a callback
+  // function name via the tqx=responseHandler:NAME parameter.
+  const cbName = '__gvizCb_' + Math.random().toString(36).slice(2);
+  const prevScript = document.getElementById('gvizScript');
+  if(prevScript) prevScript.remove();
+
+  function cleanup(){ clearTimeout(_loadTimeoutId); clearInterval(_loadTickerId); delete window[cbName]; const s=document.getElementById('gvizScript'); if(s) s.remove(); }
+
+  window[cbName] = function(json){
+    try{
+      if(!json){ throw new Error('빈 응답을 받았습니다. (STAGE: gviz_response) 외부 네트워크 요청이 차단된 환경(사내망, 미리보기 뷰어 등)일 가능성이 높습니다.'); }
+      if(json.status === 'error'){ throw new Error('(STAGE: gviz_status) ' + (json.errors?.[0]?.detailed_message || 'Google Sheets 오류 응답')); }
+      const table = json.table;
+      if(!table || !table.cols){ throw new Error('(STAGE: gviz_table) 시트 테이블 구조를 읽지 못했습니다. 시트 공유 설정 또는 gid를 확인해주세요.'); }
+      const labels = table.cols.map(c => (c && c.label || '').trim());
+      COLS = {};
+      labels.forEach((l,i)=>{ if(l) COLS[l]=i; });
+      RAW = (table.rows||[]).map(r => (r.c||[]).map(c => c ? (c.f ?? c.v) : null));
+      cleanup();
+      document.getElementById('statusDot').className='status-dot live';
+      document.getElementById('statusText').textContent='LIVE';
+      document.getElementById('rowCount').textContent = fmtNum(RAW.length)+' rows';
+      document.getElementById('lastSync').textContent = '동기화: '+new Date().toLocaleTimeString('ko-KR');
+    }catch(err){
+      showError('(STAGE: 데이터 수신/파싱) ' + err.message + (err.stack? '\n\n['+err.stack.split('\n').slice(0,3).join(' | ')+']':''));
+      return;
+    }
+    try{
+      deriveRows();
+    }catch(err){
+      showError('(STAGE: deriveRows — 행 가공 중 오류) ' + err.message + (err.stack? '\n\n['+err.stack.split('\n').slice(0,3).join(' | ')+']':''));
+      return;
+    }
+    try{
+      buildAll();
+    }catch(err){
+      showError('(STAGE: buildAll — 화면 렌더링 중 오류) ' + err.message + (err.stack? '\n\n['+err.stack.split('\n').slice(0,3).join(' | ')+']':''));
+      return;
+    }
+    document.getElementById('loading').style.display='none';
+    document.getElementById('app').style.display='block';
+  };
+
+  const script = document.createElement('script');
+  script.id = 'gvizScript';
+  const gvizUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&gid=${GID}&t=${Date.now()}`;
+  script.src = gvizUrl;
+  script.onerror = () => showError('(STAGE: script_load) 시트에 접근할 수 없습니다 (스크립트 로드 실패). 링크 공유 설정, SHEET_ID/gid, 또는 이 파일을 열고 있는 환경(사내망/사내 프록시/샌드박스 미리보기 등)의 외부 네트워크 차단 여부를 확인해주세요.');
+  document.body.appendChild(script);
+
+  // 데이터가 많거나(수만 행) 방금 시트를 대량 편집/붙여넣기 직후라면 구글 쪽 응답이 평소보다 오래 걸릴 수 있어 넉넉하게 대기합니다.
+  _loadTimeoutId = setTimeout(()=>{
+    showError(
+      '응답 시간이 45초를 초과했습니다.\n\n' +
+      '1) 방금 시트에 대량 데이터를 붙여넣었다면, 구글이 처리를 끝낼 때까지 30초~1분 정도 기다린 뒤 "다시 시도"를 눌러주세요.\n' +
+      '2) 아래 주소를 새 브라우저 탭에 직접 붙여넣어 데이터가 뜨는지 확인해보세요 (떠야 정상, 안 뜨면 시트 공유 설정 문제입니다):\n' +
+      gvizUrl.replace(/&t=\d+$/, '') +
+      '\n3) 네트워크(사내망/VPN/방화벽)가 docs.google.com 접속을 막고 있는지도 확인해주세요.'
+    );
+  }, 45000);
+}
+
+// ---------- helpers ----------
+function col(row, name){ const i = COLS[name]; return i==null? null : row[i]; }
+// 헤더명이 비어있거나 예상과 다를 수 있는 컬럼(체크아웃일=AF, 박수=AG, 쿠폰금액=AK, 놀발수익=AM, 공급사=T)은
+// 스프레드시트 "열 문자"를 직접 0-based 인덱스로 변환해 값을 가져옵니다.
+// 안전한 min/max 날짜 계산: 대용량 배열에 스프레드 연산자(Math.max(...arr))를 쓰면
+// 브라우저에 따라 콜스택 오류가 날 수 있어 reduce로 구현합니다.
+function minDateOf(rows){
+  let m = null;
+  for(const d of rows){ if(d.created && (!m || d.created < m)) m = d.created; }
+  return m;
+}
+function maxDateOf(rows){
+  let m = null;
+  for(const d of rows){ if(d.created && (!m || d.created > m)) m = d.created; }
+  return m;
+}
+
+function colLetterIndex(letter){
+  let idx = 0;
+  const s = letter.toUpperCase();
+  for(let i=0;i<s.length;i++){ idx = idx*26 + (s.charCodeAt(i)-64); }
+  return idx-1;
+}
+function colL(row, letter){ const i = colLetterIndex(letter); return (i>=0 && i<row.length) ? row[i] : null; }
+function indexToColLetter(i){
+  let n = i+1, s = '';
+  while(n>0){ const rem=(n-1)%26; s = String.fromCharCode(65+rem)+s; n = Math.floor((n-1)/26); }
+  return s;
+}
+// 지금 이 순간 헤더명 매칭이 실제로 어느 열(letter)로 연결되어 있는지 화면에 보여주는 진단 함수.
+// 컬럼이 밀리거나 추가돼도 헤더명 기준으로 자동 재매핑되므로, 여기 나오는 letter가 매번 달라질 수 있습니다.
+function renderFieldMapping(){
+  const el = document.getElementById('kpiFieldMapping');
+  if(!el) return;
+  const report = (label, headerName) => {
+    const idx = COLS[headerName];
+    return idx!=null ? `${label}: "${headerName}"열(현재 ${indexToColLetter(idx)}열) 자동 인식` : `${label}: "${headerName}" 헤더를 못 찾음 ⚠`;
+  };
+  el.innerHTML = '현재 필드 매핑(헤더명 기준 자동 인식 — 열 위치가 바뀌어도 이 텍스트가 자동으로 따라갑니다): ' +
+    [report('거래액 기준','판매가'), report('매출(순이익) 기준','놀발 수수료'), report('매출 집계 기준일','체크아웃'), report('박수','박수')].join(' · ');
+}
+function toDate(v){
+  if(!v) return null;
+  if(v instanceof Date) return v;
+  if(typeof v === 'string'){
+    const s = v.trim();
+    if(!s || s==='-') return null;
+    // 구글 gviz가 "진짜 날짜 타입" 셀을 내려줄 때 종종 Date(y,m,d,h,mi,s) 형태(월은 0부터 시작)로 오는 경우가 있어 우선 처리
+    const gvizMatch = s.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/);
+    if(gvizMatch){
+      const [, y, mo, d, h, mi, se] = gvizMatch.map(Number);
+      return new Date(y, mo, d, h||0, mi||0, se||0);
+    }
+    // 수동 파싱(연-월-일 시:분:초, 구분자는 '.' '-' '/' 모두 허용, 시/분/초 앞자리 0 없어도 안전).
+    // new Date("YYYY-MM-DDTH:MM:SS") 형태의 브라우저 내장 파서는 시(H)가 한 자리면(예: "8:00:00")
+    // 엄격한 ISO 규격 위반으로 Invalid Date를 반환하는 경우가 있어, 직접 숫자를 뽑아 Date를 생성합니다.
+    const m = s.match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+    if(m){
+      const y=+m[1], mo=+m[2], d=+m[3], h=+(m[4]||0), mi=+(m[5]||0), se=+(m[6]||0);
+      const parsed = new Date(y, mo-1, d, h, mi, se);
+      if(!isNaN(parsed)) return parsed;
+    }
+  }
+  // 구글 시트 날짜 일련번호(예: 46000.625 같은 숫자, 1899-12-30 기준)로 오는 경우 대비
+  if(typeof v === 'number' && isFinite(v) && v > 20000 && v < 80000){
+    return new Date(Date.UTC(1899,11,30) + Math.round(v*86400000));
+  }
+  return null;
+}
+function toNum(v){
+  if(v==null) return 0;
+  if(typeof v === 'number') return v;
+  const n = parseFloat(String(v).replace(/[^0-9.\-]/g,''));
+  return isNaN(n)?0:n;
+}
+function isCancelled(row){
+  const s = col(row,'진행상태') || '';
+  return String(s).includes('취소');
+}
+// 공급사명 → 채널 매핑. "온다"/"호텔스토리"는 이름으로 자동 식별되고,
+// 나머지는 기본적으로 "직계약"으로 분류됩니다.
+// 웹투어 / TL링크 / 산하CMS로 들어오는 공급사명을 알고 계시면 아래에 정확한 공급사명을 그대로 추가해주세요.
+// 예: '웹투어 거래처명': '웹투어',  'TL링크 거래처명': 'TL링크',  '산하CMS 거래처명': '산하CMS',
+const CHANNEL_OVERRIDES = {
+  // '웹투어 거래처명': '웹투어',
+  // 'TL링크 거래처명': 'TL링크',
+  // '산하CMS 거래처명': '산하CMS',
+};
+function classifyChannel(supplier){
+  const s = (supplier||'').toString().trim();
+  if(!s) return '직계약';
+  if(CHANNEL_OVERRIDES[s]) return CHANNEL_OVERRIDES[s];
+  if(s.includes('온다')) return '온다';
+  if(s.includes('아고다') || /agoda/i.test(s)) return '아고다';
+  if(s.includes('호텔스토리')) return '호텔스토리';
+  return '직계약';
+}
+const WEEKDAYS = ['일','월','화','수','목','금','토'];
+
+// 날짜를 정확히 N개월 이동 (일자가 대상 월에 없으면 그 달의 마지막 날로 보정, 시/분/초는 유지)
+function shiftMonths(date, delta){
+  if(!date) return null;
+  const d = new Date(date.getTime());
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth()+delta);
+  const daysInTarget = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  d.setDate(Math.min(day, daysInTarget));
+  return d;
+}
+function inRange(d, start, end){ return !!d && (!start || d>=start) && (!end || d<=end); }
+function fmtDateShort(d){ if(!d) return ''; return String(d.getFullYear())+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
+
+// ---------------- GLOBAL FILTER STATE ----------------
+const FILTERS = { start: null, end: null, supplier: '', region: '', includeCancelled: false };
+let VIEW = []; // DERIVED after date/supplier/region scope is applied
+let SCOPE = []; // DERIVED after supplier/region scope is applied, WITHOUT the date(조회기간) filter — used for MoM/YoY 비교, 월별 KPI, 연도별 쿠폰 집계 등 "조회기간 밖" 데이터가 필요한 계산
+
+// 취소 포함/미포함 토글에 따라 "집계에 포함할 행"을 반환.
+// 기본(미포함)일 때는 취소건을 제외한 순수 매출만 집계합니다.
+function activeRows(rows){ return FILTERS.includeCancelled ? rows : rows.filter(r=>!r.cancelled); }
+
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function applyFilters(){
+  VIEW = DERIVED.filter(d=>{
+    if(FILTERS.start && d.created < FILTERS.start) return false;
+    if(FILTERS.end && d.created > FILTERS.end) return false;
+    if(FILTERS.supplier && d.supplier !== FILTERS.supplier) return false;
+    if(FILTERS.region && d.region1 !== FILTERS.region) return false;
+    return true;
+  });
+  SCOPE = DERIVED.filter(d=>{
+    if(FILTERS.supplier && d.supplier !== FILTERS.supplier) return false;
+    if(FILTERS.region && d.region1 !== FILTERS.region) return false;
+    return true;
+  });
+}
+
+function populateFilterOptions(){
+  const wrap = document.getElementById('ssWrap-supplier');
+  if(wrap.dataset.populated) return; // 최초 1회만 채움 (데이터 새로고침 시에는 그대로 유지)
+  const suppliers = [...new Set(DERIVED.map(d=>d.supplier).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+  const regions = [...new Set(DERIVED.map(d=>d.region1).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+  SS_DATA.supplier = suppliers;
+  SS_DATA.region = regions;
+  renderSearchSelectOptions('supplier');
+  renderSearchSelectOptions('region');
+  wrap.dataset.populated = '1';
+  // 데이터 기간에 맞춰 날짜 필터 min/max 기본값 세팅
+  const minD = minDateOf(DERIVED), maxD = maxDateOf(DERIVED);
+  if(minD && maxD){
+    const toInputVal = d => d.toISOString().slice(0,10);
+    const startEl = document.getElementById('filterStart'), endEl = document.getElementById('filterEnd');
+    startEl.min = toInputVal(minD); startEl.max = toInputVal(maxD);
+    endEl.min = toInputVal(minD); endEl.max = toInputVal(maxD);
+  }
+  // 패널 바깥 클릭 시 닫기 (한 번만 등록)
+  if(!window.__ssOutsideClickBound){
+    document.addEventListener('click', (e)=>{
+      ['supplier','region'].forEach(type=>{
+        const w = document.getElementById('ssWrap-'+type);
+        if(w && !w.contains(e.target)) closeSearchSelect(type);
+      });
+    });
+    window.__ssOutsideClickBound = true;
+  }
+}
+
+// ---- 검색 가능한 드롭다운(공급사/지역) ----
+const SS_DATA = { supplier: [], region: [] };
+const SS_ALL_LABEL = { supplier: '전체 공급사', region: '전체 지역' };
+
+function renderSearchSelectOptions(type){
+  const container = document.getElementById('ss-options-'+type);
+  const q = (document.getElementById('ss-search-'+type)?.value || '').trim().toLowerCase();
+  const list = SS_DATA[type].filter(v => !q || v.toLowerCase().includes(q));
+  let html = '';
+  if(!q) html += `<div class="ss-option ss-all" onclick="selectSearchOption('${type}','')">${SS_ALL_LABEL[type]}</div>`;
+  if(list.length){
+    html += list.map(v=>`<div class="ss-option" onclick="selectSearchOption('${type}',${JSON.stringify(v).replace(/"/g,'&quot;')})">${escapeHtml(v)}</div>`).join('');
+  } else if(q) {
+    html += `<div class="ss-empty">"${escapeHtml(q)}" 검색 결과 없음</div>`;
+  }
+  container.innerHTML = html;
+}
+function filterSearchSelect(type){ renderSearchSelectOptions(type); }
+function toggleSearchSelect(type){
+  const panel = document.getElementById('ss-panel-'+type);
+  const isOpen = panel.classList.contains('open');
+  ['supplier','region'].forEach(closeSearchSelect);
+  if(!isOpen){
+    panel.classList.add('open');
+    const input = document.getElementById('ss-search-'+type);
+    input.value = '';
+    renderSearchSelectOptions(type);
+    setTimeout(()=>input.focus(), 0);
+  }
+}
+function closeSearchSelect(type){
+  document.getElementById('ss-panel-'+type).classList.remove('open');
+}
+function selectSearchOption(type, value){
+  FILTERS[type] = value;
+  document.getElementById('ss-label-'+type).textContent = value || SS_ALL_LABEL[type];
+  closeSearchSelect(type);
+  refreshAll();
+}
+function handleSearchSelectKey(e, type){
+  if(e.key === 'Escape'){ closeSearchSelect(type); return; }
+  if(e.key === 'Enter'){
+    const first = document.querySelector('#ss-options-'+type+' .ss-option:not(.ss-all)') || document.querySelector('#ss-options-'+type+' .ss-option.ss-all');
+    if(first) first.click();
+  }
+}
+
+function onFilterChange(){
+  const startVal = document.getElementById('filterStart').value;
+  const endVal = document.getElementById('filterEnd').value;
+  FILTERS.start = startVal ? new Date(startVal+'T00:00:00') : null;
+  FILTERS.end = endVal ? new Date(endVal+'T23:59:59') : null;
+  refreshAll();
+}
+
+function resetFilters(){
+  document.getElementById('filterStart').value='';
+  document.getElementById('filterEnd').value='';
+  FILTERS.start=null; FILTERS.end=null; FILTERS.supplier=''; FILTERS.region='';
+  document.getElementById('ss-label-supplier').textContent = SS_ALL_LABEL.supplier;
+  document.getElementById('ss-label-region').textContent = SS_ALL_LABEL.region;
+  refreshAll();
+}
+
+function setCancelMode(includeCancelled){
+  FILTERS.includeCancelled = includeCancelled;
+  document.getElementById('btnCancelExclude').classList.toggle('active', !includeCancelled);
+  document.getElementById('btnCancelInclude').classList.toggle('active', includeCancelled);
+  refreshAll();
+}
+
+function safeRun(fnName, fn){
+  try{ fn(); }
+  catch(err){ console.error(`[대시보드] ${fnName} 렌더링 중 오류:`, err); }
+}
+
+function refreshAll(){
+  applyFilters();
+  safeRun('computeAndRenderExec', computeAndRenderExec);
+  safeRun('computeAndRenderPartner', computeAndRenderPartner);
+  safeRun('computeAndRenderMonthlyKpi', computeAndRenderMonthlyKpi);
+  safeRun('computeAndRenderSales', computeAndRenderSales);
+  safeRun('computeAndRenderProduct', computeAndRenderProduct);
+  safeRun('computeAndRenderRegionChannel', computeAndRenderRegionChannel);
+  safeRun('computeAndRenderCustomer', computeAndRenderCustomer);
+  safeRun('renderGoal', renderGoal);
+  safeRun('computeAndRenderCoupon', computeAndRenderCoupon);
+  safeRun('computeAndRenderAnomaly', computeAndRenderAnomaly);
+}
+
+
+function buildAll(){
+  populateFilterOptions();
+  refreshAll();
+}
+
+// ---------------- EXEC ----------------
+let DERIVED = []; // cached row-level derived fields
+let DIAG_SAMPLES = []; // 체크아웃일 파싱 실패 샘플 (진단용, 새로고침마다 갱신)
+function deriveRows(){
+  DIAG_SAMPLES = [];
+  DERIVED = RAW.map(row=>{
+    const created = toDate(col(row,'생성일'));
+    const checkin = toDate(col(row,'체크인'));
+    // 체크아웃일: 헤더명 매칭을 우선 사용하되(가장 신뢰도 높음), 값이 없으면 AG열을 직접 시도
+    const rawCheckoutH = col(row,'체크아웃'), rawCheckoutL = colL(row,'AG');
+    const checkout = toDate(rawCheckoutH) || toDate(rawCheckoutL);
+    const cancelDate = toDate(col(row,'취소일'));
+    // 거래액(판매가): 헤더명 매칭 우선, 없으면 AM열을 직접 시도
+    const rawPriceH = col(row,'판매가'), rawPriceL = colL(row,'AM');
+    const price = toNum(rawPriceH ?? rawPriceL);
+    // 박수: 헤더명 매칭 우선, 없으면 AH열을 직접 시도, 그마저 없으면 체크인/체크아웃 일수 차이로 계산
+    const nights = toNum(col(row,'박수')) || toNum(colL(row,'AH')) || (checkin&&checkout? Math.max(1,Math.round((checkout-checkin)/86400000)):1);
+    // 공급사: 헤더명 매칭 우선, 없으면 T열(공급사)을 직접 사용
+    const supplier = ((col(row,'공급사') || colL(row,'T')) || '').toString().trim();
+    const region1 = (col(row,'로컬1')||'').toString().trim() || '미상';
+    const product = (col(row,'상품명')||'').toString().trim() || '(상품명 없음)';
+    const stay = (col(row,'숙소명')||'').toString().trim();
+    const phone = (col(row,'예약자 연락처')||'').toString().trim();
+    const pax = (col(row,'투숙인원')||'').toString();
+    const cancelled = isCancelled(row);
+    // 놀발 수수료(매출/순이익 집계에 사용): 헤더명 매칭 우선, 없으면 AN열을 직접 시도
+    const rawProfitH = col(row,'놀발 수수료'), rawProfitL = colL(row,'AN');
+    const profit = toNum(rawProfitH ?? rawProfitL);
+    // 쿠폰금액(AK열)
+    const coupon = toNum(colL(row,'AK'));
+    // 연동사(AV열): 대표님이 보고 싶어하시는 연동사별 실적 집계용 (AU열은 "연동업체"이며 별개 컬럼입니다)
+    const partner = (colL(row,'AV') || '').toString().trim() || '(미연동/미상)';
+
+    // 진단용 샘플 수집: 생성일은 정상 파싱됐는데 체크아웃일 파싱이 실패한 행을 최대 8개까지 원본 값 그대로 기록
+    if(created && !checkout && DIAG_SAMPLES.length < 8){
+      DIAG_SAMPLES.push({ created: rawGetForDiag(col(row,'생성일')), checkoutH: rawGetForDiag(rawCheckoutH), checkoutL: rawGetForDiag(rawCheckoutL), profitRaw: rawGetForDiag(rawProfitH ?? rawProfitL) });
+    }
+
+    return {created, checkin, checkout, cancelDate, price, nights, supplier, region1, product, stay, phone, pax, cancelled,
+            profit, coupon, partner,
+            channel: classifyChannel(supplier)};
+  }).filter(d => d.created); // must have created date to be usable
+}
+function rawGetForDiag(v){ return v==null ? '(빈값/null)' : (typeof v==='string' && v.trim()==='' ? '(빈 문자열)' : String(v)); }
+
+function periodStats(rows){
+  const total = rows.length;
+  const cancelled = rows.filter(r=>r.cancelled).length;
+  const netRows = activeRows(rows);
+  const gmv = netRows.reduce((a,r)=>a+r.price,0);
+  const nights = netRows.reduce((a,r)=>a+r.nights,0);
+  return {total, cancelled, netCount:netRows.length, gmv, nights,
+    cancelRate: total? cancelled/total:0,
+    adr: nights? gmv/nights:0,
+    avgBooking: netRows.length? gmv/netRows.length:0};
+}
+// 체크아웃일 기준 매출(놀발 수익 = AM열) 집계. VIEW 전체(필터/취소포함여부는 적용) 중 checkout일이 구간에 속하는 건을 취합.
+function checkoutProfitSum(rows, start, end){
+  const scoped = FILTERS.includeCancelled ? rows : rows.filter(r=>!r.cancelled);
+  return scoped.filter(d=> d.checkout && d.checkout>=start && d.checkout<=end)
+               .reduce((a,d)=>a+d.profit, 0);
+}
+function isSameCalendarDay(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+
+function computeAndRenderExec(){
+  if(VIEW.length===0){ document.getElementById('execKpis').innerHTML = '<div class="footnote">조건에 맞는 데이터가 없습니다. 필터를 확인해주세요.</div>'; document.getElementById('execCheckoutKpis').innerHTML=''; document.getElementById('execCancelKpis').innerHTML=''; return; }
+
+  // SCOPE = 공급사/지역 필터만 적용되고 날짜(조회기간) 필터는 적용되지 않은 전체 기간 데이터.
+  // 전월/전년 비교 시 "조회기간 밖" 데이터(예: 작년 동기)가 필요하므로 VIEW가 아닌 SCOPE에서 가져옵니다.
+  const scopeDates = SCOPE.map(d=>d.created).filter(Boolean);
+  const scopeMax = scopeDates.length? new Date(Math.max(...scopeDates)) : null;
+  const scopeMin = scopeDates.length? new Date(Math.min(...scopeDates)) : null;
+
+  // 조회기간(curStart~curEnd) 결정: 상단에서 날짜를 지정했으면 그 값 그대로 사용,
+  // 지정하지 않았으면 기본값으로 "이번 달 1일 ~ 최신 데이터일"을 사용합니다.
+  let curStart, curEnd, isCustomRange = false;
+  if(FILTERS.start || FILTERS.end){
+    curStart = FILTERS.start || scopeMin;
+    curEnd = FILTERS.end || scopeMax;
+    isCustomRange = true;
+  } else if(scopeMax){
+    curStart = new Date(scopeMax.getFullYear(), scopeMax.getMonth(), 1);
+    curEnd = scopeMax;
+  }
+
+  const curM = SCOPE.filter(d=>inRange(d.created,curStart,curEnd));
+
+  // 전월 대비(MoM): 조회기간을 정확히 1개월 이동한 구간과 비교 (예: 7/1~7/9 조회 시 → 6/1~6/9)
+  const prevStart = shiftMonths(curStart,-1), prevEnd = shiftMonths(curEnd,-1);
+  const prevM = SCOPE.filter(d=>inRange(d.created,prevStart,prevEnd));
+
+  // 전년 동기(YoY): 조회기간을 정확히 12개월(1년) 이동한 구간과 비교 (예: 7/1~7/9 조회 시 → 전년도 7/1~7/9)
+  const yoyStart = shiftMonths(curStart,-12), yoyEnd = shiftMonths(curEnd,-12);
+  const yoyM = SCOPE.filter(d=>inRange(d.created,yoyStart,yoyEnd));
+
+  const sCur = periodStats(curM), sPrev = periodStats(prevM), sYoy = periodStats(yoyM);
+
+  let momGrowth = null, momLabel = `전기간(${fmtDateShort(prevStart)}~${fmtDateShort(prevEnd)}) 대비`;
+  if(sPrev.gmv > 0){ momGrowth = (sCur.gmv - sPrev.gmv)/sPrev.gmv; }
+  else if(scopeMin && prevEnd && scopeMin > prevEnd){ momLabel = '집계 시작 후 첫 기간 · 비교 불가'; }
+  else { momLabel = `비교 기간(${fmtDateShort(prevStart)}~${fmtDateShort(prevEnd)}) 거래 데이터 없음`; }
+
+  let yoyGrowth = null, yoyLabel = `전년 동기(${fmtDateShort(yoyStart)}~${fmtDateShort(yoyEnd)}) 대비`;
+  if(sYoy.gmv > 0){ yoyGrowth = (sCur.gmv - sYoy.gmv)/sYoy.gmv; }
+  else if(scopeMin && yoyEnd && scopeMin > yoyEnd){ yoyLabel = '누적 1년 미만 · 비교 불가'; }
+  else { yoyLabel = `전년 동기(${fmtDateShort(yoyStart)}~${fmtDateShort(yoyEnd)}) 거래 데이터 없음`; }
+
+  const directCount = activeRows(curM).filter(d=>d.channel==='직계약').length;
+  const directShare = sCur.netCount? directCount/sCur.netCount : 0;
+
+  const cards = [
+    {label: isCustomRange? '조회기간 GMV':'이번 달 GMV', value:fmtWonShort(sCur.gmv)+'원', delta: momGrowth!=null? `전기간비 ${momGrowth>=0?'▲':'▼'}${fmtPct(Math.abs(momGrowth))}`:'비교불가', cls: momGrowth==null?'flat':(momGrowth>=0?'up':'down')},
+    {label:'예약건수(순)', value:fmtNum(sCur.netCount)+'건', delta:`총 접수 ${fmtNum(sCur.total)}건 · 총 ${fmtNum(sCur.nights)}박(AG열)`, cls:'flat'},
+    {label:'ADR(1박당)', value:fmtWonShort(sCur.adr)+'원', delta:`평균예약액 ${fmtWonShort(sCur.avgBooking)}원`, cls:'flat'},
+    {label:'취소율', value:fmtPct(sCur.cancelRate), delta: sCur.cancelRate>0.15?'⚠ 관리 필요':'정상 범위', cls: sCur.cancelRate>0.15?'down':'up'},
+    {label: isCustomRange? '전기간 대비 성장률':'전월 대비 성장률', value: momGrowth!=null? fmtPct(momGrowth):'N/A', delta:momLabel, cls: momGrowth==null?'flat':(momGrowth>=0?'up':'down')},
+    {label:'전년 동기 대비', value: yoyGrowth!=null? fmtPct(yoyGrowth):'N/A', delta:yoyLabel, cls: yoyGrowth==null?'flat':(yoyGrowth>=0?'up':'down')},
+    {label:'직계약 비중', value:fmtPct(directShare), delta:'목표: 확대', cls: directShare>0.4?'up':'warn'},
+  ];
+  document.getElementById('execKpis').innerHTML = cards.map(c=>`
+    <div class="kpi"><div class="label">${c.label}</div><div class="value">${c.value}</div><div class="delta ${c.cls}">${c.delta}</div></div>
+  `).join('');
+
+  // ---- 매출(체크아웃기준): AF열(체크아웃일) 기준으로 "조회기간"에 맞춰 취합, AM열(놀발 수익) 합산 ----
+  // VIEW(생성일 필터)가 아닌 SCOPE(공급사/지역만 필터)에서 체크아웃일 기준으로 직접 취합하므로
+  // 조회기간을 지정해도 전년 동기 비교에 필요한 "기간 밖" 데이터를 그대로 찾을 수 있습니다.
+  const profitCur = checkoutProfitSum(SCOPE, curStart, curEnd);
+  const profitYoy = checkoutProfitSum(SCOPE, yoyStart, yoyEnd);
+  const profitYoyGrowth = profitYoy>0 ? (profitCur-profitYoy)/profitYoy : null;
+  const hasCheckoutData = curM.some(d=>d.checkout) || SCOPE.some(d=>d.checkout);
+  const hasProfitData = SCOPE.some(d=>d.profit);
+
+  document.getElementById('execCheckoutKpis').innerHTML = `
+    <div class="kpi"><div class="label">매출(체크아웃기준) · 조회기간</div><div class="value">${fmtWonShort(profitCur)}원</div><div class="delta flat">체크아웃일(AF) 기준 · 놀발수익(AM) 합계 (${fmtDateShort(curStart)}~${fmtDateShort(curEnd)})</div></div>
+    <div class="kpi"><div class="label">매출(순이익) 전년동기</div><div class="value">${profitYoy>0? fmtWonShort(profitYoy)+'원' : 'N/A'}</div><div class="delta flat">${profitYoy>0? `전년 동기(${fmtDateShort(yoyStart)}~${fmtDateShort(yoyEnd)}) 체크아웃 기준`:'전년 동기 데이터 없음'}</div></div>
+    <div class="kpi"><div class="label">매출(순이익) 전년동기比</div><div class="value">${profitYoyGrowth!=null? fmtPct(profitYoyGrowth):'N/A'}</div><div class="delta ${profitYoyGrowth==null?'flat':(profitYoyGrowth>=0?'up':'down')}">YoY</div></div>
+    <div class="kpi"><div class="label">순이익률(참고)</div><div class="value">${sCur.gmv? fmtPct(profitCur/sCur.gmv):'N/A'}</div><div class="delta flat">체크아웃 매출(순이익) ÷ 조회기간 GMV</div></div>
+  `;
+  document.getElementById('execCheckoutFootnote').textContent = (hasCheckoutData && hasProfitData)
+    ? '※ 이 카드들은 예약 생성일이 아닌 "체크아웃일" 기준으로 재집계된 수치이므로 위 GMV 카드와 합계가 다를 수 있습니다(정상).'
+    : '⚠ 시트에서 체크아웃일(AF열) 또는 놀발수익(AM열) 값이 비어있는 행이 있어 수치가 실제보다 낮게 잡힐 수 있습니다. 원본 시트의 AF/AM열 데이터를 확인해주세요.';
+
+  // ---- 취소 분석: 조회된 날짜(현재 VIEW) 기준 ----
+  const cancelledRows = VIEW.filter(d=>d.cancelled);
+  const cancelCount = cancelledRows.length;
+  const cancelAmount = cancelledRows.reduce((a,d)=>a+d.price,0);
+  const sameDayBookings = VIEW.filter(d=> d.checkin && isSameCalendarDay(d.created, d.checkin));
+  const sameDayCancelled = sameDayBookings.filter(d=>d.cancelled).length;
+  const sameDayCancelRate = sameDayBookings.length? sameDayCancelled/sameDayBookings.length : 0;
+  document.getElementById('execCancelKpis').innerHTML = `
+    <div class="kpi"><div class="label">취소 건수</div><div class="value">${fmtNum(cancelCount)}건</div><div class="delta flat">조회 기간 전체 · 취소율 ${fmtPct(VIEW.length? cancelCount/VIEW.length:0)}</div></div>
+    <div class="kpi"><div class="label">취소 거래액</div><div class="value">${fmtWonShort(cancelAmount)}원</div><div class="delta down">취소되지 않았다면 확보 가능했던 거래액</div></div>
+    <div class="kpi"><div class="label">당일예약 중 현재취소</div><div class="value">${fmtNum(sameDayCancelled)}건 (${fmtPct(sameDayCancelRate)})</div><div class="delta flat">당일예약 총 ${fmtNum(sameDayBookings.length)}건 중</div></div>
+  `;
+
+  // trend last 60 days
+  const byDay = {};
+  VIEW.forEach(d=>{
+    if(d.cancelled) return;
+    const key = d.created.toISOString().slice(0,10);
+    byDay[key] = (byDay[key]||0)+d.price;
+  });
+  const days = Object.keys(byDay).sort().slice(-60);
+  renderChart('chartExecTrend','line', days, [{label:'일별 GMV', data:days.map(k=>byDay[k]), borderColor:PALETTE[0], backgroundColor:'rgba(47,211,196,0.12)', fill:true, tension:0.3, pointRadius:0}]);
+
+  // exec actions (top 3 rule-based)
+  const actions = [];
+  if(directShare < 0.4){
+    actions.push({tag:'직계약 확대', title:`직계약 비중 ${fmtPct(directShare)} — 확대 여지 있음`, body:'ONDA/OTA 의존도가 높습니다. 예약건수 상위 숙소 중 직계약 전환 가능한 곳을 선별해 컨택하세요.', cls:'warn'});
+  }
+  if(sCur.cancelRate > 0.15){
+    actions.push({tag:'취소율 관리', title:`이번 달 취소율 ${fmtPct(sCur.cancelRate)}`, body:'평균 대비 취소율이 높습니다. 이상징후 탭에서 취소 급증 공급사/상품을 확인하세요.', cls:'bad'});
+  }
+  if(momGrowth!=null && momGrowth < 0){
+    actions.push({tag:'거래액 성장', title:`전월 동기 대비 ${fmtPct(momGrowth)}`, body:'거래액이 둔화되고 있습니다. 상품 분석 탭에서 판매 급감 상품을 점검하세요.', cls:'bad'});
+  }
+  if(actions.length===0){
+    actions.push({tag:'양호', title:'주요 KPI가 안정적입니다', body:'현재 취소율/성장률 모두 정상 범위입니다. 목표관리 탭에서 잔여 목표를 확인하세요.', cls:''});
+  }
+  document.getElementById('execActions').innerHTML = actions.map(a=>`
+    <div class="insight ${a.cls}"><div class="itag">${a.tag}</div><div class="ititle">${a.title}</div><div class="ibody">${a.body}</div></div>
+  `).join('');
+}
+
+// ---------------- SALES ----------------
+function computeAndRenderSales(){
+  const net = activeRows(VIEW);
+  // daily
+  const byDay = {}; const byDayCnt = {};
+  net.forEach(d=>{ const k=d.created.toISOString().slice(0,10); byDay[k]=(byDay[k]||0)+d.price; byDayCnt[k]=(byDayCnt[k]||0)+1; });
+  const days = Object.keys(byDay).sort();
+  renderChart('chartDaily','bar', days, [
+    {label:'일별 GMV', data:days.map(k=>byDay[k]), backgroundColor:PALETTE[0], yAxisID:'y'},
+    {label:'예약건수', data:days.map(k=>byDayCnt[k]), backgroundColor:PALETTE[3], yAxisID:'y1', type:'line', valueType:'count'}
+  ], true);
+
+  // weekly (ISO week)
+  const byWeek = {};
+  net.forEach(d=>{
+    const dt = new Date(d.created); const onejan = new Date(dt.getFullYear(),0,1);
+    const week = Math.ceil((((dt-onejan)/86400000) + onejan.getDay()+1)/7);
+    const k = dt.getFullYear()+'-W'+String(week).padStart(2,'0');
+    byWeek[k] = (byWeek[k]||0)+d.price;
+  });
+  const weeks = Object.keys(byWeek).sort();
+  renderChart('chartWeekly','bar', weeks, [{label:'주별 GMV', data:weeks.map(k=>byWeek[k]), backgroundColor:PALETTE[1]}]);
+
+  // monthly
+  const byMonth = {};
+  net.forEach(d=>{ const k = d.created.getFullYear()+'-'+String(d.created.getMonth()+1).padStart(2,'0'); byMonth[k]=(byMonth[k]||0)+d.price; });
+  const months = Object.keys(byMonth).sort();
+  renderChart('chartMonthly','bar', months, [{label:'월별 GMV', data:months.map(k=>byMonth[k]), backgroundColor:PALETTE[2]}]);
+
+  // weekday
+  const byDow = Array(7).fill(0); const byDowCnt = Array(7).fill(0);
+  net.forEach(d=>{ const dow=d.created.getDay(); byDow[dow]+=d.price; byDowCnt[dow]++; });
+  renderChart('chartWeekday','bar', WEEKDAYS, [
+    {label:'거래액', data:byDow, backgroundColor:PALETTE[0], yAxisID:'y'},
+    {label:'예약건수', data:byDowCnt, backgroundColor:PALETTE[3], yAxisID:'y1', type:'line', valueType:'count'}
+  ], true);
+
+  // hour
+  const byHour = Array(24).fill(0);
+  VIEW.forEach(d=>{ byHour[d.created.getHours()]++; });
+  renderChart('chartHour','bar', Array.from({length:24},(_,i)=>i+'시'), [{label:'예약 생성건수', data:byHour, backgroundColor:PALETTE[4], valueType:'count'}]);
+}
+
+// ---------------- PRODUCT / SUPPLIER ----------------
+function computeAndRenderProduct(){
+  const net = activeRows(VIEW);
+  const byProduct = {};
+  net.forEach(d=>{ const k=d.stay+' · '+d.product; byProduct[k]=(byProduct[k]||0)+d.price; });
+  const top20 = Object.entries(byProduct).sort((a,b)=>b[1]-a[1]).slice(0,20);
+  renderChart('chartTopProducts','bar', top20.map(x=>x[0]), [{label:'거래액', data:top20.map(x=>x[1]), backgroundColor:PALETTE[0]}], false, true);
+
+  // supplier table
+  const bySup = {};
+  VIEW.forEach(d=>{
+    const k = d.supplier || '(미상)';
+    bySup[k] = bySup[k] || {gmv:0,count:0,cancelled:0,netCount:0};
+    bySup[k].count++;
+    if(d.cancelled) bySup[k].cancelled++;
+    // 취소포함 토글이 켜져 있으면 취소건도 거래액/건수에 포함, 꺼져 있으면(기본) 취소건 제외
+    if(FILTERS.includeCancelled || !d.cancelled){ bySup[k].gmv += d.price; bySup[k].netCount++; }
+  });
+  const supRows = Object.entries(bySup).map(([name,v])=>({
+    name, gmv:v.gmv, count:v.count, netCount:v.netCount,
+    cancelRate: v.count? v.cancelled/v.count:0,
+    adr: v.netCount? v.gmv/v.netCount:0
+  })).sort((a,b)=>b.gmv-a.gmv);
+  renderSortableTable('tblSupplier',
+    [['name','공급사'],['gmv','거래액'],['netCount','예약건수'],['cancelRate','취소율'],['adr','평균단가']],
+    supRows,
+    {gmv:fmtWonShort, cancelRate:fmtPct, adr:fmtWonShort, netCount:fmtNum}
+  );
+}
+
+// ---------------- REGION / CHANNEL ----------------
+// 각 블록(지역 막대, 산점도, 채널)을 개별 try/catch로 감싸 하나가 실패해도
+// 나머지 블록은 정상적으로 렌더링되도록 분리했습니다. 실패 시에도 콘솔에만 찍히던
+// 이전 방식 대신, 해당 카드 안에 원인을 바로 표시합니다.
+function showCardError(canvasId, message){
+  const el = document.getElementById(canvasId);
+  if(!el) return;
+  const box = el.closest('.chart-box') || el.parentElement;
+  if(!box) return;
+  let msgEl = box.querySelector('.chart-error-msg');
+  if(!msgEl){
+    msgEl = document.createElement('div');
+    msgEl.className = 'chart-error-msg footnote';
+    msgEl.style.cssText = 'padding:14px 0;';
+    box.appendChild(msgEl);
+  }
+  msgEl.textContent = `⚠ 이 차트를 그리는 중 오류가 발생했습니다: ${message}`;
+  el.style.display = 'none'; // 깨진 캔버스는 숨기되 DOM에서 완전히 제거하지 않아야 다음 새로고침 때 복구 가능
+}
+function clearCardError(canvasId){
+  const el = document.getElementById(canvasId);
+  if(!el) return;
+  el.style.display = '';
+  const box = el.closest('.chart-box') || el.parentElement;
+  const msgEl = box && box.querySelector('.chart-error-msg');
+  if(msgEl) msgEl.remove();
+}
+
+// ---------------- PARTNER (연동사별 실적, AU열 기준) ----------------
+function computeAndRenderPartner(){
+  const byPartner = {};
+  VIEW.forEach(d=>{
+    const k = d.partner;
+    byPartner[k] = byPartner[k] || {gmv:0,count:0,cancelled:0,netCount:0,nights:0};
+    byPartner[k].count++;
+    if(d.cancelled) byPartner[k].cancelled++;
+    if(FILTERS.includeCancelled || !d.cancelled){ byPartner[k].gmv+=d.price; byPartner[k].netCount++; byPartner[k].nights+=d.nights; }
+  });
+  const arr = Object.entries(byPartner)
+    .map(([name,v])=>({name, ...v, cancelRate: v.count? v.cancelled/v.count:0, adr: v.netCount? v.gmv/v.netCount:0}))
+    .filter(r=>isFinite(r.gmv))
+    .sort((a,b)=>b.gmv-a.gmv);
+
+  const totalGmv = arr.reduce((a,r)=>a+r.gmv,0);
+  const totalCount = arr.reduce((a,r)=>a+r.netCount,0);
+  const topPartner = arr[0];
+
+  document.getElementById('partnerKpis').innerHTML = `
+    <div class="kpi"><div class="label">연동사 수</div><div class="value">${fmtNum(arr.length)}개</div><div class="delta flat">AV열 기준 구분값</div></div>
+    <div class="kpi"><div class="label">총 거래액(조회 기간)</div><div class="value">${fmtWonShort(totalGmv)}원</div><div class="delta flat">${fmtNum(totalCount)}건</div></div>
+    <div class="kpi"><div class="label">1위 연동사</div><div class="value">${topPartner? escapeHtml(topPartner.name) : '-'}</div><div class="delta flat">${topPartner? fmtWonShort(topPartner.gmv)+'원' : ''}</div></div>
+    <div class="kpi"><div class="label">1위 비중</div><div class="value">${topPartner && totalGmv? fmtPct(topPartner.gmv/totalGmv) : '-'}</div><div class="delta flat">전체 거래액 대비</div></div>
+  `;
+
+  try{
+    if(!arr.length){
+      showCardError('chartPartner', '표시할 데이터가 없습니다 (조회 조건에 맞는 연동사별 예약이 없음).');
+    } else {
+      renderChart('chartPartner','bar', arr.map(r=>r.name), [{label:'거래액', data:arr.map(r=>r.gmv), backgroundColor:PALETTE[0]}], false, true);
+    }
+  }catch(err){ console.error('[대시보드] chartPartner 오류:', err); showCardError('chartPartner', err.message); }
+
+  try{
+    if(!arr.length){
+      showCardError('chartPartnerShare', '표시할 데이터가 없습니다 (조회 조건에 맞는 연동사별 예약이 없음).');
+    } else {
+      renderChart('chartPartnerShare','doughnut', arr.map(r=>r.name), [{data:arr.map(r=>r.gmv), counts:arr.map(r=>r.netCount), backgroundColor:PALETTE}]);
+    }
+  }catch(err){ console.error('[대시보드] chartPartnerShare 오류:', err); showCardError('chartPartnerShare', err.message); }
+
+  renderSortableTable('tblPartner',
+    [['name','연동사'],['gmv','거래액'],['netCount','예약건수(순)'],['nights','박수'],['cancelRate','취소율'],['adr','객단가']],
+    arr, {gmv:fmtWonShort, netCount:fmtNum, nights:fmtNum, cancelRate:fmtPct, adr:fmtWonShort});
+
+  // ---- 월별 × 연동사별 거래액 그래프 (연도 선택, 공급사/지역 필터·취소포함여부 반영, 조회기간 필터는 무관) ----
+  renderPartnerMonthlyChart();
+}
+
+const PARTNER_MONTHLY_TOP_N = 6;
+
+function populatePartnerYearOptions_(years){
+  const sel = document.getElementById('partnerMonthlyYearSelect');
+  if(!sel || sel.dataset.populated) return;
+  const curYear = new Date().getFullYear();
+  const defaultYear = years.includes(curYear) ? curYear : years[years.length-1];
+  sel.innerHTML = years.map(y=>`<option value="${y}" ${y===defaultYear?'selected':''}>${y}년</option>`).join('');
+  sel.dataset.populated = '1';
+}
+
+function renderPartnerMonthlyChart(){
+  const base = FILTERS.includeCancelled ? SCOPE : SCOPE.filter(d=>!d.cancelled);
+  const years = [...new Set(SCOPE.map(d=>d.created.getFullYear()))].sort();
+  if(!years.length){ showCardError('chartPartnerMonthly', '집계할 데이터가 없습니다.'); return; }
+  populatePartnerYearOptions_(years);
+  const sel = document.getElementById('partnerMonthlyYearSelect');
+  const selectedYear = parseInt(sel.value || years[years.length-1], 10);
+
+  const yearRows = base.filter(d=>d.created.getFullYear()===selectedYear);
+  if(!yearRows.length){ showCardError('chartPartnerMonthly', `${selectedYear}년에 해당하는 데이터가 없습니다.`); return; }
+
+  // 해당 연도 거래액 상위 N개 연동사 + 나머지는 "기타"로 묶음
+  const partnerTotals = {};
+  yearRows.forEach(d=>{ partnerTotals[d.partner] = (partnerTotals[d.partner]||0) + d.price; });
+  const topPartners = Object.entries(partnerTotals).sort((a,b)=>b[1]-a[1]).slice(0,PARTNER_MONTHLY_TOP_N).map(x=>x[0]);
+  const topSet = new Set(topPartners);
+  const hasEtc = Object.keys(partnerTotals).length > topPartners.length;
+  const seriesNames = hasEtc ? [...topPartners, '기타'] : topPartners;
+
+  // month(0-11) x series -> {gmv, count}
+  const grid = seriesNames.map(()=> ({ gmv: Array(12).fill(0), count: Array(12).fill(0) }));
+  const seriesIndex = {}; seriesNames.forEach((n,i)=>seriesIndex[n]=i);
+  yearRows.forEach(d=>{
+    const s = topSet.has(d.partner) ? d.partner : '기타';
+    const si = seriesIndex[s];
+    const mi = d.created.getMonth();
+    grid[si].gmv[mi] += d.price;
+    grid[si].count[mi] += 1;
+  });
+
+  const datasets = seriesNames.map((name,i)=>({
+    label: name,
+    data: grid[i].gmv,
+    counts: grid[i].count,
+    backgroundColor: PALETTE[i % PALETTE.length],
+  }));
+
+  try{
+    renderChart('chartPartnerMonthly','bar', Array.from({length:12},(_,i)=>(i+1)+'월'), datasets);
+  }catch(err){ console.error('[대시보드] chartPartnerMonthly 오류:', err); showCardError('chartPartnerMonthly', err.message); }
+}
+
+function computeAndRenderRegionChannel(){
+  const byRegion = {};
+  VIEW.forEach(d=>{
+    const k = d.region1;
+    byRegion[k] = byRegion[k] || {gmv:0,count:0,cancelled:0,netCount:0};
+    byRegion[k].count++;
+    if(d.cancelled) byRegion[k].cancelled++;
+    if(FILTERS.includeCancelled || !d.cancelled){ byRegion[k].gmv+=d.price; byRegion[k].netCount++; }
+  });
+  const regionArr = Object.entries(byRegion)
+    .map(([name,v])=>({name, ...v, adr: v.netCount? v.gmv/v.netCount:0}))
+    .filter(r=>isFinite(r.gmv) && isFinite(r.netCount) && isFinite(r.adr))
+    .sort((a,b)=>b.gmv-a.gmv);
+
+  try{
+    renderChart('chartRegion','bar', regionArr.map(r=>r.name), [{label:'거래액', data:regionArr.map(r=>r.gmv), backgroundColor:PALETTE[1]}], false, true);
+  }catch(err){ console.error('[대시보드] chartRegion 오류:', err); showCardError('chartRegion', err.message); }
+
+  // 지역별 객단가 vs 예약건수 (산점도)
+  try{
+    const ctx = document.getElementById('chartRegionScatter');
+    if(!ctx) throw new Error('canvas #chartRegionScatter를 찾을 수 없습니다.');
+    const existingScatter = (typeof Chart.getChart === 'function') ? Chart.getChart(ctx) : null;
+    if(existingScatter) existingScatter.destroy();
+    if(CHARTS['chartRegionScatter']) { try{ CHARTS['chartRegionScatter'].destroy(); }catch(e){} }
+    const points = regionArr.filter(r=>r.netCount>0).map(r=>({x:r.netCount, y:r.adr, name:r.name}));
+    if(!points.length){
+      showCardError('chartRegionScatter', '표시할 데이터가 없습니다 (조회 조건에 맞는 지역별 예약이 없음).');
+    } else {
+      clearCardError('chartRegionScatter');
+      CHARTS['chartRegionScatter'] = new Chart(ctx, {
+        type:'scatter',
+        data:{datasets:[{label:'지역', data:points, backgroundColor:PALETTE[0]}]},
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{
+            legend:{labels:{boxWidth:10, font:{size:11}}},
+            tooltip:{backgroundColor:'#161F30', borderColor:'#233047', borderWidth:1, padding:10, titleFont:{size:11}, bodyFont:{size:11},
+              callbacks:{label:(c)=>`${c.raw.name}: 건수 ${fmtNum(c.raw.x)} / 객단가 ${fmtWonShort(c.raw.y)}원`}},
+            datalabels:{display:true, color:'#C6CEDE', font:{size:9.5,weight:600}, anchor:'end', align:'top', offset:3,
+              formatter:(val,dctx)=>`${dctx.raw.name} (${fmtNum(dctx.raw.x)}건·${dlFormat(dctx.raw.y)}원)`}
+          },
+          scales:{
+            x:{min:0, title:{display:true,text:'예약건수',color:'#8B98B0'},grid:{color:'#1A2437'}},
+            y:{min:0, title:{display:true,text:'객단가(원)',color:'#8B98B0'},grid:{color:'#1A2437'}}
+          }
+        }
+      });
+    }
+  }catch(err){ console.error('[대시보드] chartRegionScatter 오류:', err); showCardError('chartRegionScatter', err.message); }
+
+  // 채널 분석 — VIEW의 모든 행이 정확히 하나의 채널로 귀속되는지 합계로 자체 검증합니다.
+  try{
+    const byChannel = {};
+    VIEW.forEach(d=>{
+      const k = d.channel;
+      byChannel[k] = byChannel[k] || {gmv:0,count:0,cancelled:0,netCount:0,nights:0};
+      byChannel[k].count++;
+      if(d.cancelled) byChannel[k].cancelled++;
+      if(FILTERS.includeCancelled || !d.cancelled){ byChannel[k].gmv+=d.price; byChannel[k].netCount++; byChannel[k].nights+=d.nights; }
+    });
+    const chArr = Object.entries(byChannel).map(([name,v])=>({name,...v, cancelRate:v.count?v.cancelled/v.count:0, adr:v.netCount?v.gmv/v.netCount:0})).sort((a,b)=>b.gmv-a.gmv);
+
+    if(!chArr.length){
+      showCardError('chartChannel', '표시할 데이터가 없습니다 (조회 조건에 맞는 채널별 예약이 없음).');
+    } else {
+      renderChart('chartChannel','doughnut', chArr.map(c=>c.name), [{data:chArr.map(c=>c.gmv), counts:chArr.map(c=>c.netCount), backgroundColor:PALETTE}]);
+    }
+    renderSortableTable('tblChannel',
+      [['name','채널'],['gmv','거래액'],['netCount','예약건수'],['nights','박수'],['cancelRate','취소율'],['adr','객단가']],
+      chArr, {gmv:fmtWonShort, cancelRate:fmtPct, adr:fmtWonShort, netCount:fmtNum, nights:fmtNum});
+
+    // 합계 교차검증: 채널별 건수/박수 합이 조회된 전체 건수/총박수와 일치하는지 표시
+    const totalCount = chArr.reduce((a,c)=>a+c.count,0);
+    const totalNights = chArr.reduce((a,c)=>a+c.nights,0);
+    const totalGmv = chArr.reduce((a,c)=>a+c.gmv,0);
+    const overallCount = VIEW.length;
+    const overallNights = activeRows(VIEW).reduce((a,d)=>a+d.nights,0);
+    const overallGmv = activeRows(VIEW).reduce((a,d)=>a+d.price,0);
+    const mismatch = (totalCount!==overallCount) || Math.abs(totalNights-overallNights)>0.5 || Math.abs(totalGmv-overallGmv)>1;
+    const chFootId = 'chChannelFootnote';
+    let footEl = document.getElementById(chFootId);
+    if(!footEl){
+      const tbl = document.getElementById('tblChannel');
+      const card = tbl && tbl.closest('.card');
+      if(card){
+        footEl = document.createElement('div');
+        footEl.id = chFootId;
+        footEl.className = 'footnote';
+        card.appendChild(footEl);
+      }
+    }
+    if(footEl){
+      footEl.innerHTML = mismatch
+        ? `⚠ 합계 불일치 감지: 채널 합산 ${fmtNum(totalCount)}건/${fmtNum(totalNights)}박/${fmtWonShort(totalGmv)}원 vs 조회 전체 ${fmtNum(overallCount)}건/${fmtNum(overallNights)}박/${fmtWonShort(overallGmv)}원. 원본 시트에 채널 분류가 안 되는 공급사명(빈 값 등)이 있는지 확인해주세요.`
+        : `✅ 채널 합산 ${fmtNum(totalCount)}건 / ${fmtNum(totalNights)}박 / ${fmtWonShort(totalGmv)}원 = 조회 전체와 일치. (아고다는 공급사명에 '아고다'가 포함된 건을 자동 분류했습니다. 실제 표기가 다르면 CHANNEL_OVERRIDES에 추가해주세요.)`;
+    }
+  }catch(err){ console.error('[대시보드] 채널 분석 오류:', err); showCardError('chartChannel', err.message); }
+}
+
+// ---------------- CUSTOMER ----------------
+function computeAndRenderCustomer(){
+  const byPhone = {};
+  VIEW.forEach(d=>{ if(!d.phone) return; byPhone[d.phone]=(byPhone[d.phone]||0)+1; });
+  let repeat=0, newC=0;
+  Object.values(byPhone).forEach(c=> c>1? repeat++ : newC++);
+  renderChart('chartRepeat','doughnut', ['신규','재구매'], [{data:[newC,repeat], valueType:'count', backgroundColor:[PALETTE[0],PALETTE[2]]}]);
+
+  const leadBuckets = {'당일':0,'1-3일':0,'4-7일':0,'8-14일':0,'15-30일':0,'31일+':0};
+  VIEW.forEach(d=>{
+    if(!d.checkin) return;
+    const lead = Math.round((d.checkin - d.created)/86400000);
+    if(lead<=0) leadBuckets['당일']++;
+    else if(lead<=3) leadBuckets['1-3일']++;
+    else if(lead<=7) leadBuckets['4-7일']++;
+    else if(lead<=14) leadBuckets['8-14일']++;
+    else if(lead<=30) leadBuckets['15-30일']++;
+    else leadBuckets['31일+']++;
+  });
+  renderChart('chartLeadtime','bar', Object.keys(leadBuckets), [{label:'건수', data:Object.values(leadBuckets), backgroundColor:PALETTE[3], valueType:'count'}]);
+
+  const ciDow = Array(7).fill(0);
+  VIEW.forEach(d=>{ if(d.checkin) ciDow[d.checkin.getDay()]++; });
+  renderChart('chartCheckinDow','bar', WEEKDAYS, [{label:'체크인 건수', data:ciDow, backgroundColor:PALETTE[4], valueType:'count'}]);
+
+  const nightsBucket = {};
+  VIEW.forEach(d=>{ const n=Math.min(d.nights,7); const k=n+'박'; nightsBucket[k]=(nightsBucket[k]||0)+1; });
+  const nk = Object.keys(nightsBucket).sort();
+  renderChart('chartNights','bar', nk, [{label:'건수', data:nk.map(k=>nightsBucket[k]), backgroundColor:PALETTE[5], valueType:'count'}]);
+
+  const paxBucket = {};
+  VIEW.forEach(d=>{
+    const m = d.pax.match(/어른(\d+)/);
+    const adults = m? parseInt(m[1]):0;
+    if(!adults){ paxBucket['미상'] = (paxBucket['미상']||0)+1; return; }
+    const capped = Math.min(adults, 9); // 9인 이상은 이상치 방지를 위해 한 구간으로 묶음
+    const k = capped>=9 ? '9인 이상' : capped+'인';
+    paxBucket[k] = (paxBucket[k]||0)+1;
+  });
+  const paxOrder = [...Array.from({length:8},(_,i)=>(i+1)+'인'), '9인 이상', '미상'].filter(k=>paxBucket[k]!=null);
+  renderChart('chartPax','bar', paxOrder, [{label:'건수', data:paxOrder.map(k=>paxBucket[k]), backgroundColor:PALETTE[6], valueType:'count'}]);
+}
+
+// ---------------- MONTHLY KPI (연간 목표 달성 현황) ----------------
+// 2026년 월별 목표 거래액(GMV). MD 팀장이 전달한 값을 그대로 반영했습니다.
+const MONTHLY_GOALS = {
+  '2026-01': 600000000,
+  '2026-02': 351560795,
+  '2026-03': 393982607,
+  '2026-04': 422164706,
+  '2026-05': 509061709,
+  '2026-06': 738956335,
+  '2026-07': 692122722,
+  '2026-08': 702201684,
+  '2026-09': 645616836,
+  '2026-10': 478508309,
+  '2026-11': 532925391,
+  '2026-12': 1029451894,
+};
+// 2026년 월별 목표매출(순이익, VAT별도). MD 팀장이 전달한 값을 그대로 반영했습니다.
+const MONTHLY_PROFIT_GOALS = {
+  '2026-01': 39960000,
+  '2026-02': 23413949,
+  '2026-03': 26239242,
+  '2026-04': 28116169,
+  '2026-05': 33903510,
+  '2026-06': 49214492,
+  '2026-07': 46095373,
+  '2026-08': 46766632,
+  '2026-09': 42998081,
+  '2026-10': 31868653,
+  '2026-11': 35492831,
+  '2026-12': 68561496,
+};
+
+function computeAndRenderMonthlyKpi(){
+  renderFieldMapping();
+  // 날짜(조회기간) 필터와 무관하게 SCOPE(공급사/지역 필터만 적용) 기준으로 연중 전체 월을 집계합니다.
+  // 상단의 취소포함/미포함 토글을 그대로 따릅니다 — 토글을 바꾸면 거래액/매출(순이익)/달성율이 함께 바뀝니다.
+  const byMonthGmv = {};
+  SCOPE.forEach(d=>{
+    if(!FILTERS.includeCancelled && d.cancelled) return;
+    const k = d.created.getFullYear()+'-'+String(d.created.getMonth()+1).padStart(2,'0');
+    byMonthGmv[k] = (byMonthGmv[k]||0) + d.price;
+  });
+  const byMonthProfit = {};
+  SCOPE.forEach(d=>{
+    if(!d.checkout) return;
+    if(!FILTERS.includeCancelled && d.cancelled) return;
+    const k = d.checkout.getFullYear()+'-'+String(d.checkout.getMonth()+1).padStart(2,'0');
+    byMonthProfit[k] = (byMonthProfit[k]||0) + d.profit;
+  });
+
+  const months = Object.keys(MONTHLY_GOALS).sort();
+  const rows = months.map(k=>{
+    const [y,m] = k.split('-');
+    const gmv = byMonthGmv[k] || 0;
+    const profit = byMonthProfit[k] || 0;
+    const goal = MONTHLY_GOALS[k];
+    const rate = goal ? gmv/goal : null;
+    const profitGoal = MONTHLY_PROFIT_GOALS[k] != null ? MONTHLY_PROFIT_GOALS[k] : null;
+    const profitRate = profitGoal ? profit/profitGoal : null;
+    return {key:k, month:`${y}.${m}`, gmv, profit, goal, rate, profitGoal, profitRate};
+  });
+  const totalGmv = rows.reduce((a,r)=>a+r.gmv,0);
+  const totalProfit = rows.reduce((a,r)=>a+r.profit,0);
+  const totalGoal = rows.reduce((a,r)=>a+r.goal,0);
+  const totalRate = totalGoal ? totalGmv/totalGoal : null;
+  const totalProfitGoal = rows.reduce((a,r)=>a+(r.profitGoal||0),0);
+  const totalProfitRate = totalProfitGoal ? totalProfit/totalProfitGoal : null;
+
+  // 표
+  const table = document.getElementById('tblMonthlyKpi');
+  if(table){
+    const thead = table.querySelector('thead'), tbody = table.querySelector('tbody');
+    thead.innerHTML = '<tr><th>월</th><th>거래액</th><th>목표거래액</th><th>목표달성율</th><th>매출(순이익)</th><th>목표매출(순이익,VAT별도)</th><th>순이익목표달성율</th></tr>';
+    const rateBadge = (r)=>{
+      if(r==null) return '-';
+      const cls = r>=1 ? 'ok' : (r>=0.8 ? 'warn' : 'bad');
+      return `<span class="badge ${cls}">${fmtPct(r)}</span>`;
+    };
+    tbody.innerHTML = rows.map(r=>`
+      <tr><td>${r.month}</td><td>${fmtWonShort(r.gmv)}원</td><td>${fmtWonShort(r.goal)}원</td><td>${rateBadge(r.rate)}</td><td>${fmtWonShort(r.profit)}원</td><td>${r.profitGoal!=null? fmtWonShort(r.profitGoal)+'원' : '-'}</td><td>${rateBadge(r.profitRate)}</td></tr>
+    `).join('') + `
+      <tr style="font-weight:700; background:rgba(47,211,196,0.06);"><td>합계</td><td>${fmtWonShort(totalGmv)}원</td><td>${fmtWonShort(totalGoal)}원</td><td>${rateBadge(totalRate)}</td><td>${fmtWonShort(totalProfit)}원</td><td>${fmtWonShort(totalProfitGoal)}원</td><td>${rateBadge(totalProfitRate)}</td></tr>
+    `;
+  }
+  const foot = document.getElementById('kpiMissingFootnote');
+  if(foot) foot.innerHTML = '';
+
+  // 차트: 거래액(막대) vs 목표거래액(선) — 상단 토글에 따라 취소포함/미포함이 함께 반영됨
+  renderChart('chartMonthlyKpi','bar', rows.map(r=>r.month), [
+    {label:'거래액', data:rows.map(r=>r.gmv), backgroundColor:PALETTE[0]},
+    {label:'목표거래액', data:rows.map(r=>r.goal), type:'line', borderColor:PALETTE[3], backgroundColor:'rgba(240,102,92,0.08)', borderDash:[5,4], pointRadius:3, tension:0}
+  ]);
+  // 차트: 매출(순이익, 막대) vs 목표매출(순이익, 선)
+  renderChart('chartMonthlyProfitKpi','bar', rows.map(r=>r.month), [
+    {label:'매출(순이익)', data:rows.map(r=>r.profit), backgroundColor:PALETTE[2]},
+    {label:'목표매출(순이익)', data:rows.map(r=>r.profitGoal), type:'line', borderColor:PALETTE[3], backgroundColor:'rgba(240,102,92,0.08)', borderDash:[5,4], pointRadius:3, tension:0}
+  ]);
+}
+
+// ---------------- GOAL ----------------
+function renderGoal(){
+  if(!VIEW.length) return;
+  const goal = parseFloat(document.getElementById('monthlyGoalInput').value)||0;
+  const maxDate = maxDateOf(VIEW);
+  if(!maxDate) return;
+  const monthStart = new Date(maxDate.getFullYear(), maxDate.getMonth(),1);
+  const monthEnd = new Date(maxDate.getFullYear(), maxDate.getMonth()+1,0);
+  const daysInMonth = monthEnd.getDate();
+  const daysElapsed = maxDate.getDate();
+  const daysLeft = Math.max(daysInMonth - daysElapsed,0);
+  const curGmv = activeRows(VIEW).filter(d=>d.created>=monthStart && d.created<=maxDate).reduce((a,d)=>a+d.price,0);
+  const achieveRate = goal? curGmv/goal : 0;
+  const remain = Math.max(goal-curGmv,0);
+  const dailyNeeded = daysLeft? remain/daysLeft : 0;
+  const dailyAvgSoFar = daysElapsed? curGmv/daysElapsed:0;
+
+  document.getElementById('goalBody').innerHTML = goal? `
+    <div style="margin:18px 0 8px 0; display:flex; justify-content:space-between; font-size:12.5px; color:var(--sub);">
+      <span>달성률</span><span style="font-family:var(--mono); color:var(--text);">${fmtWonShort(curGmv)}원 / ${fmtWonShort(goal)}원</span>
+    </div>
+    <div class="progress-outer"><div class="progress-inner" style="width:${Math.min(achieveRate*100,100)}%">${fmtPct(achieveRate)}</div></div>
+    <div class="kpi-grid" style="margin-top:20px; grid-template-columns:repeat(4,1fr);">
+      <div class="kpi"><div class="label">잔여 목표액</div><div class="value">${fmtWonShort(remain)}원</div></div>
+      <div class="kpi"><div class="label">잔여 일수</div><div class="value">${daysLeft}일</div></div>
+      <div class="kpi"><div class="label">일평균 필요매출</div><div class="value">${fmtWonShort(dailyNeeded)}원</div></div>
+      <div class="kpi"><div class="label">현재 일평균 실적</div><div class="value">${fmtWonShort(dailyAvgSoFar)}원</div></div>
+    </div>
+    <div class="footnote" style="margin-top:14px;">${dailyNeeded > dailyAvgSoFar*1.15 ? '⚠ 남은 기간 필요 일매출이 현재 페이스보다 15% 이상 높습니다. 프로모션/특가 편성을 검토하세요.' : '✅ 현재 페이스 유지 시 목표 달성이 가능한 궤도입니다.'}</div>
+  ` : `<div class="footnote" style="margin-top:14px;">상단에 이번 달 목표 거래액을 입력하면 달성률/잔여목표/일평균 필요매출이 계산됩니다.</div>`;
+}
+
+// ---------------- COUPON ----------------
+// 연도 선택 옵션은 최초 1회만 채우고(선택값 유지), 데이터 새로고침 시에도 그대로 둡니다.
+function populateCouponYearOptions(){
+  const sel = document.getElementById('couponYearSelect');
+  if(!sel || sel.dataset.populated) return;
+  const years = [...new Set(DERIVED.map(d=>d.created.getFullYear()))].filter(y=>isFinite(y)).sort((a,b)=>b-a);
+  if(!years.length) return;
+  const curYear = new Date().getFullYear();
+  sel.innerHTML = years.map(y=>`<option value="${y}">${y}년</option>`).join('');
+  sel.value = years.includes(curYear) ? String(curYear) : String(years[0]);
+  sel.dataset.populated = '1';
+}
+
+// 상단 조회기간(날짜) 필터와 무관하게, 선택한 연도의 월별 쿠폰 사용액을 SCOPE(공급사/지역 필터만 적용) 기준으로 집계합니다.
+function renderCouponYearlyChart(){
+  populateCouponYearOptions();
+  const sel = document.getElementById('couponYearSelect');
+  if(!sel || !sel.value){ showCardError('chartCouponYearly', '집계할 연도 데이터가 없습니다.'); return; }
+  const selectedYear = parseInt(sel.value);
+  const base = FILTERS.includeCancelled ? SCOPE : SCOPE.filter(d=>!d.cancelled);
+  const yearRows = base.filter(d=>d.created && d.created.getFullYear()===selectedYear && d.coupon>0);
+  const byMonth = Array(12).fill(0);
+  yearRows.forEach(d=>{ byMonth[d.created.getMonth()] += d.coupon; });
+  renderChart('chartCouponYearly','bar', Array.from({length:12},(_,i)=>(i+1)+'월'),
+    [{label:`${selectedYear}년 월별 쿠폰 사용액`, data:byMonth, backgroundColor:PALETTE[4]}]);
+
+  // 누적 합계: 선택 연도 합계 + 전체 이력(전 연도) 누적 합계
+  const yearTotal = byMonth.reduce((a,b)=>a+b,0);
+  const allTimeTotal = base.filter(d=>d.coupon>0).reduce((a,d)=>a+d.coupon,0);
+  const totalEl = document.getElementById('couponYearlyTotal');
+  if(totalEl){
+    totalEl.innerHTML = `
+      <div class="kpi" style="flex:1; min-width:200px;"><div class="label">${selectedYear}년 합계 사용액</div><div class="value">${fmtWonShort(yearTotal)}원</div></div>
+      <div class="kpi" style="flex:1; min-width:200px;"><div class="label">전체 누적 합계 사용액(전 기간)</div><div class="value">${fmtWonShort(allTimeTotal)}원</div></div>
+    `;
+  }
+}
+
+function computeAndRenderCoupon(){
+  try{ renderCouponYearlyChart(); }catch(err){ console.error('[대시보드] 연도별 쿠폰차트 오류:', err); showCardError('chartCouponYearly', err.message); }
+
+  if(!VIEW.length){ return; }
+  const net = activeRows(VIEW);
+  const couponRows = net.filter(d=>d.coupon>0);
+  const couponCount = couponRows.length;
+  const couponTotal = couponRows.reduce((a,d)=>a+d.coupon,0);
+  const gmvTotal = net.reduce((a,d)=>a+d.price,0);
+  const couponSharePct = gmvTotal? couponTotal/gmvTotal : 0;
+  const hasCouponCol = VIEW.some(d=>d.coupon!==null && d.coupon!==undefined);
+
+  document.getElementById('couponKpis').innerHTML = `
+    <div class="kpi"><div class="label">쿠폰 사용 건수</div><div class="value">${fmtNum(couponCount)}건</div><div class="delta flat">전체 예약(순) ${fmtNum(net.length)}건 중 ${fmtPct(net.length?couponCount/net.length:0)}</div></div>
+    <div class="kpi"><div class="label">쿠폰 사용 금액</div><div class="value">${fmtWonShort(couponTotal)}원</div><div class="delta flat">AK열(쿠폰금액) 합계</div></div>
+    <div class="kpi"><div class="label">거래액 대비 쿠폰 비중</div><div class="value">${fmtPct(couponSharePct)}</div><div class="delta ${couponSharePct>0.05?'down':'flat'}">거래액 ${fmtWonShort(gmvTotal)}원 대비</div></div>
+    <div class="kpi"><div class="label">건당 평균 쿠폰금액</div><div class="value">${fmtWonShort(couponCount? couponTotal/couponCount:0)}원</div><div class="delta flat">쿠폰 사용건 기준</div></div>
+  `;
+  if(!hasCouponCol){
+    document.getElementById('couponKpis').insertAdjacentHTML('afterend', '<div class="footnote">⚠ AK열(쿠폰금액) 데이터를 찾지 못했습니다. 원본 시트의 AK열을 확인해주세요.</div>');
+  }
+
+  // daily coupon trend
+  const byDay = {};
+  couponRows.forEach(d=>{ const k=d.created.toISOString().slice(0,10); byDay[k]=(byDay[k]||0)+d.coupon; });
+  const days = Object.keys(byDay).sort();
+  renderChart('chartCouponDaily','bar', days, [{label:'쿠폰 사용 금액', data:days.map(k=>byDay[k]), backgroundColor:PALETTE[2]}]);
+
+  // by supplier
+  const bySup = {};
+  couponRows.forEach(d=>{ const k=d.supplier||'(미상)'; bySup[k]=bySup[k]||{coupon:0,count:0}; bySup[k].coupon+=d.coupon; bySup[k].count++; });
+  const supTop = Object.entries(bySup).sort((a,b)=>b[1].coupon-a[1].coupon).slice(0,10);
+  renderChart('chartCouponSupplier','bar', supTop.map(x=>x[0]), [{label:'쿠폰 사용 금액', data:supTop.map(x=>x[1].coupon), backgroundColor:PALETTE[3]}], false, true);
+
+  // detail table by supplier (all suppliers with gmv for % calc)
+  const bySupAll = {};
+  net.forEach(d=>{ const k=d.supplier||'(미상)'; bySupAll[k]=bySupAll[k]||{gmv:0,coupon:0,couponCount:0}; bySupAll[k].gmv+=d.price; if(d.coupon>0){ bySupAll[k].coupon+=d.coupon; bySupAll[k].couponCount++; } });
+  const rows = Object.entries(bySupAll).filter(([,v])=>v.couponCount>0).map(([name,v])=>({
+    name, couponCount:v.couponCount, coupon:v.coupon, gmv:v.gmv, sharePct: v.gmv? v.coupon/v.gmv:0
+  })).sort((a,b)=>b.coupon-a.coupon);
+  renderSortableTable('tblCoupon',
+    [['name','공급사'],['couponCount','쿠폰사용건수'],['coupon','쿠폰사용금액'],['gmv','거래액'],['sharePct','거래액대비%']],
+    rows, {couponCount:fmtNum, coupon:fmtWonShort, gmv:fmtWonShort, sharePct:fmtPct});
+}
+
+// ---------------- ANOMALY / INSIGHT ----------------
+function computeAndRenderAnomaly(){
+  const anomalies = [];
+  const net = activeRows(VIEW);
+
+  // 1) daily cancel rate spike (last 14 days vs prior 14)
+  const byDayAll = {}; const byDayCancel = {};
+  VIEW.forEach(d=>{ const k=d.created.toISOString().slice(0,10); byDayAll[k]=(byDayAll[k]||0)+1; if(d.cancelled) byDayCancel[k]=(byDayCancel[k]||0)+1; });
+  const daysSorted = Object.keys(byDayAll).sort();
+  const last14 = daysSorted.slice(-14), prior14 = daysSorted.slice(-28,-14);
+  const rate = (arr)=>{ let a=0,c=0; arr.forEach(k=>{a+=byDayAll[k]||0; c+=byDayCancel[k]||0;}); return a? c/a:0; };
+  const r1 = rate(last14), r0 = rate(prior14);
+  if(r0>0 && r1 > r0*1.3){
+    anomalies.push({tag:'취소율 급증', title:`최근 14일 취소율 ${fmtPct(r1)} (직전 14일 ${fmtPct(r0)} 대비 ▲${fmtPct(r1-r0)}p)`, body:'취소율이 단기간 내 급증했습니다. 특정 공급사/상품/프로모션에 집중되어 있는지 확인이 필요합니다.', action:'상품·공급사 탭에서 취소율 상위 공급사 정렬 확인 → 원인 파악(초과판매, 가격 오류, 프로모션 조건 이슈 등) 후 공급사에 개선 요청', cls:'bad'});
+  }
+
+  // 2) supplier GMV drop (this month vs last month)
+  const maxDate = maxDateOf(VIEW);
+  if(!maxDate) return;
+  const thisMonthStart = new Date(maxDate.getFullYear(), maxDate.getMonth(),1);
+  const lastMonthStart = new Date(maxDate.getFullYear(), maxDate.getMonth()-1,1);
+  const lastMonthEnd = new Date(thisMonthStart-1);
+  const sameDay = new Date(lastMonthStart); sameDay.setDate(Math.min(maxDate.getDate(), lastMonthEnd.getDate()));
+  const bySupCur = {}, bySupPrev = {};
+  net.forEach(d=>{
+    if(d.created>=thisMonthStart) bySupCur[d.supplier]=(bySupCur[d.supplier]||0)+d.price;
+    else if(d.created>=lastMonthStart && d.created<=sameDay) bySupPrev[d.supplier]=(bySupPrev[d.supplier]||0)+d.price;
+  });
+  Object.keys(bySupPrev).forEach(sup=>{
+    const prev = bySupPrev[sup]||0, cur = bySupCur[sup]||0;
+    if(prev > 500000 && cur < prev*0.5){
+      anomalies.push({tag:'공급사 매출 급감', title:`${sup||'(미상)'} 거래액 ${fmtPct((cur-prev)/prev)} (전월동기 ${fmtWonShort(prev)}원 → 이번달 ${fmtWonShort(cur)}원)`, body:'주요 공급사의 매출이 절반 이하로 급감했습니다. 재고 소진, 가격 경쟁력 약화, 노출 순위 하락 가능성이 있습니다.', action:'해당 공급사 담당자와 컨택하여 재고/가격 현황 점검, 필요 시 노출 우선순위 조정', cls:'warn'});
+    }
+  });
+
+  // 3) product surge
+  const byProdCur = {}, byProdPrev = {};
+  net.forEach(d=>{
+    const k = d.product;
+    if(d.created>=thisMonthStart) byProdCur[k]=(byProdCur[k]||0)+d.price;
+    else if(d.created>=lastMonthStart && d.created<=sameDay) byProdPrev[k]=(byProdPrev[k]||0)+d.price;
+  });
+  Object.keys(byProdCur).forEach(p=>{
+    const cur=byProdCur[p]||0, prev=byProdPrev[p]||0;
+    if(cur > 1000000 && (prev===0 || cur > prev*2)){
+      anomalies.push({tag:'상품 판매 급증', title:`${p} 거래액 급증 (${fmtWonShort(prev)}원 → ${fmtWonShort(cur)}원)`, body:'특정 상품의 판매가 단기간에 크게 늘었습니다. 프로모션 효과이거나 바이럴 요인일 수 있습니다.', action:'재고/객실 가용성 확인 후 노출 강화 또는 유사 상품 추가 소싱 검토', cls:'ok'});
+    }
+  });
+
+  // 4) booking concentration weekday
+  const dowCount = Array(7).fill(0); VIEW.forEach(d=>dowCount[d.created.getDay()]++);
+  const totalB = dowCount.reduce((a,b)=>a+b,0);
+  const maxDow = dowCount.indexOf(Math.max(...dowCount));
+  if(totalB && dowCount[maxDow]/totalB > 0.22){
+    anomalies.push({tag:'예약 집중 요일', title:`${WEEKDAYS[maxDow]}요일에 예약이 집중 (전체의 ${fmtPct(dowCount[maxDow]/totalB)})`, body:'특정 요일에 예약 접수가 몰리고 있습니다. 서버/CS 리소스 배분 및 프로모션 발행 타이밍 참고에 활용하세요.', action:`${WEEKDAYS[maxDow]}요일 프로모션 발행 강화 또는 다른 요일 분산 유도 프로모션 검토`, cls:''});
+  }
+
+  document.getElementById('anomalyList').innerHTML = anomalies.length ? anomalies.map(a=>`
+    <div class="insight ${a.cls}"><div class="itag">${a.tag}</div><div class="ititle">${a.title}</div><div class="ibody">${a.body}</div><div class="iaction">▶ ${a.action||''}</div></div>
+  `).join('') : '<div class="footnote">현재 감지된 이상징후가 없습니다.</div>';
+
+  renderStrategicInsights();
+}
+
+function renderStrategicInsights(){
+  const net = activeRows(VIEW);
+  const insights = [];
+
+  // region high ADR low volume
+  const byRegion = {};
+  VIEW.forEach(d=>{
+    const k=d.region1; byRegion[k]=byRegion[k]||{gmv:0,count:0,cancelled:0,netCount:0};
+    byRegion[k].count++;
+    if(d.cancelled) byRegion[k].cancelled++;
+    if(FILTERS.includeCancelled || !d.cancelled){ byRegion[k].gmv+=d.price; byRegion[k].netCount++; }
+  });
+  const regionArr = Object.entries(byRegion).map(([name,v])=>({name,...v,adr:v.netCount?v.gmv/v.netCount:0})).filter(r=>r.netCount>=3);
+  const avgAdr = regionArr.reduce((a,r)=>a+r.adr,0)/(regionArr.length||1);
+  const avgCount = regionArr.reduce((a,r)=>a+r.netCount,0)/(regionArr.length||1);
+  regionArr.filter(r=>r.adr>avgAdr*1.2 && r.netCount<avgCount*0.7).sort((a,b)=>b.adr-a.adr).slice(0,2).forEach(r=>{
+    insights.push({tag:'객단가 상승 기회', title:`${r.name} 객단가는 평균 대비 높으나 예약건수는 낮음`, body:`${r.name} 지역 평균 객단가 ${fmtWonShort(r.adr)}원 (전체 평균 ${fmtWonShort(avgAdr)}원 대비 높음), 예약건수는 ${r.netCount}건으로 저조합니다.`, action:'해당 지역 상품 노출 확대 및 타깃 프로모션 편성 검토', cls:''});
+  });
+
+  // channel: cancel rate lowest -> expand direct
+  const byChannel = {};
+  VIEW.forEach(d=>{
+    const k=d.channel; byChannel[k]=byChannel[k]||{gmv:0,count:0,cancelled:0};
+    byChannel[k].count++;
+    if(d.cancelled) byChannel[k].cancelled++;
+    if(FILTERS.includeCancelled || !d.cancelled) byChannel[k].gmv+=d.price;
+  });
+  const chArr = Object.entries(byChannel).map(([name,v])=>({name,...v,cancelRate:v.count?v.cancelled/v.count:0})).filter(c=>c.count>=5);
+  if(chArr.length){
+    const lowest = chArr.slice().sort((a,b)=>a.cancelRate-b.cancelRate)[0];
+    const ondaLike = chArr.find(c=>c.name==='ONDA');
+    if(lowest){
+      insights.push({tag:'채널 전략', title:`${lowest.name} 채널 취소율이 가장 낮음 (${fmtPct(lowest.cancelRate)})`, body:`${lowest.name} 채널은 안정적인 예약 품질을 보이고 있습니다. 이 채널 비중 확대 또는 유사 조건의 직계약 확대를 검토할 가치가 있습니다.`, action:'해당 채널 공급 물량 확대 협의 / 유사 취소 조건을 가진 신규 공급사 발굴', cls:'ok'});
+    }
+  }
+
+  // supplier concentration risk (top1 share)
+  const bySup = {};
+  net.forEach(d=>{ bySup[d.supplier]=(bySup[d.supplier]||0)+d.price; });
+  const supArr = Object.entries(bySup).sort((a,b)=>b[1]-a[1]);
+  const totalGmv = supArr.reduce((a,s)=>a+s[1],0);
+  if(supArr.length && totalGmv>0){
+    const top1Share = supArr[0][1]/totalGmv;
+    if(top1Share > 0.3){
+      insights.push({tag:'공급사 리스크', title:`${supArr[0][0]} 단일 공급사 매출 비중 ${fmtPct(top1Share)}`, body:'특정 공급사 의존도가 높아 해당 공급사 이슈 발생 시 전체 실적에 영향을 줄 수 있습니다.', action:'신규 공급사 소싱을 통해 매출 포트폴리오 분산 필요 (목표: 신규 공급사 확대)', cls:'warn'});
+    }
+  }
+
+  // lead time / conversion style insight
+  const leads = VIEW.filter(d=>d.checkin).map(d=>Math.round((d.checkin-d.created)/86400000)).filter(n=>n>=0);
+  if(leads.length){
+    const avgLead = leads.reduce((a,b)=>a+b,0)/leads.length;
+    insights.push({tag:'예약 패턴', title:`평균 예약 Lead Time ${avgLead.toFixed(1)}일`, body: avgLead<7 ? '임박 예약 비중이 높습니다. 최종특가/당일특가 노출을 강화하면 전환에 유리할 수 있습니다.' : '사전 예약 비중이 높습니다. 얼리버드 프로모션 및 장기 특가 편성이 효과적일 수 있습니다.', action: avgLead<7 ? '임박 특가 섹션 강화' : '얼리버드 프로모션 편성', cls:''});
+  }
+
+  if(!insights.length) insights.push({tag:'인사이트', title:'현재 두드러진 전략 시그널이 없습니다', body:'데이터가 더 누적되면 지역/채널/공급사별 인사이트가 더 정교해집니다.', cls:''});
+
+  document.getElementById('insightList').innerHTML = insights.map(a=>`
+    <div class="insight ${a.cls}"><div class="itag">${a.tag}</div><div class="ititle">${a.title}</div><div class="ibody">${a.body}</div>${a.action?`<div class="iaction">▶ ${a.action}</div>`:''}</div>
+  `).join('');
+}
+
+// ---------------- CHART / TABLE UTILS ----------------
+// 차트 값 라벨 포맷터: valueType이 'count'면 건수, 그 외에는 금액(만원 단위 축약)으로 표시
+function dlFormat(val, valueType){
+  if(val==null || val===0) return '';
+  if(valueType==='count') return fmtNum(val)+'건';
+  if(valueType==='pct') return fmtPct(val);
+  // 금액: 절대값이 크면 만원 단위로 축약 표기 (라벨 가독성 목적, 정확 수치는 툴팁에서 원 단위로 확인)
+  const abs = Math.abs(val);
+  if(abs>=100000000) return (val/100000000).toFixed(1)+'억';
+  if(abs>=10000) return Math.round(val/10000).toLocaleString('ko-KR')+'만';
+  return fmtNum(val);
+}
+
+function renderChart(id, type, labels, datasets, dualAxis, horizontal){
+  const ctx = document.getElementById(id);
+  if(!ctx) return;
+  clearCardError(id);
+  // 우리 자체 CHARTS[] 추적과 별개로, Chart.js 자신의 레지스트리에 이 캔버스에 연결된
+  // 차트가 남아있는지 직접 물어봐서 지웁니다("Canvas is already in use" 오류의 근본 원인 방지).
+  const existing = (typeof Chart.getChart === 'function') ? Chart.getChart(ctx) : null;
+  if(existing) existing.destroy();
+  if(CHARTS[id]) { try{ CHARTS[id].destroy(); }catch(e){} }
+  const opts = chartBase();
+  if(horizontal) opts.indexAxis = 'y';
+  if(dualAxis){
+    opts.scales = {
+      x:{grid:{color:'#1A2437'}, ticks:{font:{size:10}}},
+      y:{position:'left', grid:{color:'#1A2437'}, ticks:{font:{size:10}}},
+      y1:{position:'right', grid:{display:false}, ticks:{font:{size:10}}}
+    };
+  }
+  if(type==='doughnut'||type==='pie'){
+    opts.scales = {};
+    opts.plugins.legend.position='right';
+    opts.plugins.tooltip.callbacks = {
+      label: function(ctx){
+        const ds = ctx.dataset;
+        const total = ds.data.reduce((a,b)=>a+(b||0),0);
+        const val = ctx.parsed;
+        const pct = total? (val/total*100).toFixed(1):'0.0';
+        const label = ctx.label||'';
+        const valueStr = ds.valueType==='count' ? `${fmtNum(val)}건` : `${fmtWon(val)}`;
+        const countStr = ds.counts ? ` · ${fmtNum(ds.counts[ctx.dataIndex])}건` : '';
+        return `${label}: ${valueStr}${countStr} (${pct}%)`;
+      }
+    };
+    opts.plugins.datalabels = {
+      display:true, color:'#0A0F1A', font:{size:10, weight:700}, backgroundColor:'rgba(231,236,245,0.85)', borderRadius:4, padding:{top:2,bottom:2,left:5,right:5},
+      formatter:(val, ctx)=>{
+        const ds = ctx.chart.data.datasets[ctx.datasetIndex];
+        const total = ds.data.reduce((a,b)=>a+(b||0),0);
+        const pct = total? (val/total*100).toFixed(1):'0.0';
+        return pct+'%';
+      }
+    };
+  } else if(type==='scatter'){
+    // scatter는 점이 많아 라벨을 표시하지 않음 (겹침 방지)
+  } else {
+    // bar / line: 각 데이터 포인트 위에 실제 수치 라벨 표시
+    opts.plugins.datalabels = {
+      display:true, color:'#C6CEDE', font:{size:9.5, weight:600},
+      anchor: type==='line' ? 'end' : 'end',
+      align: type==='line' ? 'top' : 'end',
+      offset: 2,
+      formatter:(val, ctx)=>{
+        const ds = ctx.chart.data.datasets[ctx.datasetIndex];
+        return dlFormat(val, ds.valueType);
+      }
+    };
+    // 라벨이 너무 많아 겹치는 경우(막대 20개 초과) 자동 숨김
+    if(labels.length > 20) opts.plugins.datalabels.display = false;
+    // 데이터셋에 counts(건수)가 있으면 툴팁에 금액과 건수를 함께 표시
+    if(datasets.some(ds=>ds.counts)){
+      opts.plugins.tooltip.callbacks = {
+        label: function(ctx){
+          const ds = ctx.dataset;
+          const val = ctx.parsed.y != null ? ctx.parsed.y : ctx.parsed;
+          const valueStr = ds.valueType==='count' ? `${fmtNum(val)}건` : `${fmtWon(val)}`;
+          const countStr = ds.counts ? ` · ${fmtNum(ds.counts[ctx.dataIndex])}건` : '';
+          return `${ds.label||''}: ${valueStr}${countStr}`;
+        }
+      };
+    }
+  }
+  datasets.forEach((ds,i)=>{ if(!ds.backgroundColor) ds.backgroundColor = type==='line'? 'rgba(47,211,196,0.15)': PALETTE[i%PALETTE.length]; });
+  CHARTS[id] = new Chart(ctx, {type, data:{labels, datasets}, options:opts});
+}
+
+function renderSortableTable(id, cols, rows, formatters){
+  const table = document.getElementById(id);
+  const thead = table.querySelector('thead'), tbody = table.querySelector('tbody');
+  let sortKey = cols[1][0], sortDir = -1;
+  function draw(){
+    const sorted = rows.slice().sort((a,b)=> (a[sortKey]>b[sortKey]?1:-1)*sortDir);
+    thead.innerHTML = '<tr>'+cols.map(([k,label])=>`<th data-k="${k}">${label}${sortKey===k?(sortDir===1?' ▲':' ▼'):''}</th>`).join('')+'</tr>';
+    tbody.innerHTML = sorted.map(r=>{
+      const cancelCell = r.cancelRate!=null ? `<span class="badge ${r.cancelRate>0.2?'bad':r.cancelRate>0.1?'warn':'ok'}">${fmtPct(r.cancelRate)}</span>` : null;
+      return '<tr>'+cols.map(([k])=>{
+        if(k==='cancelRate') return `<td>${cancelCell}</td>`;
+        const f = formatters[k];
+        return `<td>${f? f(r[k]) : r[k]}</td>`;
+      }).join('')+'</tr>';
+    }).join('');
+    thead.querySelectorAll('th').forEach(th=>{
+      th.onclick = ()=>{ const k=th.dataset.k; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=-1;} draw(); };
+    });
+  }
+  draw();
+}
+
+// tabs
+document.getElementById('tabs').addEventListener('click', e=>{
+  const t = e.target.closest('.tab'); if(!t) return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('sec-'+t.dataset.tab).classList.add('active');
+});
+
+loadData();
+</script>
+</body>
+</html>
