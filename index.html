@@ -435,6 +435,26 @@ tr:hover td{background:rgba(47,211,196,0.04);}
         </div>
         <div class="footnote">헤더 클릭 시 정렬됩니다. 취소율은 색상으로 경고(주황 10%↑ / 빨강 20%↑) 표시됩니다.</div>
       </div>
+
+      <div class="section-title" style="margin-top:26px;"><span class="num">03-C</span>특가 vs 상시 실적</div>
+      <div class="footnote" style="margin-bottom:10px;">⚠ 특가 판별은 <b>상품명(AI열)</b> 기준입니다. 숙소명(W열)에 붙는 "[특가] 시설명"은 프로모션이 아니라 <b>직계약 시설 태그</b>이므로 특가 판별에 사용하지 않습니다. 매주 다른 시설이 특가를 진행하므로, 아래 표는 조회기간 내 최신 주차 기준으로 자동 갱신됩니다.</div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">
+        <div class="kpi"><div class="label">특가 거래액</div><div class="value" id="promoGmvKpi">-</div></div>
+        <div class="kpi"><div class="label">특가 비중</div><div class="value" id="promoShareKpi">-</div></div>
+        <div class="kpi"><div class="label">특가 예약건수</div><div class="value" id="promoCountKpi">-</div></div>
+        <div class="kpi"><div class="label">평균단가(특가/상시)</div><div class="value" id="promoAdrCompareKpi">-</div></div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>주별 특가 vs 상시 거래액</h3>
+        <div class="chart-box"><canvas id="chartPromoWeekly"></canvas></div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3 id="promoWeekLabel">이번 주 특가 시설 실적</h3>
+        <div class="table-scroll">
+          <table id="tblPromoWeek"><thead></thead><tbody></tbody></table>
+        </div>
+        <div class="footnote">해당 주(생성일 기준 ISO 주차)에 상품명이 특가/프로모션 패턴(특가, 세일페스타, VIP전용, 얼리버드, ★ 등)을 포함한 예약을 시설별로 집계했습니다.</div>
+      </div>
     </div>
 
     <!-- REGION / CHANNEL -->
@@ -494,6 +514,21 @@ tr:hover td{background:rgba(47,211,196,0.04);}
         <div class="card">
           <h3>예약 인원 분포</h3>
           <div class="chart-box"><canvas id="chartPax"></canvas></div>
+        </div>
+      </div>
+      <div class="section-title" style="margin-top:26px;"><span class="num">06-B</span>취소 리드타임 분석</div>
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:4px;">
+          <h3 style="margin-bottom:0;">취소 리드타임 분포</h3>
+          <div class="fgroup" style="flex-direction:row; align-items:center; gap:8px;">
+            <label style="margin-bottom:0;">지역</label>
+            <select id="cancelLeadRegionSelect" onchange="computeAndRenderCancelLeadTime()"></select>
+          </div>
+        </div>
+        <div class="cap">예약 생성일시 → 취소 처리일시 사이 경과 시간 기준. 상단 조회기간·공급사 필터는 그대로 반영되며, 취소포함여부 토글과 무관하게 항상 취소건만 집계합니다. 우측 지역 선택은 이 카드에만 적용되는 별도 필터입니다.</div>
+        <div class="chart-box"><canvas id="chartCancelLeadTime"></canvas></div>
+        <div class="table-scroll" style="margin-top:12px;">
+          <table id="tblCancelLeadTime"><thead></thead><tbody></tbody></table>
         </div>
       </div>
     </div>
@@ -814,6 +849,22 @@ function classifyChannel(supplier){
   if(s.includes('호텔스토리')) return '호텔스토리';
   return '직계약';
 }
+
+// 특가(프로모션) 판별: 반드시 "상품명(AI열)" 기준으로만 판단합니다.
+// ⚠ 함정 주의: 숙소명(W열)에 붙는 "[특가] 시설명"은 프로모션이 아니라
+// 그 시설이 "직계약" 시설이라는 뜻입니다(공급 채널 태그). 매주 바뀌는 특가 실적과는
+// 전혀 무관한 값이므로, 숙소명 기준으로는 절대 특가를 판별하지 않습니다.
+const PROMO_KEYWORDS = ['특가','세일페스타','프로모션','핫딜','얼리버드','타임세일','VIP전용','늦캉스','★'];
+function classifyPromo(product){
+  const p = (product||'').toString();
+  if(!p) return false;
+  return PROMO_KEYWORDS.some(k=>p.includes(k));
+}
+function isoWeekKey(dt){
+  const onejan = new Date(dt.getFullYear(),0,1);
+  const week = Math.ceil((((dt-onejan)/86400000) + onejan.getDay()+1)/7);
+  return dt.getFullYear()+'-W'+String(week).padStart(2,'0');
+}
 const WEEKDAYS = ['일','월','화','수','목','금','토'];
 
 // 날짜를 정확히 N개월 이동 (일자가 대상 월에 없으면 그 달의 마지막 날로 보정, 시/분/초는 유지)
@@ -865,6 +916,12 @@ function populateFilterOptions(){
   SS_DATA.region = regions;
   renderSearchSelectOptions('supplier');
   renderSearchSelectOptions('region');
+  // 취소 리드타임 카드 전용 지역 셀렉트(간단 select, 전역 필터와 별개)
+  const clrSel = document.getElementById('cancelLeadRegionSelect');
+  if(clrSel && !clrSel.dataset.populated){
+    clrSel.innerHTML = '<option value="">전체 지역</option>' + regions.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+    clrSel.dataset.populated = '1';
+  }
   wrap.dataset.populated = '1';
   // 데이터 기간에 맞춰 날짜 필터 min/max 기본값 세팅
   const minD = minDateOf(DERIVED), maxD = maxDateOf(DERIVED);
@@ -969,8 +1026,10 @@ function refreshAll(){
   safeRun('computeAndRenderMonthlyKpi', computeAndRenderMonthlyKpi);
   safeRun('computeAndRenderSales', computeAndRenderSales);
   safeRun('computeAndRenderProduct', computeAndRenderProduct);
+  safeRun('computeAndRenderPromo', computeAndRenderPromo);
   safeRun('computeAndRenderRegionChannel', computeAndRenderRegionChannel);
   safeRun('computeAndRenderCustomer', computeAndRenderCustomer);
+  safeRun('computeAndRenderCancelLeadTime', computeAndRenderCancelLeadTime);
   safeRun('renderGoal', renderGoal);
   safeRun('computeAndRenderCoupon', computeAndRenderCoupon);
   safeRun('computeAndRenderAnomaly', computeAndRenderAnomaly);
@@ -1022,7 +1081,8 @@ function deriveRows(){
 
     return {created, checkin, checkout, cancelDate, price, nights, supplier, region1, product, stay, phone, pax, cancelled,
             profit, coupon, partner,
-            channel: classifyChannel(supplier)};
+            channel: classifyChannel(supplier),
+            promo: classifyPromo(product)};
   }).filter(d => d.created); // must have created date to be usable
 }
 function rawGetForDiag(v){ return v==null ? '(빈값/null)' : (typeof v==='string' && v.trim()==='' ? '(빈 문자열)' : String(v)); }
@@ -1237,6 +1297,58 @@ function computeAndRenderProduct(){
     supRows,
     {gmv:fmtWonShort, cancelRate:fmtPct, adr:fmtWonShort, netCount:fmtNum}
   );
+}
+
+// ---------------- PROMO(특가) vs 상시 ----------------
+// 특가 판별은 상품명(AI열) 기준(classifyPromo)이며, 숙소명(W열)의 [특가] 태그(=직계약 의미)는 사용하지 않습니다.
+function computeAndRenderPromo(){
+  const net = activeRows(VIEW);
+  const promoRows = net.filter(d=>d.promo);
+  const regularRows = net.filter(d=>!d.promo);
+  const promoGmv = promoRows.reduce((s,d)=>s+d.price,0);
+  const regularGmv = regularRows.reduce((s,d)=>s+d.price,0);
+  const totalGmv = promoGmv + regularGmv;
+  const promoShare = totalGmv ? promoGmv/totalGmv : 0;
+  const promoAdr = promoRows.length ? promoGmv/promoRows.length : 0;
+  const regularAdr = regularRows.length ? regularGmv/regularRows.length : 0;
+
+  const setText = (id,txt)=>{ const el=document.getElementById(id); if(el) el.textContent = txt; };
+  setText('promoGmvKpi', fmtWonShort(promoGmv)+'원');
+  setText('promoShareKpi', fmtPct(promoShare));
+  setText('promoCountKpi', fmtNum(promoRows.length)+'건');
+  setText('promoAdrCompareKpi', fmtWonShort(promoAdr)+' / '+fmtWonShort(regularAdr));
+
+  // 주별(생성일 기준 ISO 주차) 특가 vs 상시 GMV
+  const byWeekPromo = {}, byWeekRegular = {};
+  net.forEach(d=>{
+    const k = isoWeekKey(d.created);
+    if(d.promo) byWeekPromo[k] = (byWeekPromo[k]||0) + d.price;
+    else byWeekRegular[k] = (byWeekRegular[k]||0) + d.price;
+  });
+  const weeks = Array.from(new Set([...Object.keys(byWeekPromo), ...Object.keys(byWeekRegular)])).sort();
+  renderChart('chartPromoWeekly','bar', weeks, [
+    {label:'특가 GMV', data:weeks.map(k=>byWeekPromo[k]||0), backgroundColor:PALETTE[2]},
+    {label:'상시 GMV', data:weeks.map(k=>byWeekRegular[k]||0), backgroundColor:PALETTE[1]}
+  ]);
+
+  // 최신 주차의 특가 시설별 실적 (그 주에 어느 시설이 특가를 돌렸는지)
+  const latestWeek = weeks[weeks.length-1];
+  const thisWeekPromo = promoRows.filter(d=>isoWeekKey(d.created)===latestWeek);
+  const byFacility = {};
+  thisWeekPromo.forEach(d=>{
+    const k = d.stay || '(숙소명 없음)';
+    byFacility[k] = byFacility[k] || {gmv:0,count:0};
+    byFacility[k].gmv += d.price; byFacility[k].count++;
+  });
+  const facRows = Object.entries(byFacility).map(([name,v])=>({
+    name, gmv:v.gmv, count:v.count, adr: v.count? v.gmv/v.count : 0
+  })).sort((a,b)=>b.gmv-a.gmv);
+  renderSortableTable('tblPromoWeek',
+    [['name','시설명'],['gmv','거래액'],['count','예약건수'],['adr','평균단가']],
+    facRows,
+    {gmv:fmtWonShort, count:fmtNum, adr:fmtWonShort}
+  );
+  setText('promoWeekLabel', latestWeek ? `${latestWeek} 특가 시설 실적 (${facRows.length}개 시설)` : '이번 주 특가 데이터 없음');
 }
 
 // ---------------- REGION / CHANNEL ----------------
@@ -1511,6 +1623,41 @@ function computeAndRenderCustomer(){
   });
   const paxOrder = [...Array.from({length:8},(_,i)=>(i+1)+'인'), '9인 이상', '미상'].filter(k=>paxBucket[k]!=null);
   renderChart('chartPax','bar', paxOrder, [{label:'건수', data:paxOrder.map(k=>paxBucket[k]), backgroundColor:PALETTE[6], valueType:'count'}]);
+}
+
+// ---------------- 취소 리드타임 (예약생성 → 취소처리 경과시간) ----------------
+// 항상 취소건만 대상으로 하며(includeCancelled 토글과 무관), 우측 상단 지역 선택은
+// 상단 전역 필터(조회기간/공급사/전역 지역필터가 이미 적용된 VIEW)에 추가로 얹어지는
+// 이 카드 전용 필터입니다.
+function computeAndRenderCancelLeadTime(){
+  const regionSel = (document.getElementById('cancelLeadRegionSelect')||{}).value || '';
+  const base = VIEW.filter(d => d.cancelled && d.cancelDate && (!regionSel || d.region1 === regionSel));
+
+  const order = ['10분 이내','하루 이내','2일 이내','3일 이내','1주일 이내','그외'];
+  const buckets = {}; const bucketAmt = {};
+  order.forEach(k=>{ buckets[k]=0; bucketAmt[k]=0; });
+
+  base.forEach(d=>{
+    const diffMin = (d.cancelDate - d.created) / 60000;
+    let k;
+    if(diffMin <= 10) k = '10분 이내';
+    else if(diffMin <= 1440) k = '하루 이내';
+    else if(diffMin <= 2880) k = '2일 이내';
+    else if(diffMin <= 4320) k = '3일 이내';
+    else if(diffMin <= 10080) k = '1주일 이내';
+    else k = '그외';
+    buckets[k]++; bucketAmt[k] += d.price;
+  });
+
+  renderChart('chartCancelLeadTime','bar', order, [{label:'취소 건수', data:order.map(k=>buckets[k]), backgroundColor:PALETTE[2], valueType:'count'}]);
+
+  const total = order.reduce((s,k)=>s+buckets[k], 0);
+  const rows = order.map(k=>({ bucket:k, count:buckets[k], share: total? buckets[k]/total : 0, amount:bucketAmt[k] }));
+  renderSortableTable('tblCancelLeadTime',
+    [['bucket','구간'],['count','취소건수'],['share','비중'],['amount','취소 거래액']],
+    rows,
+    {count:fmtNum, share:fmtPct, amount:fmtWonShort}
+  );
 }
 
 // ---------------- MONTHLY KPI (연간 목표 달성 현황) ----------------
