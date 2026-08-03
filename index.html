@@ -531,6 +531,15 @@ tr:hover td{background:rgba(47,211,196,0.04);}
         <div class="cap">예약 생성일 → 취소일까지 걸린 시간. 취소 원인 유형을 가늠하는 데 참고할 수 있습니다 (예: 10분 이내는 시스템/재고 오류성 취소, 1~3일은 가격비교 후 이탈, 1주일 이상은 일정변경 가능성).</div>
         <div class="chart-box"><canvas id="chartCancelLeadtime"></canvas></div>
       </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>딜별 복수구매 현황</h3>
+        <div class="cap">같은 고객(연락처 기준)이 <b>같은 상품(딜)</b>을 2건 이상 예약한 케이스입니다. 옵션을 여러 개 잡아두고 일부만 남기는 "중복예약 후 취소" 패턴을 확인하는 데 참고할 수 있습니다. 연락처가 없는 예약은 식별할 수 없어 집계에서 제외됩니다.</div>
+        <div class="kpi-grid" id="dupPurchaseKpis" style="grid-template-columns:repeat(4,1fr); margin:12px 0 14px 0;"></div>
+        <div class="table-scroll">
+          <table id="tblDupPurchase"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
     </div>
 
     <!-- GOAL -->
@@ -1634,7 +1643,38 @@ function computeAndRenderCustomer(){
     else if(diffMin <= 10080) cancelLeadBuckets['1주일 이내']++;
     else cancelLeadBuckets['그외(1주일+)']++;
   });
-  renderChart('chartCancelLeadtime','bar', Object.keys(cancelLeadBuckets), [{label:'취소 건수', data:Object.values(cancelLeadBuckets), backgroundColor:PALETTE[3], valueType:'count'}]);
+  renderChart('chartCancelLeadtime','bar', Object.keys(cancelLeadBuckets), [{label:'취소 건수', data:Object.values(cancelLeadBuckets), backgroundColor:PALETTE[3], valueType:'count', showPercent:true}]);
+
+  // 딜별(같은 고객이 같은 상품을 2건 이상 예약) 복수구매 현황
+  const byPhoneProduct = {};
+  let identifiableCount = 0;
+  VIEW.forEach(d=>{
+    if(!d.phone) return;
+    identifiableCount++;
+    const key = d.phone + '||' + d.product;
+    byPhoneProduct[key] = byPhoneProduct[key] || {phone:d.phone, product:d.product, count:0, cancelled:0};
+    byPhoneProduct[key].count++;
+    if(d.cancelled) byPhoneProduct[key].cancelled++;
+  });
+  const dupGroups = Object.values(byPhoneProduct).filter(g=>g.count>=2)
+    .map(g=>({...g, cancelRate: g.count? g.cancelled/g.count : 0}))
+    .sort((a,b)=> b.count-a.count || b.cancelled-a.cancelled);
+
+  const dupTotalBookings = dupGroups.reduce((a,g)=>a+g.count,0);
+  const dupTotalCancelled = dupGroups.reduce((a,g)=>a+g.cancelled,0);
+  const dupCancelRate = dupTotalBookings? dupTotalCancelled/dupTotalBookings : 0;
+  const dupShareOfAll = identifiableCount? dupTotalBookings/identifiableCount : 0;
+
+  document.getElementById('dupPurchaseKpis').innerHTML = `
+    <div class="kpi"><div class="label">복수구매 케이스</div><div class="value">${fmtNum(dupGroups.length)}건</div><div class="delta flat">고객×딜 조합 기준</div></div>
+    <div class="kpi"><div class="label">복수구매 관련 예약</div><div class="value">${fmtNum(dupTotalBookings)}건</div><div class="delta flat">식별 가능한 전체 예약 중 ${fmtPct(dupShareOfAll)}</div></div>
+    <div class="kpi"><div class="label">그 중 취소건수</div><div class="value">${fmtNum(dupTotalCancelled)}건</div><div class="delta ${dupCancelRate>0.3?'down':'flat'}">취소율 ${fmtPct(dupCancelRate)}</div></div>
+    <div class="kpi"><div class="label">전체 취소 대비 비중</div><div class="value">${(()=>{ const totalCancelled = VIEW.filter(d=>d.cancelled).length; return totalCancelled? fmtPct(dupTotalCancelled/totalCancelled) : '-'; })()}</div><div class="delta flat">전체 취소건 중 복수구매發 취소</div></div>
+  `;
+
+  renderSortableTable('tblDupPurchase',
+    [['phone','고객(연락처)'],['product','딜(상품명)'],['count','구매건수'],['cancelled','취소건수'],['cancelRate','취소율']],
+    dupGroups, {count:fmtNum, cancelled:fmtNum, cancelRate:fmtPct});
 }
 
 // ---------------- MONTHLY KPI (연간 목표 달성 현황) ----------------
@@ -2309,7 +2349,7 @@ function renderChart(id, type, labels, datasets, dualAxis, horizontal){
   } else if(type==='scatter'){
     // scatter는 점이 많아 라벨을 표시하지 않음 (겹침 방지)
   } else {
-    // bar / line: 각 데이터 포인트 위에 실제 수치 라벨 표시
+    // bar / line: 각 데이터 포인트 위에 실제 수치 라벨 표시 (데이터셋에 showPercent:true가 있으면 건수와 비중%을 함께 표시)
     opts.plugins.datalabels = {
       display:true, color:'#C6CEDE', font:{size:9.5, weight:600},
       anchor: type==='line' ? 'end' : 'end',
@@ -2317,7 +2357,13 @@ function renderChart(id, type, labels, datasets, dualAxis, horizontal){
       offset: 2,
       formatter:(val, ctx)=>{
         const ds = ctx.chart.data.datasets[ctx.datasetIndex];
-        return dlFormat(val, ds.valueType);
+        const base = dlFormat(val, ds.valueType);
+        if(ds.showPercent){
+          const total = ds.data.reduce((a,b)=>a+(b||0),0);
+          const pct = total? (val/total*100).toFixed(1):'0.0';
+          return [base, `(${pct}%)`];
+        }
+        return base;
       }
     };
     // 라벨이 너무 많아 겹치는 경우(막대 20개 초과) 자동 숨김
