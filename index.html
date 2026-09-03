@@ -678,8 +678,9 @@ tr:hover td{background:rgba(47,211,196,0.04);}
       <div class="card">
         <div class="goal-row" style="flex-wrap:wrap; align-items:flex-end;">
           <div class="fgroup" style="flex:1; min-width:240px;">
-            <label>숙소 PK 번호 또는 숙소명</label>
-            <input type="text" id="lowestQuery" placeholder="예: 30439  또는  더위크앤리조트" style="width:100%;">
+            <label>숙소 (직계약건 선택 · 또는 PK/숙소명 직접 입력)</label>
+            <input type="text" id="lowestQuery" list="lowestDL" placeholder="예: 더위크앤리조트  또는  30439" style="width:100%;">
+            <datalist id="lowestDL"></datalist>
           </div>
           <div class="fgroup">
             <label>시작일</label>
@@ -2442,6 +2443,8 @@ function renderSortableTable(id, cols, rows, formatters){
 
 // ---------------- 최저가 상품 조회 (놀이의발견 admin) ----------------
 const LOWEST_API = 'https://price-scraper-iota.vercel.app/api/nolbal-lowest';
+const FACILITIES_API = 'https://price-scraper-iota.vercel.app/api/nolbal-facilities';
+const LOWEST_NAME_TO_PK = {};
 
 (function initLowestDates(){
   const t = new Date();
@@ -2453,6 +2456,19 @@ const LOWEST_API = 'https://price-scraper-iota.vercel.app/api/nolbal-lowest';
   if (g && !g.value) g.value = iso(end);
 })();
 
+// 직계약 숙소 드롭다운
+(async function loadLowestFacilities(){
+  try{
+    const j = await fetch(FACILITIES_API).then(r=>r.json());
+    if (!j.ok || !j.facilities.length) return;
+    const dl = document.getElementById('lowestDL');
+    dl.innerHTML = j.facilities.map(f=>{
+      LOWEST_NAME_TO_PK[f.name] = String(f.id);
+      return '<option value="'+String(f.name).replace(/"/g,'&quot;')+'">PK '+f.id+'</option>';
+    }).join('');
+  }catch(e){ /* 드롭다운 없이도 직접 입력 가능 */ }
+})();
+
 function lwWeekdayColor(wd){
   if (wd === '토') return 'color:#7FB4FF;';
   if (wd === '일') return 'color:var(--coral);';
@@ -2460,7 +2476,8 @@ function lwWeekdayColor(wd){
 }
 
 async function runLowest(){
-  const q = document.getElementById('lowestQuery').value.trim();
+  const qv = document.getElementById('lowestQuery').value.trim();
+  const q = LOWEST_NAME_TO_PK[qv] || qv; // 드롭다운에서 고른 이름이면 PK로
   const from = document.getElementById('lowestFrom').value;
   const to = document.getElementById('lowestTo').value;
   const statusEl = document.getElementById('lowestStatus');
