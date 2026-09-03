@@ -249,6 +249,47 @@ tr:hover td{background:rgba(47,211,196,0.04);}
 .footnote{font-size:11px; color:var(--sub); margin-top:10px; line-height:1.6;}
 .pill-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
 .pill{font-family:var(--mono); font-size:10.5px; padding:4px 9px; border:1px solid var(--line); border-radius:20px; color:var(--sub);}
+
+/* ── 숙박가격비교 매트릭스 (경쟁사 가격 탭) ── */
+#sec-competitor .matrixbox{background:var(--panel); border:1px solid var(--line); border-radius:12px; margin-bottom:16px; overflow:hidden;}
+#sec-competitor .matrixbox h2{font-family:var(--disp); font-size:13.5px; padding:12px 16px; background:var(--panel-2); border-bottom:1px solid var(--line); font-weight:600;}
+#sec-competitor .mscroll{overflow-x:auto;}
+#sec-competitor table.matrix{border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; font-family:var(--mono);}
+#sec-competitor table.matrix th,#sec-competitor table.matrix td{padding:10px 12px; font-size:12.5px; border-bottom:1px solid var(--line); white-space:nowrap; text-align:right;}
+#sec-competitor table.matrix thead th{color:var(--sub); font-weight:600; font-size:11px; position:sticky; top:0; background:var(--panel-2); text-transform:none; letter-spacing:0;}
+#sec-competitor table.matrix th.date,#sec-competitor table.matrix td.date{text-align:left; position:sticky; left:0; background:var(--panel); z-index:1;}
+#sec-competitor table.matrix thead th.date{background:var(--panel-2); z-index:2;}
+#sec-competitor table.matrix tbody tr:hover td{background:rgba(255,255,255,.02);}
+#sec-competitor table.matrix td.self{background:rgba(47,211,196,.05); border-left:1px solid rgba(47,211,196,.25); border-right:1px solid rgba(47,211,196,.25);}
+#sec-competitor table.matrix thead th.self-h{color:var(--teal); border-left:1px solid rgba(47,211,196,.25); border-right:1px solid rgba(47,211,196,.25);}
+#sec-competitor .cell{display:block;}
+#sec-competitor .cell a{color:inherit; text-decoration:none;}
+#sec-competitor .cell a:hover{text-decoration:underline;}
+#sec-competitor td.best .cell{color:var(--teal); font-weight:700;}
+#sec-competitor .cell.warn::after{content:'*'; color:var(--amber); margin-left:2px;}
+#sec-competitor .cell.miss{color:#5A6884;}
+#sec-competitor .wd-sat{color:#7FB4FF;}
+#sec-competitor .wd-sun{color:var(--coral);}
+#sec-competitor tr.summary td{border-top:2px solid var(--line); border-bottom:0; color:var(--sub); font-size:11.5px; font-weight:600;}
+#sec-competitor tr.summary td.win{color:var(--teal);}
+#sec-competitor table.matrix th.remark,#sec-competitor table.matrix td.remark{text-align:left; white-space:normal; min-width:140px; max-width:230px; color:var(--amber); font-size:11px; font-weight:500;}
+#sec-competitor table.matrix th.remark{color:var(--sub);}
+#sec-competitor .legend{padding:10px 16px; font-size:11px; color:var(--sub); border-top:1px solid var(--line); line-height:1.7;}
+#sec-competitor .rooms{background:var(--panel); border:1px solid var(--line); border-radius:12px; margin-bottom:10px; overflow:hidden;}
+#sec-competitor .rooms>summary{cursor:pointer; padding:11px 16px; font-size:12.5px; font-weight:600; background:var(--panel-2); list-style:none; display:flex; justify-content:space-between; align-items:center;}
+#sec-competitor .rooms>summary::-webkit-details-marker{display:none;}
+#sec-competitor .rooms>summary::after{content:'▾'; color:var(--sub);}
+#sec-competitor .rooms[open]>summary::after{content:'▴';}
+#sec-competitor .rgrid{padding:8px 16px 14px;}
+#sec-competitor .pblock{padding:10px 0; border-bottom:1px solid var(--line);}
+#sec-competitor .pblock:last-child{border-bottom:0;}
+#sec-competitor .pblock h4{font-size:12px; color:var(--sub); font-weight:600; margin-bottom:6px; display:flex; gap:8px; align-items:center;}
+#sec-competitor .pblock h4 a{color:var(--sub); text-decoration:none; border:1px solid var(--line); border-radius:5px; padding:1px 6px; font-size:11px;}
+#sec-competitor .pblock h4 a:hover{border-color:var(--teal); color:var(--teal);}
+#sec-competitor .pblock ul{list-style:none;}
+#sec-competitor .pblock li{display:flex; justify-content:space-between; padding:3px 0; font-size:12.5px; max-width:460px; font-family:var(--mono);}
+#sec-competitor .pblock li.cheapest span{color:var(--teal); font-weight:600;}
+#sec-competitor .pblock .none{font-size:12px; color:#5A6884; font-style:italic;}
 </style>
 </head>
 <body>
@@ -594,67 +635,45 @@ tr:hover td{background:rgba(47,211,196,0.04);}
       </div>
     </div>
 
-    <!-- COMPETITOR PRICE -->
+    <!-- COMPETITOR PRICE = 숙박가격비교 -->
     <div class="section" id="sec-competitor">
-      <div class="section-title"><span class="num">10</span>경쟁사 가격 정보</div>
+      <div class="section-title"><span class="num">10</span>경쟁사 가격 (숙박가격비교)</div>
       <div class="footnote" style="margin-bottom:14px;">
-        구글 정책상 이 페이지가 여기어때·아고다·놀유니버스 같은 외부 사이트에서 가격을 직접 긁어올 수는 없습니다.
-        대신 시설명으로 각 사이트 <b>구글 검색 결과를 새 탭으로 바로 열어드리고</b>, 확인하신 가격은 아래에 입력해서 기록으로 남길 수 있게 만들었습니다.
-        기록은 <b>이 브라우저(이 컴퓨터)에만 저장</b>되며, 팀과 공유하시려면 "기록 내보내기"로 복사해서 구글시트에 붙여넣어 주세요.
+        숙소 + 날짜를 넣으면 <b>놀이의발견 · 여기어때 · 놀유니버스 · 맘맘 · 마이리얼트립</b>에서 실시간으로 조회해
+        날짜별 최저가를 한 표로 비교합니다. <span style="color:var(--teal);">초록</span> = 그날 최저가,
+        맨 아래 요약행에 놀이의발견 가격경쟁력 판정. (조회 5~15초)
       </div>
 
       <div class="card">
-        <div class="fgroup ss-wrap" id="ssWrap-competitorFacility" style="max-width:360px;">
-          <label>시설명 선택</label>
-          <div class="ss-control" tabindex="0" onclick="toggleSearchSelect('competitorFacility')" onkeydown="if(event.key==='Enter')toggleSearchSelect('competitorFacility')">
-            <span class="ss-label" id="ss-label-competitorFacility">시설을 선택하세요</span>
-            <span class="ss-arrow">▾</span>
+        <div class="goal-row" style="flex-wrap:wrap; align-items:flex-end;">
+          <div class="fgroup ss-wrap" id="ssWrap-competitorFacility" style="flex:1; min-width:260px;">
+            <label>숙소 (놀발 직계약건)</label>
+            <div class="ss-control" tabindex="0" onclick="toggleSearchSelect('competitorFacility')" onkeydown="if(event.key==='Enter')toggleSearchSelect('competitorFacility')">
+              <span class="ss-label" id="ss-label-competitorFacility">숙소를 선택하세요</span>
+              <span class="ss-arrow">▾</span>
+            </div>
+            <div class="ss-panel" id="ss-panel-competitorFacility">
+              <input type="text" class="ss-search" id="ss-search-competitorFacility" placeholder="숙소명 검색..." oninput="filterSearchSelect('competitorFacility')" onkeydown="handleSearchSelectKey(event,'competitorFacility')">
+              <div class="ss-options" id="ss-options-competitorFacility"></div>
+            </div>
           </div>
-          <div class="ss-panel" id="ss-panel-competitorFacility">
-            <input type="text" class="ss-search" id="ss-search-competitorFacility" placeholder="시설명 검색..." oninput="filterSearchSelect('competitorFacility')" onkeydown="handleSearchSelectKey(event,'competitorFacility')">
-            <div class="ss-options" id="ss-options-competitorFacility"></div>
+          <div class="fgroup" style="min-width:120px;">
+            <label>목록에 없으면 PK/이름</label>
+            <input type="text" id="cmpManual" placeholder="예: 30439">
           </div>
+          <div class="fgroup" style="min-width:150px;">
+            <label>객실타입 (선택 — 비우면 최저가)</label>
+            <input type="text" id="cmpRoomType" placeholder="예: 어반듀플렉스">
+          </div>
+          <div class="fgroup"><label>체크인</label><input type="date" id="cmpFrom"></div>
+          <div class="fgroup"><label>체크아웃</label><input type="date" id="cmpTo"></div>
+          <div class="fgroup" style="min-width:70px;"><label>인원</label><input type="number" id="cmpGuests" value="2" min="1" max="10"></div>
+          <button class="btn" id="cmpBtn" onclick="runCompare()">검색</button>
         </div>
-
-        <div id="competitorOwnPriceBox" style="margin-top:18px; display:none;">
-          <h3 style="margin-bottom:4px;">자사(놀이의발견) 최근 판매 정보</h3>
-          <div class="cap">최근 30일 이내 판매 건 기준</div>
-          <div class="kpi-grid" id="competitorOwnKpis" style="grid-template-columns:repeat(4,1fr); margin:10px 0 14px 0;"></div>
-          <div class="table-scroll" style="max-height:220px;">
-            <table id="tblCompetitorOwnRecent"><thead></thead><tbody></tbody></table>
-          </div>
-
-          <h3 style="margin:22px 0 4px 0;">경쟁사 가격 검색</h3>
-          <div class="cap">클릭하면 새 탭에서 구글 검색 결과가 열립니다. 나오는 가격을 확인해서 아래에 입력해주세요.</div>
-          <div class="pill-row" style="margin-top:10px;">
-            <button class="btn" onclick="openCompetitorSearch('여기어때')">🔍 여기어때에서 검색</button>
-            <button class="btn" onclick="openCompetitorSearch('아고다')">🔍 아고다에서 검색</button>
-            <button class="btn" onclick="openCompetitorSearch('놀유니버스')">🔍 놀유니버스에서 검색</button>
-          </div>
-
-          <h3 style="margin:22px 0 4px 0;">가격 기록 입력</h3>
-          <div class="goal-row" style="flex-wrap:wrap;">
-            <div class="fgroup"><label>여기어때 가격</label><input type="number" id="compPriceYeogi" placeholder="예: 89000"></div>
-            <div class="fgroup"><label>아고다 가격</label><input type="number" id="compPriceAgoda" placeholder="예: 92000"></div>
-            <div class="fgroup"><label>놀유니버스 가격</label><input type="number" id="compPriceNolu" placeholder="예: 95000"></div>
-            <div class="fgroup" style="flex:1; min-width:180px;"><label>메모</label><input type="text" id="compMemo" placeholder="예: 8/15 성수기 특가 확인" style="width:100%;"></div>
-            <button class="btn" style="align-self:flex-end;" onclick="saveCompetitorRecord()">기록 저장</button>
-          </div>
-        </div>
+        <div class="cap" id="cmpStatus" style="margin-top:6px; min-height:16px;"></div>
       </div>
 
-      <div class="card" style="margin-top:14px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-          <h3 style="margin-bottom:0;">가격 비교 히스토리</h3>
-          <div class="pill-row">
-            <button class="btn" onclick="exportCompetitorLog()">📋 기록 내보내기(복사)</button>
-            <button class="btn" onclick="clearCompetitorLog()">전체 삭제</button>
-          </div>
-        </div>
-        <div class="table-scroll" style="margin-top:10px;">
-          <table id="tblCompetitorLog"><thead></thead><tbody></tbody></table>
-        </div>
-      </div>
+      <div id="cmpResult" style="margin-top:14px;"></div>
     </div>
 
     <!-- ANOMALY -->
@@ -677,10 +696,20 @@ tr:hover td{background:rgba(47,211,196,0.04);}
 
       <div class="card">
         <div class="goal-row" style="flex-wrap:wrap; align-items:flex-end;">
-          <div class="fgroup" style="flex:1; min-width:240px;">
-            <label>숙소 (직계약건 선택 · 또는 PK/숙소명 직접 입력)</label>
-            <input type="text" id="lowestQuery" list="lowestDL" placeholder="예: 더위크앤리조트  또는  30439" style="width:100%;">
-            <datalist id="lowestDL"></datalist>
+          <div class="fgroup ss-wrap" id="ssWrap-lowestFacility" style="flex:1; min-width:260px;">
+            <label>숙소 (놀발 직계약건)</label>
+            <div class="ss-control" tabindex="0" onclick="toggleSearchSelect('lowestFacility')" onkeydown="if(event.key==='Enter')toggleSearchSelect('lowestFacility')">
+              <span class="ss-label" id="ss-label-lowestFacility">숙소를 선택하세요</span>
+              <span class="ss-arrow">▾</span>
+            </div>
+            <div class="ss-panel" id="ss-panel-lowestFacility">
+              <input type="text" class="ss-search" id="ss-search-lowestFacility" placeholder="숙소명 검색..." oninput="filterSearchSelect('lowestFacility')" onkeydown="handleSearchSelectKey(event,'lowestFacility')">
+              <div class="ss-options" id="ss-options-lowestFacility"></div>
+            </div>
+          </div>
+          <div class="fgroup" style="min-width:130px;">
+            <label>목록에 없으면 PK 직접</label>
+            <input type="text" id="lowestPkManual" placeholder="예: 30439">
           </div>
           <div class="fgroup">
             <label>시작일</label>
@@ -1002,13 +1031,11 @@ function populateFilterOptions(){
   if(wrap.dataset.populated) return; // 최초 1회만 채움 (데이터 새로고침 시에는 그대로 유지)
   const suppliers = [...new Set(DERIVED.map(d=>d.supplier).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
   const regions = [...new Set(DERIVED.map(d=>d.region1).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
-  const facilities = [...new Set(DERIVED.map(d=>d.stay).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
   SS_DATA.supplier = suppliers;
   SS_DATA.region = regions;
-  SS_DATA.competitorFacility = facilities;
   renderSearchSelectOptions('supplier');
   renderSearchSelectOptions('region');
-  renderSearchSelectOptions('competitorFacility');
+  // competitorFacility / lowestFacility 는 놀발 API 목록으로 별도 채움 (cmpLoadFacilities / loadLowestFacilities)
   wrap.dataset.populated = '1';
   // 데이터 기간에 맞춰 날짜 필터 min/max 기본값 세팅
   const minD = minDateOf(DERIVED), maxD = maxDateOf(DERIVED);
@@ -1031,12 +1058,13 @@ function populateFilterOptions(){
 }
 
 // ---- 검색 가능한 드롭다운(공급사/지역) ----
-const SS_DATA = { supplier: [], region: [], competitorFacility: [] };
-const SS_ALL_LABEL = { supplier: '전체 공급사', region: '전체 지역' }; // competitorFacility는 "전체" 옵션 없음(단일 시설 선택 전용)
-const SS_TYPES = ['supplier','region','competitorFacility'];
+const SS_DATA = { supplier: [], region: [], competitorFacility: [], lowestFacility: [] };
+const SS_ALL_LABEL = { supplier: '전체 공급사', region: '전체 지역' }; // competitorFacility/lowestFacility는 "전체" 옵션 없음(단일 시설 선택 전용)
+const SS_TYPES = ['supplier','region','competitorFacility','lowestFacility'];
 // 타입별로 값을 선택했을 때 무엇을 할지 (기본은 FILTERS[type] 갱신, competitorFacility는 별도 동작)
 const SS_ON_SELECT = {
-  competitorFacility: (value)=>{ onCompetitorFacilitySelected(value); },
+  competitorFacility: (value)=>{ CMP_SELECTED_NAME = value; },
+  lowestFacility: (value)=>{ LOWEST_SELECTED_NAME = value; },
 };
 
 function renderSearchSelectOptions(type){
@@ -1129,7 +1157,6 @@ function refreshAll(){
 function buildAll(){
   populateFilterOptions();
   refreshAll();
-  safeRun('renderCompetitorLogTable', renderCompetitorLogTable);
   safeRun('loadSettlementGrid', loadSettlementGrid);
 }
 
@@ -2064,141 +2091,198 @@ function dlFormat(val, valueType){
   return fmtNum(val);
 }
 
-// ---------------- 경쟁사 가격 정보 ----------------
-let CURRENT_COMPETITOR_FACILITY = '';
-const COMPETITOR_LOG_KEY = 'nolbal_competitor_price_log_v1';
+// ---------------- 경쟁사 가격 = 숙박가격비교 ----------------
+const SEARCH_API = 'https://price-scraper-iota.vercel.app/api/search';
+const CMP_PLATFORM_ORDER = ['놀이의발견','여기어때','놀유니버스','아고다','트립닷컴','맘맘','트립비토즈','마이리얼트립'];
+const CMP_SELF = '놀이의발견';
+let CMP_SELECTED_NAME = '';
 
-function loadCompetitorLog(){
+const cmpWon = n => (n == null ? '-' : Number(n).toLocaleString('ko-KR') + '원');
+const CMP_WD = ['일','월','화','수','목','금','토'];
+function cmpDlabel(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  const wd = new Date(Date.UTC(y, m-1, d)).getUTCDay();
+  const cls = wd === 6 ? 'wd-sat' : wd === 0 ? 'wd-sun' : '';
+  return `${m}/${d}<span class="${cls}"> (${CMP_WD[wd]})</span>`;
+}
+function cmpRemarks(results, platforms){
+  const notes = [];
+  for (const p of platforms){
+    const r = results.find(x => x.platform === p);
+    if (!r) continue;
+    const mt = r.matched;
+    if (mt && mt.soldOut) notes.push(`${p} 매진`);
+    else if (mt && mt.fallback) notes.push(`${p} 대체객실`);
+    else if (mt && r.warn) notes.push(`${p} 확인필요`);
+    else if (!mt && r.found) notes.push(`${p} 판매없음`);
+  }
+  return notes.join(' · ');
+}
+
+(function cmpInitDates(){
+  const t = new Date(); t.setDate(t.getDate()+7);
+  const t2 = new Date(t); t2.setDate(t2.getDate()+1);
+  const iso = d => d.toISOString().slice(0,10);
+  const f = document.getElementById('cmpFrom'), g = document.getElementById('cmpTo');
+  if (f && !f.value) f.value = iso(t);
+  if (g && !g.value) g.value = iso(t2);
+})();
+
+// ── 놀발 직계약 숙소 목록 → 경쟁사가격/최저가상품 두 드롭다운을 한 번에 채움 ──
+const FACILITIES_API = 'https://price-scraper-iota.vercel.app/api/nolbal-facilities';
+const NOLBAL_NAME_TO_PK = {};
+(async function loadNolbalFacilities(){
+  const targets = [
+    { ss: 'competitorFacility', fail: '목록 로드 실패 — PK/이름 직접 입력' },
+    { ss: 'lowestFacility',     fail: '목록 로드 실패 — PK 직접 입력' },
+  ];
+  let names = null;
+  for (let attempt = 0; attempt < 3 && !names; attempt++){
+    try{
+      const j = await fetch(FACILITIES_API).then(r=>r.json());
+      if (j.ok && j.facilities && j.facilities.length){
+        names = [];
+        for (const f of j.facilities){ NOLBAL_NAME_TO_PK[f.name] = String(f.id); names.push(f.name); }
+      }
+    }catch(e){ /* retry */ }
+    if (!names) await new Promise(r=>setTimeout(r, 1500));
+  }
+  for (const t of targets){
+    const label = document.getElementById('ss-label-'+t.ss);
+    if (!label) continue;
+    if (names){
+      SS_DATA[t.ss] = names;
+      renderSearchSelectOptions(t.ss);
+      label.textContent = `숙소를 선택하세요 (${names.length}개)`;
+    } else {
+      label.textContent = t.fail;
+    }
+  }
+})();
+
+async function runCompare(){
+  const manual = document.getElementById('cmpManual').value.trim();
+  const facility = manual || NOLBAL_NAME_TO_PK[CMP_SELECTED_NAME] || CMP_SELECTED_NAME || '';
+  const from = document.getElementById('cmpFrom').value;
+  const to = document.getElementById('cmpTo').value;
+  const roomType = document.getElementById('cmpRoomType').value.trim();
+  const guests = document.getElementById('cmpGuests').value || '2';
+  const statusEl = document.getElementById('cmpStatus');
+  const outEl = document.getElementById('cmpResult');
+  const btn = document.getElementById('cmpBtn');
+
+  if (!facility){ statusEl.textContent = '⚠ 숙소를 선택하거나 PK/이름을 입력하세요.'; return; }
+  if (!from || !to){ statusEl.textContent = '⚠ 체크인·체크아웃 날짜를 입력하세요.'; return; }
+
+  btn.disabled = true;
+  statusEl.textContent = '조회 중… (5~15초)';
+  outEl.innerHTML = '';
   try{
-    const raw = localStorage.getItem(COMPETITOR_LOG_KEY);
-    return raw ? JSON.parse(raw) : [];
-  }catch(e){
-    console.warn('[경쟁사가격] localStorage 사용 불가(브라우저 설정/파일 실행 환경 제약일 수 있음):', e.message);
-    return [];
+    const qs = new URLSearchParams({ facility, roomType, from, to, guests });
+    const j = await fetch(SEARCH_API + '?' + qs.toString()).then(r=>r.json());
+    if (!j.ok) throw new Error(j.error || '검색 실패');
+    renderCompare(j);
+    statusEl.textContent = `"${j.facility}"${j.requestedPk ? ` (PK ${j.requestedPk})` : ''} · ${j.nights.length}박 조회 완료`;
+  }catch(err){
+    statusEl.textContent = '⚠ ' + err.message;
+  }finally{
+    btn.disabled = false;
   }
 }
-function saveCompetitorLogToStorage(log){
-  try{ localStorage.setItem(COMPETITOR_LOG_KEY, JSON.stringify(log)); return true; }
-  catch(e){ console.warn('[경쟁사가격] localStorage 저장 실패:', e.message); return false; }
-}
-let COMPETITOR_LOG = loadCompetitorLog();
 
-function onCompetitorFacilitySelected(value){
-  CURRENT_COMPETITOR_FACILITY = value;
-  const box = document.getElementById('competitorOwnPriceBox');
-  if(!value){ box.style.display='none'; return; }
-  box.style.display='block';
+function renderCompare(j){
+  const out = document.getElementById('cmpResult');
+  const nights = j.nights || [];
+  if (!nights.length){ out.textContent = '결과가 없습니다.'; return; }
 
-  // 최근 30일 이내 해당 숙소의 자사 판매 데이터
-  const now = maxDateOf(DERIVED) || new Date();
-  const cutoff = new Date(now.getTime() - 30*86400000);
-  const rows = DERIVED.filter(d=> d.stay===value && !d.cancelled && d.created>=cutoff)
-    .sort((a,b)=> b.created - a.created);
+  const seen = new Set();
+  for (const n of nights) for (const p of n.results) seen.add(p.platform);
+  const platforms = [
+    ...CMP_PLATFORM_ORDER.filter(p => seen.has(p)),
+    ...[...seen].filter(p => !CMP_PLATFORM_ORDER.includes(p)),
+  ];
+  const roomLabel = j.roomType ? `객실 "${j.roomType}"` : '최저가';
+  const wins = Object.fromEntries(platforms.map(p => [p, 0]));
+  const sums = Object.fromEntries(platforms.map(p => [p, { total: 0, cnt: 0 }]));
 
-  const prices = rows.map(r=>r.price).filter(p=>p>0);
-  const avg = prices.length ? prices.reduce((a,b)=>a+b,0)/prices.length : 0;
-  const min = prices.length ? Math.min(...prices) : 0;
-  const max = prices.length ? Math.max(...prices) : 0;
-  document.getElementById('competitorOwnKpis').innerHTML = `
-    <div class="kpi"><div class="label">최근 30일 판매건수</div><div class="value">${fmtNum(rows.length)}건</div></div>
-    <div class="kpi"><div class="label">평균 판매가</div><div class="value">${fmtWonShort(avg)}원</div></div>
-    <div class="kpi"><div class="label">최저가</div><div class="value">${fmtWonShort(min)}원</div></div>
-    <div class="kpi"><div class="label">최고가</div><div class="value">${fmtWonShort(max)}원</div></div>
-  `;
+  let head = `<tr><th class="date">날짜</th>${platforms
+    .map(p => `<th${p === CMP_SELF ? ' class="self-h"' : ''}>${p}</th>`).join('')}<th class="remark">비고</th></tr>`;
 
-  renderSortableTable('tblCompetitorOwnRecent',
-    [['createdStr','생성일'],['product','상품명'],['price','판매가']],
-    rows.slice(0,20).map(r=>({createdStr: fmtDateShort ? fmtDateShort(r.created) : r.created.toISOString().slice(0,10), product:r.product, price:r.price})),
-    {price:fmtWonShort}, 'createdStr', -1);
+  let body = '';
+  for (const n of nights){
+    const byPlat = Object.fromEntries(n.results.map(r => [r.platform, r]));
+    const prices = platforms.map(p => byPlat[p] && byPlat[p].matched && byPlat[p].matched.price).filter(x => x > 0);
+    const min = prices.length ? Math.min(...prices) : null;
+    let cells = '';
+    for (const p of platforms){
+      const r = byPlat[p];
+      const price = r && r.matched && r.matched.price > 0 ? r.matched.price : null;
+      const isSelf = p === CMP_SELF;
+      if (price != null){
+        sums[p].total += price; sums[p].cnt++;
+        const isBest = price === min;
+        if (isBest) wins[p]++;
+        const inner = r.url
+          ? `<a href="${r.url}" target="_blank" rel="noopener" title="${escapeHtml((r.matched && r.matched.name) || '')}">${cmpWon(price)}</a>`
+          : cmpWon(price);
+        cells += `<td class="${isSelf ? 'self ' : ''}${isBest ? 'best' : ''}"><span class="cell${r.warn ? ' warn' : ''}">${inner}</span></td>`;
+      } else {
+        const why = r ? r.reason || r.error || '없음' : '조회 안 됨';
+        cells += `<td class="${isSelf ? 'self' : ''}"><span class="cell miss" title="${escapeHtml(why)}">–</span></td>`;
+      }
+    }
+    body += `<tr><td class="date">${cmpDlabel(n.checkIn)}</td>${cells}<td class="remark">${escapeHtml(cmpRemarks(n.results, platforms))}</td></tr>`;
+  }
 
-  // 이전에 저장된 기록이 있으면 입력창에 최근 값 프리필 (참고용)
-  const lastRecord = COMPETITOR_LOG.filter(r=>r.facility===value).sort((a,b)=> b.ts-a.ts)[0];
-  document.getElementById('compPriceYeogi').value = lastRecord ? (lastRecord.yeogi||'') : '';
-  document.getElementById('compPriceAgoda').value = lastRecord ? (lastRecord.agoda||'') : '';
-  document.getElementById('compPriceNolu').value = lastRecord ? (lastRecord.nolu||'') : '';
-  document.getElementById('compMemo').value = '';
+  const bestWin = Math.max(...Object.values(wins));
+  const sumRow = `<tr class="summary"><td class="date">최저가 횟수</td>${platforms
+    .map(p => `<td class="${wins[p] > 0 && wins[p] === bestWin ? 'win' : ''}">${wins[p]}/${nights.length}</td>`).join('')}<td class="remark"></td></tr>`;
+  const avgRow = `<tr class="summary"><td class="date">평균가</td>${platforms
+    .map(p => `<td>${sums[p].cnt ? cmpWon(Math.round(sums[p].total / sums[p].cnt)) : '–'}</td>`).join('')}<td class="remark"></td></tr>`;
 
-  renderCompetitorLogTable();
-}
+  const selfWins = wins[CMP_SELF];
+  let verdict = '';
+  if (seen.has(CMP_SELF)){
+    const selfPriced = sums[CMP_SELF] ? sums[CMP_SELF].cnt : 0;
+    const rivalBest = Math.max(0, ...platforms.filter(p => p !== CMP_SELF).map(p => wins[p]));
+    verdict = selfPriced === 0
+      ? `놀이의발견 요금/판매 데이터 없음 — 비교 불가 (요금 미설정일 수 있음)`
+      : selfWins >= rivalBest && selfWins > 0
+      ? `놀이의발견이 ${selfWins}/${selfPriced}박 최저가 — 가격경쟁력 있음`
+      : selfWins === 0
+      ? `놀이의발견이 최저가인 날 없음 — 가격경쟁력 열위`
+      : `놀이의발견 ${selfWins}/${selfPriced}박 최저가 (경쟁사 최다 ${rivalBest})`;
+  }
 
-function openCompetitorSearch(platform){
-  if(!CURRENT_COMPETITOR_FACILITY){ alert('먼저 시설명을 선택해주세요.'); return; }
-  const q = encodeURIComponent(`${CURRENT_COMPETITOR_FACILITY} ${platform} 가격`);
-  window.open(`https://www.google.com/search?q=${q}`, '_blank');
-}
+  const matrix = document.createElement('div');
+  matrix.className = 'matrixbox';
+  matrix.innerHTML = `<h2>${escapeHtml(j.facility)} · ${roomLabel} · ${nights.length}박${
+    verdict ? ` — <span style="color:var(--teal)">${escapeHtml(verdict)}</span>` : ''
+  }</h2>
+    <div class="mscroll"><table class="matrix"><thead>${head}</thead><tbody>${body}${sumRow}${avgRow}</tbody></table></div>
+    <div class="legend">숫자를 누르면 예약 페이지로 이동 · <span style="color:var(--teal)">초록</span> = 그날 최저가 · <span style="color:var(--amber)">*</span> = 요청 객실 없어 대체/신뢰도 낮음 · <b>비고</b> = 매진·대체객실·확인필요 (아래 전체 객실에서 확인)</div>`;
+  out.appendChild(matrix);
 
-function saveCompetitorRecord(){
-  if(!CURRENT_COMPETITOR_FACILITY){ alert('먼저 시설명을 선택해주세요.'); return; }
-  const yeogi = document.getElementById('compPriceYeogi').value;
-  const agoda = document.getElementById('compPriceAgoda').value;
-  const nolu = document.getElementById('compPriceNolu').value;
-  const memo = document.getElementById('compMemo').value;
-  if(!yeogi && !agoda && !nolu){ alert('최소 한 곳의 가격은 입력해주세요.'); return; }
-
-  // 자사 최근 판매가(참고용 스냅샷)도 같이 기록
-  const now = maxDateOf(DERIVED) || new Date();
-  const cutoff = new Date(now.getTime() - 30*86400000);
-  const ownPrices = DERIVED.filter(d=> d.stay===CURRENT_COMPETITOR_FACILITY && !d.cancelled && d.created>=cutoff).map(d=>d.price).filter(p=>p>0);
-  const ownAvg = ownPrices.length ? Math.round(ownPrices.reduce((a,b)=>a+b,0)/ownPrices.length) : null;
-
-  COMPETITOR_LOG.push({
-    ts: Date.now(),
-    dateStr: new Date().toISOString().slice(0,10),
-    facility: CURRENT_COMPETITOR_FACILITY,
-    own: ownAvg,
-    yeogi: yeogi ? Number(yeogi) : null,
-    agoda: agoda ? Number(agoda) : null,
-    nolu: nolu ? Number(nolu) : null,
-    memo: memo || '',
-  });
-  const persisted = saveCompetitorLogToStorage(COMPETITOR_LOG);
-  document.getElementById('compMemo').value = '';
-  renderCompetitorLogTable();
-  if(!persisted) alert('기록은 저장했지만 이 브라우저에서는 localStorage를 사용할 수 없어 새로고침하면 사라질 수 있습니다. "기록 내보내기"로 바로 복사해두시는 걸 권장합니다.');
-}
-
-function renderCompetitorLogTable(){
-  const rows = COMPETITOR_LOG.slice().sort((a,b)=>b.ts-a.ts).map(r=>({
-    dateStr:r.dateStr, facility:r.facility,
-    own: r.own!=null? r.own : null,
-    yeogi: r.yeogi, agoda: r.agoda, nolu: r.nolu, memo: r.memo,
-  }));
-  renderSortableTable('tblCompetitorLog',
-    [['dateStr','기록일'],['facility','시설명'],['own','자사(30일평균)'],['yeogi','여기어때'],['agoda','아고다'],['nolu','놀유니버스'],['memo','메모']],
-    rows,
-    { own: v=> v!=null? fmtWonShort(v)+'원' : '-',
-      yeogi: v=> v!=null? fmtWonShort(v)+'원' : '-',
-      agoda: v=> v!=null? fmtWonShort(v)+'원' : '-',
-      nolu: v=> v!=null? fmtWonShort(v)+'원' : '-' },
-    'dateStr', -1);
-}
-
-function exportCompetitorLog(){
-  if(!COMPETITOR_LOG.length){ alert('내보낼 기록이 없습니다.'); return; }
-  const header = ['기록일','시설명','자사(30일평균)','여기어때','아고다','놀유니버스','메모'];
-  const lines = [header.join('\t')];
-  COMPETITOR_LOG.slice().sort((a,b)=>b.ts-a.ts).forEach(r=>{
-    lines.push([r.dateStr, r.facility, r.own??'', r.yeogi??'', r.agoda??'', r.nolu??'', r.memo||''].join('\t'));
-  });
-  const text = lines.join('\n');
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(()=>alert('복사했습니다! 구글시트에 그대로 붙여넣기(Ctrl+V) 하시면 표 형태로 들어갑니다.'))
-      .catch(()=>fallbackCopy_(text));
-  } else fallbackCopy_(text);
-}
-function fallbackCopy_(text){
-  const ta = document.createElement('textarea');
-  ta.value = text; document.body.appendChild(ta); ta.select();
-  try{ document.execCommand('copy'); alert('복사했습니다! 구글시트에 붙여넣기 하시면 됩니다.'); }
-  catch(e){ alert('자동 복사에 실패했습니다. 콘솔(F12)에 표 데이터를 출력해두었으니 직접 복사해주세요.'); console.log(text); }
-  document.body.removeChild(ta);
-}
-function clearCompetitorLog(){
-  if(!COMPETITOR_LOG.length) return;
-  if(!confirm('저장된 모든 가격 비교 기록을 삭제할까요? (이 브라우저에서만 삭제되며 되돌릴 수 없습니다)')) return;
-  COMPETITOR_LOG = [];
-  saveCompetitorLogToStorage(COMPETITOR_LOG);
-  renderCompetitorLogTable();
+  for (const n of nights){
+    const det = document.createElement('details');
+    det.className = 'rooms';
+    let blocks = '';
+    for (const p of platforms){
+      const r = n.results.find(x => x.platform === p);
+      if (!r) continue;
+      const all = (r.rooms || []).filter(x => x.price > 0);
+      const cheapest = all.length ? Math.min(...all.map(x => x.price)) : null;
+      const linkA = r.url ? `<a href="${r.url}" target="_blank" rel="noopener">열기 ↗</a>` : '';
+      const list = all.length
+        ? `<ul>${all.map(x => `<li class="${x.price === cheapest ? 'cheapest' : ''}"><span>${escapeHtml(x.name)}${x.soldOut ? ' (마감)' : ''}</span><span>${cmpWon(x.price)}</span></li>`).join('')}</ul>`
+        : `<div class="none">${escapeHtml(r.reason || r.error || '판매 없음')}</div>`;
+      blocks += `<div class="pblock"><h4>${p}${
+        r.facilityName && r.facilityName !== j.facility ? ` <span style="color:#5A6884">(${escapeHtml(r.facilityName)})</span>` : ''
+      } ${linkA}</h4>${list}</div>`;
+    }
+    det.innerHTML = `<summary><span>${cmpDlabel(n.checkIn)} → ${n.checkOut.slice(5)} · 전체 객실</span></summary><div class="rgrid">${blocks}</div>`;
+    out.appendChild(det);
+  }
 }
 
 // ---------------- 02-K 정산기준 표 (별도 스프레드시트, 조회 전용) ----------------
@@ -2442,9 +2526,9 @@ function renderSortableTable(id, cols, rows, formatters){
 }
 
 // ---------------- 최저가 상품 조회 (놀이의발견 admin) ----------------
+// FACILITIES_API / NOLBAL_NAME_TO_PK / 숙소 드롭다운 로드는 경쟁사가격 블록에서 공유
 const LOWEST_API = 'https://price-scraper-iota.vercel.app/api/nolbal-lowest';
-const FACILITIES_API = 'https://price-scraper-iota.vercel.app/api/nolbal-facilities';
-const LOWEST_NAME_TO_PK = {};
+let LOWEST_SELECTED_NAME = '';
 
 (function initLowestDates(){
   const t = new Date();
@@ -2456,19 +2540,6 @@ const LOWEST_NAME_TO_PK = {};
   if (g && !g.value) g.value = iso(end);
 })();
 
-// 직계약 숙소 드롭다운
-(async function loadLowestFacilities(){
-  try{
-    const j = await fetch(FACILITIES_API).then(r=>r.json());
-    if (!j.ok || !j.facilities.length) return;
-    const dl = document.getElementById('lowestDL');
-    dl.innerHTML = j.facilities.map(f=>{
-      LOWEST_NAME_TO_PK[f.name] = String(f.id);
-      return '<option value="'+String(f.name).replace(/"/g,'&quot;')+'">PK '+f.id+'</option>';
-    }).join('');
-  }catch(e){ /* 드롭다운 없이도 직접 입력 가능 */ }
-})();
-
 function lwWeekdayColor(wd){
   if (wd === '토') return 'color:#7FB4FF;';
   if (wd === '일') return 'color:var(--coral);';
@@ -2476,8 +2547,8 @@ function lwWeekdayColor(wd){
 }
 
 async function runLowest(){
-  const qv = document.getElementById('lowestQuery').value.trim();
-  const q = LOWEST_NAME_TO_PK[qv] || qv; // 드롭다운에서 고른 이름이면 PK로
+  const manual = document.getElementById('lowestPkManual').value.trim();
+  const q = manual || NOLBAL_NAME_TO_PK[LOWEST_SELECTED_NAME] || LOWEST_SELECTED_NAME || '';
   const from = document.getElementById('lowestFrom').value;
   const to = document.getElementById('lowestTo').value;
   const statusEl = document.getElementById('lowestStatus');
@@ -2485,7 +2556,7 @@ async function runLowest(){
   const outEl = document.getElementById('lowestResult');
   const btn = document.getElementById('lowestBtn');
 
-  if (!q){ statusEl.textContent = '⚠ 숙소 PK 번호 또는 숙소명을 입력하세요.'; return; }
+  if (!q){ statusEl.textContent = '⚠ 숙소를 드롭다운에서 선택하거나 PK를 입력하세요.'; return; }
   if (!from || !to){ statusEl.textContent = '⚠ 시작일과 종료일을 입력하세요.'; return; }
 
   btn.disabled = true;
