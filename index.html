@@ -140,6 +140,9 @@ body{
 .kpi-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:10px;}
 @media (max-width:1300px){.kpi-grid{grid-template-columns:repeat(4,1fr);}}
 @media (max-width:760px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+#execWeekKpis{grid-template-columns:repeat(6,1fr);}
+@media (max-width:1300px){#execWeekKpis{grid-template-columns:repeat(3,1fr);}}
+@media (max-width:760px){#execWeekKpis{grid-template-columns:repeat(2,1fr);}}
 .kpi{
   background:var(--panel); border:1px solid var(--line); border-radius:10px;
   padding:16px 16px 14px 16px; position:relative; overflow:hidden;
@@ -375,6 +378,10 @@ tr:hover td{background:rgba(47,211,196,0.04);}
     <div class="section active" id="sec-exec">
       <div class="section-title"><span class="num">01</span>Executive Summary</div>
       <div class="kpi-grid" id="execKpis"></div>
+
+      <div class="section-title" style="margin-top:24px; font-size:13px;"><span class="num">01-W</span><span id="execWeekTitle">금주 현황 (월~일)</span></div>
+      <div class="kpi-grid" id="execWeekKpis" style="margin-bottom:6px;"></div>
+      <div class="footnote" style="margin-bottom:14px;">※ 최신 데이터일이 속한 주(월요일~일요일) 기준입니다. 상단 날짜 필터와 상관없이 항상 이번 주를 보여주며, 공급사/지역/취소포함 필터는 적용됩니다. 비교는 지난주 같은 요일까지(전주 동기)입니다.</div>
 
       <div class="section-title" style="margin-top:24px; font-size:13px;"><span class="num">01-A</span>매출(체크아웃 기준) · 취소 분석</div>
       <div class="kpi-grid" id="execCheckoutKpis" style="grid-template-columns:repeat(4,1fr); margin-bottom:10px;"></div>
@@ -1224,8 +1231,60 @@ function checkoutProfitSum(rows, start, end){
 }
 function isSameCalendarDay(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
 
+// ---- 금주 현황(월~일): 최신 데이터일(scopeMax)이 속한 주. 날짜 필터와 무관하게 SCOPE에서 집계 ----
+function renderExecWeek(scopeMax){
+  const el = document.getElementById('execWeekKpis');
+  if(!scopeMax){ el.innerHTML = '<div class="footnote">이번 주 데이터가 없습니다.</div>'; return; }
+  const DAY = 24*60*60*1000;
+  const weekStart = new Date(scopeMax.getFullYear(), scopeMax.getMonth(), scopeMax.getDate() - ((scopeMax.getDay()+6)%7));
+  const weekEnd = new Date(weekStart.getTime() + 7*DAY - 1);                   // 일요일 23:59:59
+  const todayEnd = new Date(scopeMax.getFullYear(), scopeMax.getMonth(), scopeMax.getDate()+1) - 1;
+  const asOf = new Date(todayEnd);
+  const prevStart = new Date(weekStart.getTime() - 7*DAY), prevEnd = new Date(asOf.getTime() - 7*DAY);
+
+  const curW = SCOPE.filter(d=>inRange(d.created, weekStart, asOf));
+  const prevW = SCOPE.filter(d=>inRange(d.created, prevStart, prevEnd));
+  const sW = periodStats(curW), sP = periodStats(prevW);
+  const directW = sW.netCount ? activeRows(curW).filter(d=>d.channel==='직계약').length / sW.netCount : 0;
+  const directP = sP.netCount ? activeRows(prevW).filter(d=>d.channel==='직계약').length / sP.netCount : null;
+  const profitW = checkoutProfitSum(SCOPE, weekStart, asOf);
+  const profitWeekAll = checkoutProfitSum(SCOPE, weekStart, weekEnd);
+  const profitP = checkoutProfitSum(SCOPE, prevStart, prevEnd);
+
+  // 전주 동기 대비: 금액/건수는 증감률, 비율(취소율·직계약 비중)은 %p 차이
+  const growth = (cur, prev) => {
+    if(!prev) return {text:'전주 동기 데이터 없음', cls:'flat'};
+    const g = (cur-prev)/prev;
+    if(Math.abs(g) < 0.0005) return {text:'전주 동기와 동일', cls:'flat'};
+    return {text:`전주 동기비 ${g>=0?'▲':'▼'}${fmtPct(Math.abs(g))}`, cls: g>=0?'up':'down'};
+  };
+  const pp = (cur, prev, higherIsBad) => {
+    if(prev==null) return {text:'전주 동기 데이터 없음', cls:'flat'};
+    const diff = (cur-prev)*100;
+    const good = higherIsBad ? diff<=0 : diff>=0;
+    return {text:`전주 동기비 ${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}%p`, cls: Math.abs(diff)<0.05?'flat':(good?'up':'down')};
+  };
+
+  const gGmv = growth(sW.gmv, sP.gmv), gCnt = growth(sW.netCount, sP.netCount), gAdr = growth(sW.adr, sP.adr);
+  const gCancel = pp(sW.cancelRate, sP.total? sP.cancelRate : null, true);
+  const gProfit = growth(profitW, profitP), gDirect = pp(directW, directP, false);
+
+  document.getElementById('execWeekTitle').textContent = `금주 현황 (월~일) · ${fmtDateShort(weekStart)}~${fmtDateShort(new Date(weekEnd))}`;
+  const cards = [
+    {label:'금주 GMV', value:fmtWonShort(sW.gmv)+'원', delta:gGmv.text, cls:gGmv.cls},
+    {label:'금주 예약건수(순)', value:fmtNum(sW.netCount)+'건', delta:`${gCnt.text} · 총 접수 ${fmtNum(sW.total)}건`, cls:gCnt.cls},
+    {label:'금주 ADR(1박당)', value:fmtWonShort(sW.adr)+'원', delta:gAdr.text, cls:gAdr.cls},
+    {label:'금주 취소율', value:fmtPct(sW.cancelRate), delta:gCancel.text, cls:gCancel.cls},
+    {label:'금주 매출(체크아웃)', value:fmtWonShort(profitW)+'원', delta:`${gProfit.text} · 일요일까지 예정 포함 ${fmtWonShort(profitWeekAll)}원`, cls:gProfit.cls},
+    {label:'금주 직계약 비중', value:fmtPct(directW), delta:gDirect.text, cls:gDirect.cls},
+  ];
+  el.innerHTML = cards.map(c=>`
+    <div class="kpi"><div class="label">${c.label}</div><div class="value">${c.value}</div><div class="delta ${c.cls}">${c.delta}</div></div>
+  `).join('');
+}
+
 function computeAndRenderExec(){
-  if(VIEW.length===0){ document.getElementById('execKpis').innerHTML = '<div class="footnote">조건에 맞는 데이터가 없습니다. 필터를 확인해주세요.</div>'; document.getElementById('execCheckoutKpis').innerHTML=''; document.getElementById('execCancelKpis').innerHTML=''; return; }
+  if(VIEW.length===0){ document.getElementById('execKpis').innerHTML = '<div class="footnote">조건에 맞는 데이터가 없습니다. 필터를 확인해주세요.</div>'; document.getElementById('execWeekKpis').innerHTML=''; document.getElementById('execCheckoutKpis').innerHTML=''; document.getElementById('execCancelKpis').innerHTML=''; return; }
 
   // SCOPE = 공급사/지역 필터만 적용되고 날짜(조회기간) 필터는 적용되지 않은 전체 기간 데이터.
   // 전월/전년 비교 시 "조회기간 밖" 데이터(예: 작년 동기)가 필요하므로 VIEW가 아닌 SCOPE에서 가져옵니다.
@@ -1282,6 +1341,8 @@ function computeAndRenderExec(){
   document.getElementById('execKpis').innerHTML = cards.map(c=>`
     <div class="kpi"><div class="label">${c.label}</div><div class="value">${c.value}</div><div class="delta ${c.cls}">${c.delta}</div></div>
   `).join('');
+
+  renderExecWeek(scopeMax);
 
   // ---- 매출(체크아웃기준): AF열(체크아웃일) 기준으로 "조회기간"에 맞춰 취합, AM열(놀발 수익) 합산 ----
   // VIEW(생성일 필터)가 아닌 SCOPE(공급사/지역만 필터)에서 체크아웃일 기준으로 직접 취합하므로
