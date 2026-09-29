@@ -271,6 +271,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
 #sec-competitor td.best .cell{color:var(--teal); font-weight:700;}
 #sec-competitor .cell.warn::after{content:'*'; color:var(--amber); margin-left:2px;}
 #sec-competitor .cell.miss{color:#5A6884;}
+#sec-competitor .cell.pending{font-size:11px; white-space:nowrap;}
 #sec-competitor .wd-sat{color:#7FB4FF;}
 #sec-competitor .wd-sun{color:var(--coral);}
 #sec-competitor tr.summary td{border-top:2px solid var(--line); border-bottom:0; color:var(--sub); font-size:11.5px; font-weight:600;}
@@ -2154,7 +2155,7 @@ function dlFormat(val, valueType){
 
 // ---------------- 경쟁사 가격 = 숙박가격비교 ----------------
 const SEARCH_API = 'https://price-scraper-iota.vercel.app/api/search';
-const CMP_PLATFORM_ORDER = ['놀이의발견','여기어때','놀유니버스','아고다','트립닷컴','맘맘','트립비토즈','마이리얼트립'];
+const CMP_PLATFORM_ORDER = ['놀이의발견','여기어때','놀유니버스','아고다','트립닷컴','맘맘','트립비토즈','마이리얼트립','11번가','롯데온','쿠팡','네이버 스마트스토어'];
 const CMP_SELF = '놀이의발견';
 let CMP_SELECTED_NAME = '';
 
@@ -2289,6 +2290,8 @@ function renderCompare(j){
           ? `<a href="${r.url}" target="_blank" rel="noopener" title="${escapeHtml((r.matched && r.matched.name) || '')}">${cmpWon(price)}</a>`
           : cmpWon(price);
         cells += `<td class="${isSelf ? 'self ' : ''}${isBest ? 'best' : ''}"><span class="cell${r.warn ? ' warn' : ''}">${inner}</span></td>`;
+      } else if (r && r.pending){
+        cells += `<td><span class="cell miss pending">업데이트중</span></td>`;
       } else {
         const why = r ? r.reason || r.error || '없음' : '조회 안 됨';
         cells += `<td class="${isSelf ? 'self' : ''}"><span class="cell miss" title="${escapeHtml(why)}">–</span></td>`;
@@ -2332,7 +2335,7 @@ function renderCompare(j){
     let blocks = '';
     for (const p of platforms){
       const r = n.results.find(x => x.platform === p);
-      if (!r) continue;
+      if (!r || r.pending) continue;
       const all = (r.rooms || []).filter(x => x.price > 0);
       const cheapest = all.length ? Math.min(...all.map(x => x.price)) : null;
       const linkA = r.url ? `<a href="${r.url}" target="_blank" rel="noopener">열기 ↗</a>` : '';
