@@ -2243,7 +2243,9 @@ async function runCompare(){
     const j = await fetch(SEARCH_API + '?' + qs.toString()).then(r=>r.json());
     if (!j.ok) throw new Error(j.error || '검색 실패');
     renderCompare(j);
-    statusEl.textContent = `"${j.facility}"${j.requestedPk ? ` (PK ${j.requestedPk})` : ''} · ${j.nights.length}박 조회 완료`;
+    const at = j.fetchedAt ? new Date(j.fetchedAt) : null;
+    const atLabel = at ? ` · ${at.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 수집 가격${(Date.now()-at) > 60000 ? ' (30분 캐시)' : ''}` : '';
+    statusEl.textContent = `"${j.facility}"${j.requestedPk ? ` (PK ${j.requestedPk})` : ''} · ${j.nights.length}박 조회 완료${atLabel}`;
   }catch(err){
     statusEl.textContent = '⚠ ' + err.message;
   }finally{
