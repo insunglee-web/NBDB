@@ -181,6 +181,12 @@ th:hover{color:var(--teal);}
 td{padding:9px 10px; border-bottom:1px solid rgba(35,48,71,0.5); font-family:var(--mono); font-size:12px;}
 tr:hover td{background:rgba(47,211,196,0.04);}
 .table-scroll{max-height:420px; overflow:auto;}
+#ypResult td.yp-num{text-align:right; white-space:nowrap;}
+#ypResult th.yp-num{text-align:right;}
+#ypResult .yp-sub{display:block; font-size:10.5px; color:var(--sub); margin-top:2px;}
+#ypResult .yp-up{color:var(--teal);} #ypResult .yp-down{color:var(--coral);}
+#ypResult tr.yp-total td{font-weight:700; border-top:1px solid var(--line);}
+#ypResult td.yp-name{font-family:var(--body); white-space:normal; min-width:180px;}
 .table-scroll table{min-width:560px;}
 @media (max-width:480px){
   .kpi-grid{grid-template-columns:1fr 1fr;}
@@ -375,6 +381,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
     <div class="tab" data-tab="competitor">경쟁사 가격</div>
     <div class="tab" data-tab="anomaly">이상징후·인사이트</div>
     <div class="tab" data-tab="lowest">최저가상품</div>
+    <div class="tab" data-tab="yearprice">연도별 시설금액</div>
   </div>
 
   <div class="wrap">
@@ -747,6 +754,43 @@ tr:hover td{background:rgba(47,211,196,0.04);}
       <div id="lowestResult" style="margin-top:14px;"></div>
     </div>
 
+    <!-- YEARLY FACILITY PRICE -->
+    <div class="section" id="sec-yearprice">
+      <div class="section-title"><span class="num">12</span>연도별 시설금액 (판매내역 기준)</div>
+      <div class="footnote" style="margin-bottom:14px;">
+        판매내역 시트에서 선택한 시설의 <b>체크인일이 기간(월/일)에 속하는 예약</b>을 연도별로 모아
+        객실별 <b>1박·1객실당 평균 판매가</b>(판매가 ÷ 박수 ÷ 객실수)를 비교합니다. 취소 건과 판매가 0원 건은 제외합니다.
+        날짜의 연도는 무시하고 월/일만 사용합니다. 상단 날짜·공급사·지역 필터는 적용되지 않습니다.
+      </div>
+
+      <div class="card">
+        <div class="goal-row" style="flex-wrap:wrap; align-items:flex-end; margin-bottom:0;">
+          <div class="fgroup ss-wrap" id="ssWrap-yearFacility" style="flex:1; min-width:260px;">
+            <label>시설 (판매내역 숙소명)</label>
+            <div class="ss-control" tabindex="0" onclick="toggleSearchSelect('yearFacility')" onkeydown="if(event.key==='Enter')toggleSearchSelect('yearFacility')">
+              <span class="ss-label" id="ss-label-yearFacility">시설을 선택하세요</span>
+              <span class="ss-arrow">▾</span>
+            </div>
+            <div class="ss-panel" id="ss-panel-yearFacility">
+              <input type="text" class="ss-search" id="ss-search-yearFacility" placeholder="숙소명 검색..." oninput="filterSearchSelect('yearFacility')" onkeydown="handleSearchSelectKey(event,'yearFacility')">
+              <div class="ss-options" id="ss-options-yearFacility"></div>
+            </div>
+          </div>
+          <div class="fgroup"><label>시작일 (월/일)</label><input type="date" id="ypFrom" onchange="renderYearPrice()"></div>
+          <div class="fgroup"><label>종료일 (월/일)</label><input type="date" id="ypTo" onchange="renderYearPrice()"></div>
+          <div class="fgroup">
+            <label>객실 묶기</label>
+            <select id="ypGroup" onchange="renderYearPrice()">
+              <option value="room">객실명 기준 (패키지 머리말 제거)</option>
+              <option value="product">상품명 그대로</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="ypResult" style="margin-top:14px;"></div>
+    </div>
+
   </div>
 </div>
 
@@ -1055,6 +1099,7 @@ function populateFilterOptions(){
   renderSearchSelectOptions('supplier');
   renderSearchSelectOptions('region');
   // competitorFacility / lowestFacility 는 놀발 API 목록으로 별도 채움 (cmpLoadFacilities / loadLowestFacilities)
+  safeRun('initYearPrice', initYearPrice);
   wrap.dataset.populated = '1';
   // 데이터 기간에 맞춰 날짜 필터 min/max 기본값 세팅
   const minD = minDateOf(DERIVED), maxD = maxDateOf(DERIVED);
@@ -1077,13 +1122,14 @@ function populateFilterOptions(){
 }
 
 // ---- 검색 가능한 드롭다운(공급사/지역) ----
-const SS_DATA = { supplier: [], region: [], competitorFacility: [], lowestFacility: [] };
+const SS_DATA = { supplier: [], region: [], competitorFacility: [], lowestFacility: [], yearFacility: [] };
 const SS_ALL_LABEL = { supplier: '전체 공급사', region: '전체 지역' }; // competitorFacility/lowestFacility는 "전체" 옵션 없음(단일 시설 선택 전용)
-const SS_TYPES = ['supplier','region','competitorFacility','lowestFacility'];
+const SS_TYPES = ['supplier','region','competitorFacility','lowestFacility','yearFacility'];
 // 타입별로 값을 선택했을 때 무엇을 할지 (기본은 FILTERS[type] 갱신, competitorFacility는 별도 동작)
 const SS_ON_SELECT = {
   competitorFacility: (value)=>{ CMP_SELECTED_NAME = value; },
   lowestFacility: (value)=>{ LOWEST_SELECTED_NAME = value; },
+  yearFacility: (value)=>{ YP_FACILITY = value; renderYearPrice(); },
 };
 
 function renderSearchSelectOptions(type){
@@ -1203,6 +1249,7 @@ function deriveRows(){
     const stay = (col(row,'숙소명')||'').toString().trim();
     const phone = (col(row,'예약자 연락처')||'').toString().trim();
     const pax = (col(row,'투숙인원')||'').toString();
+    const rooms = toNum(col(row,'객실수')) || 1;
     const cancelled = isCancelled(row);
     // 놀발 수수료(매출/순이익 집계에 사용): 헤더명 매칭 우선, 없으면 AN열을 직접 시도
     const rawProfitH = col(row,'놀발 수수료'), rawProfitL = colL(row,'AN');
@@ -1217,7 +1264,7 @@ function deriveRows(){
       DIAG_SAMPLES.push({ created: rawGetForDiag(col(row,'생성일')), checkoutH: rawGetForDiag(rawCheckoutH), checkoutL: rawGetForDiag(rawCheckoutL), profitRaw: rawGetForDiag(rawProfitH ?? rawProfitL) });
     }
 
-    return {created, checkin, checkout, cancelDate, price, nights, supplier, region1, product, stay, phone, pax, cancelled,
+    return {created, checkin, checkout, cancelDate, price, nights, rooms, supplier, region1, product, stay, phone, pax, cancelled,
             profit, coupon, partner,
             channel: classifyChannel(supplier)};
   }).filter(d => d.created); // must have created date to be usable
@@ -2759,6 +2806,95 @@ function fmtMd(iso){
   if (!iso) return '';
   const [y,m,d] = iso.split('-');
   return `${+m}/${+d}`;
+}
+
+// ---------------- 연도별 시설금액 (판매내역 기준) ----------------
+// 숙소명의 [특가] 같은 머리말을 떼서 연도마다 달라지는 표기를 한 시설로 묶는다
+let YP_FACILITY = '';
+const ypFacilityName = stay => (stay||'').replace(/^\s*(\[[^\]]*\]\s*)+/, '').trim();
+// 객실명: [놀딜★조식PKG] 같은 머리말 제거. 비교 키는 괄호·공백·구두점까지 제거 (예: "디럭스(패밀리트윈)" = "디럭스 패밀리 트윈")
+const ypRoomName = product => (product||'').replace(/\[[^\]]*\]/g, ' ').replace(/\s+/g, ' ').trim() || '(상품명 없음)';
+const ypRoomKey = name => name.toLowerCase().replace(/[\s()\[\]{}·.,\/_\-]/g, '');
+
+function initYearPrice(){
+  const names = new Set();
+  DERIVED.forEach(d=>{ const f = ypFacilityName(d.stay); if(f) names.add(f); });
+  SS_DATA.yearFacility = [...names].sort((a,b)=>a.localeCompare(b,'ko'));
+  renderSearchSelectOptions('yearFacility');
+  // 기본 기간: 이번 달 1일 ~ 말일
+  const now = new Date(), iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const from = document.getElementById('ypFrom'), to = document.getElementById('ypTo');
+  if(!from.value) from.value = iso(new Date(now.getFullYear(), now.getMonth(), 1));
+  if(!to.value) to.value = iso(new Date(now.getFullYear(), now.getMonth()+1, 0));
+  renderYearPrice();
+}
+
+function renderYearPrice(){
+  const out = document.getElementById('ypResult');
+  if(!YP_FACILITY){ out.innerHTML = '<div class="footnote">시설을 선택하세요.</div>'; return; }
+  const fv = document.getElementById('ypFrom').value, tv = document.getElementById('ypTo').value;
+  if(!fv || !tv){ out.innerHTML = '<div class="footnote">시작일과 종료일을 입력하세요.</div>'; return; }
+  const [, fm, fd] = fv.split('-').map(Number), [, tm, td] = tv.split('-').map(Number);
+  const fromMd = fm*100+fd, toMd = tm*100+td;
+  const wraps = toMd < fromMd;   // 예: 12/20 ~ 1/10 → 해를 넘기는 기간은 시작 연도로 집계
+  const byProduct = document.getElementById('ypGroup').value === 'product';
+
+  const groups = {}, total = {}, years = new Set();
+  DERIVED.forEach(d=>{
+    if(d.cancelled || !d.checkin || !(d.price > 0)) return;
+    if(ypFacilityName(d.stay) !== YP_FACILITY) return;
+    const md = (d.checkin.getMonth()+1)*100 + d.checkin.getDate();
+    let y = d.checkin.getFullYear();
+    if(wraps){ if(md < fromMd && md > toMd) return; if(md <= toMd) y -= 1; }
+    else if(md < fromMd || md > toMd) return;
+    const name = byProduct ? (d.product||'(상품명 없음)') : ypRoomName(d.product);
+    const key = byProduct ? name : ypRoomKey(name);
+    const units = Math.max(1, d.nights) * Math.max(1, d.rooms);
+    const perNight = d.price / units;
+    years.add(y);
+    const g = groups[key] = groups[key] || {names:{}, years:{}};
+    g.names[name] = Math.max(g.names[name]||0, y);      // 가장 최근 연도에 쓴 표기를 대표 이름으로
+    [g.years, total].forEach(bucket=>{
+      const e = bucket[y] = bucket[y] || {sum:0, units:0, count:0, min:Infinity, max:0};
+      e.sum += d.price; e.units += units; e.count++;
+      e.min = Math.min(e.min, perNight); e.max = Math.max(e.max, perNight);
+    });
+  });
+
+  const ys = [...years].sort((a,b)=>a-b);
+  const period = `${fm}/${fd}~${tm}/${td}${wraps?' (해 넘김, 시작 연도 기준)':''}`;
+  if(!ys.length){ out.innerHTML = `<div class="footnote">${escapeHtml(YP_FACILITY)} · ${period} 기간에 판매 내역이 없습니다.</div>`; return; }
+
+  const cell = (e, prev) => {
+    if(!e) return '<td class="yp-num" style="color:var(--sub);">-</td>';
+    const avg = e.sum / e.units;
+    let chg = '';
+    if(prev){ const g = avg / (prev.sum/prev.units) - 1; if(Math.abs(g) >= 0.0005) chg = ` <span class="${g>0?'yp-up':'yp-down'}">${g>0?'▲':'▼'}${fmtPct(Math.abs(g))}</span>`; }
+    const range = e.count > 1 && Math.round(e.min) !== Math.round(e.max) ? ` · ${fmtWonShort(e.min)}~${fmtWonShort(e.max)}` : '';
+    return `<td class="yp-num">${fmtWonShort(avg)}원${chg}<span class="yp-sub">${fmtNum(e.count)}건 · ${fmtNum(e.units)}박${range}</span></td>`;
+  };
+  const row = (name, yrs, cls) => `<tr class="${cls||''}"><td class="yp-name">${escapeHtml(name)}</td>${ys.map((y,i)=>cell(yrs[y], i? yrs[ys[i-1]] : null)).join('')}</tr>`;
+
+  const list = Object.values(groups).map(g=>({
+    name: Object.entries(g.names).sort((a,b)=>b[1]-a[1])[0][0],
+    years: g.years,
+    count: Object.values(g.years).reduce((a,e)=>a+e.count,0),
+  })).sort((a,b)=>b.count-a.count);
+
+  out.innerHTML = `
+    <div class="card">
+      <h3>${escapeHtml(YP_FACILITY)} · ${period}</h3>
+      <div class="cap">1박·1객실당 평균 판매가. ▲▼는 바로 앞 연도 대비 증감, 아래 작은 글씨는 예약건수 · 판매 박수(박×객실) · 1박 최저~최고가. 판매가 많은 객실 순.</div>
+      <div class="table-scroll" style="max-height:640px;">
+        <table>
+          <thead><tr><th>객실</th>${ys.map(y=>`<th class="yp-num">${wraps? y+"~"+String(y+1).slice(2) : y+"년"}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${list.map(g=>row(g.name, g.years)).join('')}
+            ${row('시설 전체 평균', total, 'yp-total')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
 }
 
 // tabs
