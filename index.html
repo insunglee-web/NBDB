@@ -304,6 +304,123 @@ tr:hover td{background:rgba(47,211,196,0.04);}
 #sec-competitor .pblock li{display:flex; justify-content:space-between; padding:3px 0; font-size:12.5px; max-width:460px; font-family:var(--mono);}
 #sec-competitor .pblock li.cheapest span{color:var(--teal); font-weight:600;}
 #sec-competitor .pblock .none{font-size:12px; color:#5A6884; font-style:italic;}
+/* ── 프로모션 관리 탭 (pm-) ── */
+#sec-promo [hidden]{display:none !important;}
+.pm-app{display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:16px; align-items:start;}
+@media (max-width:1100px){.pm-app{grid-template-columns:minmax(0,1fr);}}
+.pm-board,.pm-panel{background:var(--panel); border:1px solid var(--line); border-radius:12px; min-width:0;}
+.pm-head{display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--line);}
+.pm-tabs{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+.pm-vtab{background:var(--panel-2); border:0; color:var(--sub); padding:7px 13px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--body);}
+.pm-vtab[aria-selected="true"]{background:var(--teal); color:#04140F;}
+.pm-monthnav{display:flex; align-items:center; gap:6px;}
+.pm-mlabel{font-family:var(--disp); font-size:16px; font-weight:600; min-width:112px; text-align:center;}
+.pm-icon{background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:7px; width:30px; height:30px; font-size:16px; cursor:pointer;}
+.pm-icon:hover{border-color:var(--teal); color:var(--teal);}
+.btn.pm-small{padding:6px 10px; font-size:12px;}
+.pm-listtools{display:flex; flex-wrap:wrap; align-items:center; gap:10px;}
+.pm-listtools input[type="text"]{width:220px; max-width:100%;}
+.pm-stats{display:flex; flex-wrap:wrap; gap:4px 14px; color:var(--sub); font-size:12px; margin-left:auto;}
+.pm-stats b{color:var(--text); font-family:var(--mono);}
+.pm-stats .alert b{color:var(--coral);}
+.pm-filters{display:flex; flex-wrap:wrap; gap:6px; padding:9px 14px; border-bottom:1px solid var(--line);}
+.pm-fchip{background:var(--panel-2); border:1px solid var(--line); color:var(--sub); border-radius:999px; padding:3px 10px; font-size:12px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-family:var(--body);}
+.pm-fchip[aria-pressed="true"]{color:var(--text); border-color:var(--sub); font-weight:600;}
+.pm-dot{width:8px; height:8px; border-radius:50%; display:inline-block; flex:none;}
+.pm-grid{overflow-x:auto;}
+.pm-grid-inner{min-width:760px;}
+.pm-grid-inner.as-list{min-width:900px;}
+.pm-row{display:grid; grid-template-columns:270px minmax(0,1fr); border-bottom:1px solid var(--line);}
+.pm-row:last-child{border-bottom:0;}
+.pm-row.item{cursor:pointer;}
+.pm-row.item:hover .pm-info,.pm-row.item:hover .pm-lane{background:var(--panel-2);}
+.pm-row.selected .pm-info{box-shadow:inset 3px 0 0 var(--teal); background:var(--panel-2);}
+.pm-info{padding:9px 12px 9px 14px; min-width:0; border-right:1px solid var(--line); display:flex; flex-direction:column; gap:4px;}
+.pm-head-row .pm-info{justify-content:flex-end; color:var(--sub); font-size:11px; font-weight:600; padding-block:8px 6px;}
+.pm-fac{font-weight:600; font-size:13px; display:flex; align-items:center; gap:6px; min-width:0;}
+.pm-fac span:last-child{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.pm-prod{color:var(--sub); font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.pm-chips{display:flex; flex-wrap:wrap; gap:4px;}
+.pm-chip{font-size:11px; padding:1px 7px; border-radius:5px; font-weight:600; white-space:nowrap;}
+.pm-ok{color:#5BE3A0; background:rgba(91,227,160,.12);}
+.pm-warn{color:var(--amber); background:rgba(240,169,59,.13);}
+.pm-bad{color:var(--coral); background:rgba(240,102,92,.14);}
+.pm-info-c{color:#7FB5FF; background:rgba(127,181,255,.13);}
+.pm-none{color:var(--sub); background:rgba(139,152,176,.12);}
+.pm-viralc{color:var(--text); border:1px solid var(--line); font-weight:500;}
+.pm-pkc{color:var(--text); background:var(--panel-2); font-family:var(--mono); font-weight:500;}
+.pm-lane{position:relative; display:grid; align-items:center; min-height:62px;}
+.pm-days,.pm-cells,.pm-bars{display:grid; grid-template-columns:repeat(var(--n),minmax(0,1fr));}
+.pm-days{font-family:var(--mono); font-size:10.5px; color:var(--sub); text-align:center; align-items:end; padding-block:8px 6px;}
+.pm-days .we{color:var(--coral);}
+.pm-days .td{color:var(--teal); font-weight:700;}
+.pm-cells{position:absolute; inset:0;}
+.pm-cells .we{background:rgba(255,255,255,.025);}
+.pm-cells .td{box-shadow:inset 2px 0 0 var(--teal);}
+.pm-bars{position:relative; padding-inline:2px;}
+.pm-bar{height:22px; border-radius:6px; color:#0A0F1A; font-size:11px; font-weight:700; padding:0 8px; display:flex; align-items:center; overflow:hidden; white-space:nowrap; font-family:var(--mono);}
+.pm-bar.open{border-top-right-radius:0; border-bottom-right-radius:0;}
+.pm-bar.cont-l{border-top-left-radius:0; border-bottom-left-radius:0;}
+.pm-bar.tentative{background-image:repeating-linear-gradient(135deg,rgba(10,15,26,.28) 0 6px,transparent 6px 12px);}
+.pm-sec{padding:12px 14px 8px; font-size:12px; font-weight:700; color:var(--sub); border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:8px;}
+.pm-undated{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:8px; padding:0 14px 14px;}
+.pm-ucard{background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:4px; cursor:pointer; text-align:left; color:var(--text); font-family:var(--body); min-width:0;}
+.pm-ucard:hover{border-color:var(--teal);}
+.pm-when{font-family:var(--mono); font-size:11.5px; color:var(--sub);}
+.pm-empty{padding:34px 14px; text-align:center; color:var(--sub); font-size:12.5px;}
+.pm-empty strong{display:block; color:var(--text); font-size:14px; margin-bottom:4px;}
+.pm-table td{vertical-align:top;}
+.pm-table tbody tr{cursor:pointer;}
+.pm-table tbody tr:hover td{background:var(--panel-2);}
+.pm-table tbody tr.selected td{background:var(--panel-2);}
+.pm-table tbody tr.selected td:first-child{box-shadow:inset 3px 0 0 var(--teal);}
+.pm-table tr.past td{color:var(--sub);}
+.pm-table .pm-when{white-space:nowrap;}
+.pm-table .pm-prodc{max-width:280px; color:var(--sub);}
+.pm-table .pm-pk{font-family:var(--mono); font-size:12px; white-space:nowrap;}
+.pm-table tr.pm-msep td{background:var(--panel-2); font-size:11.5px; font-weight:700; color:var(--sub); padding:6px 10px; cursor:default;}
+.pm-panel{padding:16px; position:sticky; top:84px;}
+@media (max-width:1100px){.pm-panel{position:static;}}
+.pm-panel h3{font-family:var(--disp); font-size:14px; font-weight:600;}
+.pm-hint{color:var(--sub); font-size:11.5px; margin:2px 0 14px;}
+#pmForm{display:flex; flex-direction:column; gap:13px;}
+.pm-field{display:flex; flex-direction:column; gap:5px; min-width:0;}
+.pm-field > label,.pm-lab{font-size:11.5px; font-weight:600; color:var(--sub);}
+.pm-req{color:var(--coral);}
+.pm-two{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+#sec-promo input[type="text"],#sec-promo input[type="date"],#sec-promo input[type="password"],#sec-promo textarea{
+  width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+  padding:7px 10px; border-radius:7px; font-size:12.5px; font-family:var(--body); min-width:0; color-scheme:dark;
+}
+#sec-promo textarea{resize:vertical; min-height:60px;}
+#sec-promo input:focus,#sec-promo textarea:focus{outline:none; border-color:var(--teal);}
+#sec-promo :focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+.pm-seg{display:flex; flex-wrap:wrap; gap:6px;}
+.pm-seg label{border:1px solid var(--line); background:var(--panel-2); border-radius:7px; padding:5px 10px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; color:var(--sub);}
+.pm-seg input{position:absolute; opacity:0; pointer-events:none;}
+.pm-seg label:has(input:checked){border-color:var(--teal); color:var(--teal); background:rgba(47,211,196,.10); font-weight:600;}
+.pm-seg label:has(input:focus-visible){outline:2px solid var(--teal); outline-offset:2px;}
+.pm-check{display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--sub); cursor:pointer;}
+.pm-actions{display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+.pm-spacer{flex:1;}
+.btn.pm-primary{background:var(--teal); color:#04140F; border-color:var(--teal);}
+.btn.pm-primary:hover{color:#04140F; filter:brightness(1.08);}
+.btn.pm-danger{color:var(--coral);}
+.btn.pm-danger.armed{background:var(--coral); color:#fff; border-color:var(--coral);}
+.btn:disabled{opacity:.5; cursor:not-allowed;}
+.pm-msg{font-size:12px; min-height:16px;}
+.pm-msg.err{color:var(--coral);}
+.pm-msg.ok{color:#5BE3A0;}
+.pm-meta{font-size:11px; color:var(--sub); font-family:var(--mono);}
+@media (max-width:760px){
+  .pm-grid-inner:not(.as-list){min-width:0;}
+  .pm-row{grid-template-columns:minmax(0,1fr);}
+  .pm-head-row{display:none;}
+  .pm-info{border-right:0; padding-bottom:4px;}
+  .pm-lane{min-height:28px; padding:0 12px 10px 14px;}
+  .pm-cells{display:none;}
+  .pm-stats{margin-left:0;}
+}
 </style>
 </head>
 <body>
@@ -382,6 +499,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
     <div class="tab" data-tab="anomaly">이상징후·인사이트</div>
     <div class="tab" data-tab="lowest">최저가상품</div>
     <div class="tab" data-tab="yearprice">연도별 시설금액</div>
+    <div class="tab" data-tab="promo">프로모션 관리</div>
   </div>
 
   <div class="wrap">
@@ -789,6 +907,88 @@ tr:hover td{background:rgba(47,211,196,0.04);}
       </div>
 
       <div id="ypResult" style="margin-top:14px;"></div>
+    </div>
+
+    <!-- PROMOTIONS -->
+    <div class="section" id="sec-promo">
+      <div class="section-title"><span class="num">13</span>프로모션 관리 (숙박 공구·브랜드기획전·특가)</div>
+      <div class="pm-app">
+        <section class="pm-board" aria-label="프로모션 일정">
+          <div class="pm-head">
+            <div class="pm-tabs" role="tablist" aria-label="보기 방식">
+              <button type="button" class="pm-vtab" id="pmTabMonth" role="tab">월별 보기</button>
+              <button type="button" class="pm-vtab" id="pmTabList" role="tab">리스트로 보기</button>
+            </div>
+            <div class="pm-monthnav" id="pmMonthNav">
+              <button class="pm-icon" id="pmPrev" type="button" aria-label="이전 달">‹</button>
+              <div class="pm-mlabel" id="pmMonthLabel"></div>
+              <button class="pm-icon" id="pmNext" type="button" aria-label="다음 달">›</button>
+              <button class="btn pm-small" id="pmThisMonth" type="button">이번 달</button>
+            </div>
+            <div class="pm-listtools" id="pmListTools" hidden>
+              <input type="text" id="pmQ" placeholder="시설명·상품안·PK 검색" aria-label="검색">
+              <label class="pm-check"><input type="checkbox" id="pmHidePast"> 지난 프로모션 숨기기</label>
+            </div>
+            <div class="pm-stats" id="pmStats"></div>
+            <button class="btn pm-small" id="pmReload" type="button">새로고침</button>
+          </div>
+          <div class="pm-filters" id="pmFilters" role="group" aria-label="구분 필터"></div>
+          <div class="pm-grid"><div class="pm-grid-inner" id="pmGrid">
+            <div class="pm-empty"><strong>프로모션 탭을 열면 목록을 불러와요</strong></div>
+          </div></div>
+          <div id="pmUndated"></div>
+        </section>
+
+        <aside class="pm-panel" id="pmPanel" aria-labelledby="pmFormTitle">
+          <h3 id="pmFormTitle">프로모션 추가</h3>
+          <p class="pm-hint" id="pmFormHint">왼쪽에서 행을 누르면 수정할 수 있어요.</p>
+          <form id="pmForm" novalidate>
+            <div class="pm-field">
+              <span class="pm-lab">일정 <span class="pm-req">*</span></span>
+              <div class="pm-two">
+                <input type="date" id="pmStart" aria-label="시작일">
+                <input type="date" id="pmEnd" aria-label="종료일">
+              </div>
+              <label class="pm-check"><input type="checkbox" id="pmTbd"> 날짜 미정 (체크중·조율 중)</label>
+              <input type="text" id="pmNote" placeholder="일정 메모 (예: 10/6 or 10/19, 9/19 투숙)" aria-label="일정 메모">
+            </div>
+            <div class="pm-field">
+              <label for="pmFac">시설명 <span class="pm-req">*</span></label>
+              <input type="text" id="pmFac" placeholder="예: 소노벨 천안" autocomplete="off" list="pmFacList">
+              <datalist id="pmFacList"></datalist>
+            </div>
+            <div class="pm-field"><span class="pm-lab">프로모션 종류</span><div class="pm-seg" id="pmType"></div></div>
+            <div class="pm-field">
+              <label for="pmProd">상품안 / 상품명</label>
+              <textarea id="pmProd" placeholder="예: 한브로(태그바이) / 조식·워터·올인클"></textarea>
+            </div>
+            <div class="pm-field"><span class="pm-lab">확정 여부</span><div class="pm-seg" id="pmConfirm"></div></div>
+            <div class="pm-field">
+              <span class="pm-lab">세팅 여부 (놀발 앱 내)</span>
+              <div class="pm-seg" id="pmSetting"></div>
+              <input type="text" id="pmPk" placeholder="PK번호 (예: 103702, 여러 개면 쉼표로)" aria-label="PK번호" inputmode="numeric" autocomplete="off">
+            </div>
+            <div class="pm-field">
+              <span class="pm-lab">바이럴 추가노출 요청</span>
+              <div class="pm-seg" id="pmViral"></div>
+              <input type="text" id="pmViralNote" placeholder="요청 메모 (예: 가능한 것 다 부탁드려요)" aria-label="바이럴 요청 메모">
+            </div>
+            <div class="pm-field"><label for="pmMemo">비고</label><input type="text" id="pmMemo" placeholder="예: 선착순 쿠폰 발급"></div>
+            <div class="pm-field" id="pmKeyField" hidden>
+              <label for="pmKey">편집 비밀번호</label>
+              <input type="password" id="pmKey" autocomplete="off" placeholder="팀 편집 비밀번호">
+            </div>
+            <div class="pm-msg" id="pmMsg" role="status" aria-live="polite"></div>
+            <div class="pm-actions">
+              <button class="btn pm-primary" id="pmSave" type="submit">추가하기</button>
+              <button class="btn" id="pmCancel" type="button" hidden>취소</button>
+              <span class="pm-spacer"></span>
+              <button class="btn pm-danger" id="pmDel" type="button" hidden>삭제</button>
+            </div>
+            <div class="pm-meta" id="pmMeta"></div>
+          </form>
+        </aside>
+      </div>
     </div>
 
   </div>
@@ -2907,6 +3107,372 @@ document.getElementById('tabs').addEventListener('click', e=>{
 });
 
 loadData();
+</script>
+
+<script>
+// ---------------- 프로모션 관리 (저장소: price-scraper /api/promotions) ----------------
+(function(){
+  const API = 'https://price-scraper-iota.vercel.app/api/promotions';
+  const TYPES = [
+    { v: '기획전+공구', color: 'var(--amber)' },
+    { v: '브랜드기획전', color: 'var(--violet)' },
+    { v: '특가', color: 'var(--coral)' },
+    { v: '기타', color: 'var(--teal)' },
+  ];
+  const CONFIRMS = [{ v: '확정', cls: 'pm-ok' }, { v: '체크중', cls: 'pm-warn' }, { v: '미정', cls: 'pm-none' }, { v: '일정미뤄짐', cls: 'pm-bad' }];
+  const SETTINGS = [{ v: '미세팅', cls: 'pm-none' }, { v: '세팅중', cls: 'pm-warn' }, { v: '진행중', cls: 'pm-info-c' }, { v: '종료', cls: 'pm-none' }];
+  const VIRALS = ['공구', '바이럴진행요청', '사전홍보', '인플루언서', '맘카페', '홈아이콘'];
+
+  const $ = (id) => document.getElementById(id);
+  const pad = (n) => String(n).padStart(2, '0');
+  const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const md = (s) => { const d = parse(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
+  const typeOf = (v) => TYPES.find((t) => t.v === v) || TYPES[3];
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+  const today = new Date();
+  const todayIso = iso(today);
+  let view = { y: today.getFullYear(), m: today.getMonth() };
+  let mode = store.get('pm-mode') === 'list' ? 'list' : 'month';
+  let typeFilter = new Set();
+  let items = [];
+  let loaded = false, loading = false, loadError = '';
+  let writeLocked = false;
+  let editing = null;
+
+  // ---------- 서버 ----------
+  async function load() {
+    if (loading) return;
+    loading = true;
+    try {
+      const r = await fetch(API, { cache: 'no-store' });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || '불러오지 못했어요.');
+      items = (j.items || []).filter((x) => x.facility);
+      writeLocked = !!j.writeLocked;
+      $('pmKeyField').hidden = !(writeLocked && !store.get('pm-key'));
+      loadError = '';
+    } catch (e) {
+      loadError = e.message || String(e);
+    } finally {
+      loaded = true; loading = false;
+      if (editing && !items.some((x) => x.id === editing)) resetForm(); else render();
+    }
+  }
+  async function send(body) {
+    const key = $('pmKey').value.trim() || store.get('pm-key') || '';
+    const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-promo-key': key }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({ ok: false, error: '서버 응답을 읽지 못했어요.' }));
+    if (j.code === 'bad_key') { $('pmKeyField').hidden = false; store.set('pm-key', ''); }
+    else if (j.ok && key) { store.set('pm-key', key); $('pmKeyField').hidden = true; }
+    if (!j.ok) throw new Error(j.error || '저장하지 못했어요.');
+    return j;
+  }
+
+  // ---------- 폼 ----------
+  function seg(container, name, options, multi) {
+    const box = $(container);
+    for (const o of options) {
+      const v = o.v || o;
+      const lab = el('label');
+      const inp = document.createElement('input');
+      inp.type = multi ? 'checkbox' : 'radio'; inp.name = name; inp.value = v; inp.id = `${name}-${v}`;
+      lab.append(inp);
+      if (o.color) { const d = el('span', 'pm-dot'); d.style.background = o.color; lab.append(d); }
+      lab.append(document.createTextNode(v));
+      box.append(lab);
+    }
+  }
+  seg('pmType', 'pmtype', TYPES, false);
+  seg('pmConfirm', 'pmconfirm', CONFIRMS, false);
+  seg('pmSetting', 'pmsetting', SETTINGS, false);
+  seg('pmViral', 'pmviral', VIRALS, true);
+  const radio = (name) => (document.querySelector(`input[name="${name}"]:checked`) || {}).value || '';
+  const setRadio = (name, v) => document.querySelectorAll(`input[name="${name}"]`).forEach((i) => (i.checked = i.value === v));
+
+  function toggleTbd() { const t = $('pmTbd').checked; $('pmStart').disabled = t; $('pmEnd').disabled = t; }
+  $('pmTbd').addEventListener('change', toggleTbd);
+
+  function resetForm() {
+    editing = null;
+    const keep = $('pmKey').value;
+    $('pmForm').reset();
+    $('pmKey').value = keep;
+    setRadio('pmtype', '기획전+공구'); setRadio('pmconfirm', '체크중'); setRadio('pmsetting', '미세팅');
+    $('pmFormTitle').textContent = '프로모션 추가';
+    $('pmFormHint').textContent = '왼쪽에서 행을 누르면 수정할 수 있어요.';
+    $('pmSave').textContent = '추가하기';
+    $('pmCancel').hidden = true; $('pmDel').hidden = true; disarm();
+    $('pmMeta').textContent = '';
+    toggleTbd();
+    render();
+  }
+  function fillForm(it) {
+    editing = it.id;
+    $('pmFormTitle').textContent = '프로모션 수정';
+    $('pmFormHint').textContent = it.facility;
+    $('pmStart').value = it.start || ''; $('pmEnd').value = it.end || '';
+    $('pmTbd').checked = !it.start; toggleTbd();
+    $('pmNote').value = it.scheduleNote || '';
+    $('pmFac').value = it.facility || '';
+    setRadio('pmtype', it.type || '기타');
+    $('pmProd').value = it.product || '';
+    setRadio('pmconfirm', it.confirm || '');
+    setRadio('pmsetting', it.setting || '미세팅');
+    $('pmPk').value = it.pk || '';
+    document.querySelectorAll('input[name="pmviral"]').forEach((i) => (i.checked = (it.viral || []).includes(i.value)));
+    $('pmViralNote').value = it.viralNote || '';
+    $('pmMemo').value = it.memo || '';
+    $('pmSave').textContent = '저장하기';
+    $('pmCancel').hidden = false; $('pmDel').hidden = false; disarm();
+    say('');
+    const t = it.updatedAt ? new Date(it.updatedAt) : null;
+    $('pmMeta').textContent = t ? `마지막 수정 ${t.getMonth() + 1}/${t.getDate()} ${pad(t.getHours())}:${pad(t.getMinutes())}` : '';
+    render();
+    if (window.matchMedia('(max-width: 1100px)').matches) $('pmPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function readForm() {
+    const tbd = $('pmTbd').checked;
+    const start = tbd ? '' : $('pmStart').value;
+    const end = tbd ? '' : $('pmEnd').value;
+    const facility = $('pmFac').value.trim();
+    if (!facility) return { error: '시설명을 입력해주세요.', focus: 'pmFac' };
+    if (!tbd && !start) return { error: '시작일을 고르거나 "날짜 미정"을 체크해주세요.', focus: 'pmStart' };
+    if (start && end && end < start) return { error: '종료일이 시작일보다 빨라요. 날짜를 확인해주세요.', focus: 'pmEnd' };
+    return { data: {
+      start, end, scheduleNote: $('pmNote').value.trim(), facility,
+      type: radio('pmtype') || '기타', product: $('pmProd').value.trim(),
+      confirm: radio('pmconfirm'), setting: radio('pmsetting') || '미세팅', pk: $('pmPk').value.trim(),
+      viral: [...document.querySelectorAll('input[name="pmviral"]:checked')].map((i) => i.value),
+      viralNote: $('pmViralNote').value.trim(), memo: $('pmMemo').value.trim(),
+    } };
+  }
+  function say(text, kind) { $('pmMsg').textContent = text; $('pmMsg').className = 'pm-msg' + (kind ? ' ' + kind : ''); }
+
+  $('pmForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const r = readForm();
+    if (r.error) { say(r.error, 'err'); $(r.focus).focus(); return; }
+    $('pmSave').disabled = true;
+    try {
+      const wasEditing = editing;
+      const j = await send({ action: 'upsert', item: wasEditing ? { ...r.data, id: wasEditing } : r.data });
+      const i = items.findIndex((x) => x.id === j.item.id);
+      if (i >= 0) items[i] = j.item; else items.push(j.item);
+      if (wasEditing) { say(`${j.item.facility} 저장했어요.`, 'ok'); fillForm(j.item); say(`${j.item.facility} 저장했어요.`, 'ok'); }
+      else {
+        resetForm();
+        if (j.item.start) { const d = parse(j.item.start); view = { y: d.getFullYear(), m: d.getMonth() }; render(); }
+        say(`${j.item.facility} 추가했어요.`, 'ok');
+      }
+    } catch (e) { say(e.message, 'err'); }
+    finally { $('pmSave').disabled = false; }
+  });
+  $('pmCancel').addEventListener('click', () => { resetForm(); say(''); });
+
+  let armTimer = null;
+  function disarm() { clearTimeout(armTimer); $('pmDel').classList.remove('armed'); $('pmDel').textContent = '삭제'; }
+  $('pmDel').addEventListener('click', async () => {
+    if (!editing) return;
+    if (!$('pmDel').classList.contains('armed')) {
+      $('pmDel').classList.add('armed'); $('pmDel').textContent = '한 번 더 누르면 삭제';
+      armTimer = setTimeout(disarm, 4000); return;
+    }
+    const it = items.find((x) => x.id === editing);
+    try {
+      await send({ action: 'delete', id: editing });
+      items = items.filter((x) => x.id !== editing);
+      resetForm(); say(`${it ? it.facility : '프로모션'} 삭제했어요.`, 'ok');
+    } catch (e) { say(e.message, 'err'); disarm(); }
+  });
+
+  // ---------- 보기 전환 ----------
+  function shift(n) { const d = new Date(view.y, view.m + n, 1); view = { y: d.getFullYear(), m: d.getMonth() }; render(); }
+  $('pmPrev').addEventListener('click', () => shift(-1));
+  $('pmNext').addEventListener('click', () => shift(1));
+  $('pmThisMonth').addEventListener('click', () => { view = { y: today.getFullYear(), m: today.getMonth() }; render(); });
+  $('pmTabMonth').addEventListener('click', () => { mode = 'month'; store.set('pm-mode', mode); render(); });
+  $('pmTabList').addEventListener('click', () => { mode = 'list'; store.set('pm-mode', mode); render(); });
+  $('pmQ').addEventListener('input', () => render());
+  $('pmHidePast').addEventListener('change', () => render());
+  $('pmReload').addEventListener('click', () => load());
+
+  function renderFilters(list) {
+    const box = $('pmFilters'); box.textContent = '';
+    for (const t of TYPES) {
+      const n = list.filter((x) => (x.type || '기타') === t.v).length;
+      const b = el('button', 'pm-fchip'); b.type = 'button';
+      b.setAttribute('aria-pressed', typeFilter.has(t.v) ? 'true' : 'false');
+      const d = el('span', 'pm-dot'); d.style.background = t.color;
+      b.append(d, document.createTextNode(`${t.v} ${n}`));
+      b.addEventListener('click', () => { typeFilter.has(t.v) ? typeFilter.delete(t.v) : typeFilter.add(t.v); render(); });
+      box.append(b);
+    }
+  }
+  function needsSetup(it) {
+    if (it.confirm !== '확정' || (it.setting && it.setting !== '미세팅') || !it.start) return false;
+    const days = (parse(it.start) - parse(todayIso)) / 864e5;
+    return days <= 7 && (it.end || it.start) >= todayIso;
+  }
+  function chipsFor(it, opts = {}) {
+    const wrap = el('div', 'pm-chips');
+    if (it.confirm) wrap.append(el('span', 'pm-chip ' + ((CONFIRMS.find((c) => c.v === it.confirm) || {}).cls || 'pm-none'), it.confirm));
+    const ended = it.start && (it.end || it.start) < todayIso;
+    const setting = it.setting || '미세팅';
+    if (!(ended && setting === '미세팅')) wrap.append(el('span', 'pm-chip ' + ((SETTINGS.find((c) => c.v === setting) || {}).cls || 'pm-none'), setting === '미세팅' ? '앱 미세팅' : '앱 ' + setting));
+    if (it.pk && !opts.noPk) wrap.append(el('span', 'pm-chip pm-pkc', 'PK ' + it.pk));
+    if (needsSetup(it)) wrap.append(el('span', 'pm-chip pm-bad', '세팅 필요'));
+    if (!opts.noViral) for (const v of it.viral || []) wrap.append(el('span', 'pm-chip pm-viralc', v));
+    return wrap;
+  }
+  function addStat(label, v, cls) { const s = el('span', cls); s.append(document.createTextNode(label + ' '), el('b', null, String(v))); $('pmStats').append(s); }
+  function emptyMsg(title, sub) { const e = el('div', 'pm-empty'); e.append(el('strong', null, title), document.createTextNode(sub)); return e; }
+  function fillFacList() {
+    const dl = $('pmFacList'); dl.textContent = '';
+    [...new Set(items.map((x) => x.facility))].sort((a, b) => a.localeCompare(b, 'ko')).forEach((f) => { const o = document.createElement('option'); o.value = f; dl.append(o); });
+  }
+
+  // ---------- 그리기 ----------
+  function render() {
+    const y = view.y, m = view.m;
+    $('pmMonthLabel').textContent = `${y}년 ${m + 1}월`;
+    $('pmTabMonth').setAttribute('aria-selected', mode === 'month' ? 'true' : 'false');
+    $('pmTabList').setAttribute('aria-selected', mode === 'list' ? 'true' : 'false');
+    $('pmMonthNav').hidden = mode === 'list';
+    $('pmListTools').hidden = mode !== 'list';
+    $('pmGrid').classList.toggle('as-list', mode === 'list');
+    if (!loaded) return;
+    const gi = $('pmGrid'); gi.textContent = ''; $('pmUndated').textContent = ''; $('pmStats').textContent = '';
+    if (loadError) {
+      renderFilters([]);
+      gi.append(emptyMsg('프로모션을 불러오지 못했어요', loadError));
+      return;
+    }
+    fillFacList();
+    if (mode === 'list') return renderList();
+
+    const n = new Date(y, m + 1, 0).getDate();
+    const mStart = `${y}-${pad(m + 1)}-01`, mEnd = `${y}-${pad(m + 1)}-${pad(n)}`;
+    const monthItems = items.filter((x) => x.start && x.start <= mEnd && (x.end ? x.end >= mStart : x.start >= mStart));
+    renderFilters(monthItems);
+    const shown = monthItems.filter((x) => !typeFilter.size || typeFilter.has(x.type || '기타'))
+      .sort((a, b) => a.start.localeCompare(b.start) || (a.end || a.start).localeCompare(b.end || b.start) || a.facility.localeCompare(b.facility, 'ko'));
+    addStat('이번 달', monthItems.length);
+    addStat('확정', monthItems.filter((x) => x.confirm === '확정').length);
+    addStat('바이럴 요청', monthItems.filter((x) => (x.viral || []).some((v) => v !== '공구')).length);
+    const ns = items.filter(needsSetup).length; if (ns) addStat('세팅 필요', ns, 'alert');
+
+    const dayCells = (cls) => {
+      const box = el('div', cls);
+      for (let d = 1; d <= n; d++) {
+        const dt = new Date(y, m, d); const wd = dt.getDay();
+        box.append(el('div', (wd === 0 || wd === 6 ? 'we ' : '') + (iso(dt) === todayIso ? 'td' : ''), cls === 'pm-days' ? String(d) : null));
+      }
+      return box;
+    };
+    const head = el('div', 'pm-row pm-head-row');
+    const hl = el('div', 'pm-lane'); hl.style.setProperty('--n', n); hl.append(dayCells('pm-days'));
+    head.append(el('div', 'pm-info', '시설 · 상품'), hl); gi.append(head);
+    if (!shown.length) gi.append(emptyMsg(items.length ? `${m + 1}월에 등록된 프로모션이 없어요` : '아직 등록된 프로모션이 없어요', typeFilter.size ? '구분 필터를 풀거나 다른 달을 확인해보세요.' : '오른쪽에서 일정과 시설명을 넣으면 여기에 표시돼요.'));
+    for (const it of shown) {
+      const row = el('div', 'pm-row item' + (editing === it.id ? ' selected' : ''));
+      row.tabIndex = 0; row.setAttribute('role', 'button'); row.setAttribute('aria-label', `${it.facility} 수정`);
+      const info = el('div', 'pm-info'); const fac = el('div', 'pm-fac');
+      const d = el('span', 'pm-dot'); d.style.background = typeOf(it.type).color;
+      fac.append(d, el('span', null, it.facility)); info.append(fac);
+      const sub = [it.type, it.product].filter(Boolean).join(' · ');
+      if (sub) { const p = el('div', 'pm-prod', sub); p.title = sub; info.append(p); }
+      info.append(chipsFor(it));
+      const lane = el('div', 'pm-lane'); lane.style.setProperty('--n', n);
+      const bars = el('div', 'pm-bars');
+      const s = it.start < mStart ? 1 : parse(it.start).getDate();
+      const e2 = !it.end || it.end > mEnd ? n : parse(it.end).getDate();
+      const bar = el('div', 'pm-bar' + (!it.end || it.end > mEnd ? ' open' : '') + (it.start < mStart ? ' cont-l' : '') + (it.confirm && it.confirm !== '확정' ? ' tentative' : ''));
+      bar.style.gridColumn = `${s} / ${e2 + 1}`; bar.style.background = typeOf(it.type).color;
+      const label = `${md(it.start)}${it.end ? '–' + md(it.end) : '~'}${it.scheduleNote ? ' · ' + it.scheduleNote : ''}`;
+      bar.textContent = label; bar.title = `${it.facility} ${label}`;
+      bars.append(bar); lane.append(dayCells('pm-cells'), bars);
+      row.append(info, lane);
+      row.addEventListener('click', () => fillForm(it));
+      row.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); fillForm(it); } });
+      gi.append(row);
+    }
+    const und = items.filter((x) => !x.start && (!typeFilter.size || typeFilter.has(x.type || '기타')));
+    if (und.length) {
+      const t = el('div', 'pm-sec'); t.append(el('span', null, `날짜 미정 · ${und.length}건`), el('span', null, '일정이 정해지면 날짜를 넣어주세요'));
+      const g = el('div', 'pm-undated');
+      for (const it of und) {
+        const c = el('button', 'pm-ucard'); c.type = 'button';
+        const fac = el('div', 'pm-fac'); const d = el('span', 'pm-dot'); d.style.background = typeOf(it.type).color;
+        fac.append(d, el('span', null, it.facility));
+        c.append(fac, el('div', 'pm-when', it.scheduleNote || '일정 미정'));
+        if (it.product) c.append(el('div', 'pm-prod', it.product));
+        c.append(chipsFor(it));
+        c.addEventListener('click', () => fillForm(it));
+        g.append(c);
+      }
+      $('pmUndated').append(t, g);
+    }
+  }
+
+  function renderList() {
+    const q = $('pmQ').value.trim().toLowerCase();
+    const hidePast = $('pmHidePast').checked;
+    const base = items.filter((x) => {
+      if (hidePast && x.start && (x.end || x.start) < todayIso) return false;
+      if (q && ![x.facility, x.product, x.pk, x.memo, x.scheduleNote].some((v) => (v || '').toLowerCase().includes(q))) return false;
+      return true;
+    });
+    renderFilters(base);
+    const shown = base.filter((x) => !typeFilter.size || typeFilter.has(x.type || '기타'))
+      .sort((a, b) => (a.start ? 0 : 1) - (b.start ? 0 : 1) || (a.start || '').localeCompare(b.start || '') || a.facility.localeCompare(b.facility, 'ko'));
+    addStat('목록', shown.length);
+    addStat('진행·예정', shown.filter((x) => x.start && (x.end || x.start) >= todayIso).length);
+    addStat('PK 미입력', shown.filter((x) => x.confirm === '확정' && !x.pk && x.start && (x.end || x.start) >= todayIso).length);
+    const ns = items.filter(needsSetup).length; if (ns) addStat('세팅 필요', ns, 'alert');
+    const gi = $('pmGrid');
+    if (!shown.length) { gi.append(emptyMsg(items.length ? '조건에 맞는 프로모션이 없어요' : '아직 등록된 프로모션이 없어요', items.length ? '검색어나 필터를 바꿔보세요.' : '오른쪽에서 일정과 시설명을 넣으면 여기에 표시돼요.')); return; }
+    const t = el('table', 'pm-table'); const thead = el('thead'); const hr = el('tr');
+    ['일정', '시설명', '종류', '상품안 / 상품명', '확정·세팅', 'PK번호', '바이럴 요청'].forEach((h) => hr.append(el('th', null, h)));
+    thead.append(hr); t.append(thead);
+    const tb = el('tbody'); let last = null;
+    for (const it of shown) {
+      const mk = it.start ? it.start.slice(0, 7) : 'none';
+      if (mk !== last) {
+        last = mk;
+        const sep = el('tr', 'pm-msep'); const td = el('td'); td.colSpan = 7;
+        td.textContent = it.start ? `${Number(mk.slice(0, 4))}년 ${Number(mk.slice(5))}월` : '날짜 미정';
+        sep.append(td); tb.append(sep);
+      }
+      const past = it.start && (it.end || it.start) < todayIso;
+      const tr = el('tr', (past ? 'past' : '') + (editing === it.id ? ' selected' : ''));
+      tr.tabIndex = 0; tr.setAttribute('aria-label', `${it.facility} 수정`);
+      const tdWhen = el('td', 'pm-when', it.start ? `${md(it.start)}${it.end ? '–' + md(it.end) : '~'}` : (it.scheduleNote || '미정'));
+      if (it.start && it.scheduleNote) tdWhen.append(el('div', 'pm-prod', it.scheduleNote));
+      const tdFac = el('td'); const fc = el('div', 'pm-fac'); const d = el('span', 'pm-dot'); d.style.background = typeOf(it.type).color;
+      fc.append(d, el('span', null, it.facility)); tdFac.append(fc);
+      if (it.memo) tdFac.append(el('div', 'pm-prod', it.memo));
+      const tdState = el('td'); tdState.append(chipsFor(it, { noPk: true, noViral: true }));
+      const tdV = el('td'); const vc = el('div', 'pm-chips');
+      for (const v of it.viral || []) vc.append(el('span', 'pm-chip pm-viralc', v));
+      tdV.append(vc); if (it.viralNote) tdV.append(el('div', 'pm-prod', it.viralNote));
+      tr.append(tdWhen, tdFac, el('td', null, it.type || ''), el('td', 'pm-prodc', it.product || ''), tdState, el('td', 'pm-pk', it.pk || '—'), tdV);
+      tr.addEventListener('click', () => fillForm(it));
+      tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); fillForm(it); } });
+      tb.append(tr);
+    }
+    t.append(tb); gi.append(t);
+  }
+
+  resetForm();
+  // 탭을 처음 열 때 불러온다
+  document.getElementById('tabs').addEventListener('click', (e) => {
+    const t = e.target.closest('.tab');
+    if (t && t.dataset.tab === 'promo' && !loaded) load();
+  });
+})();
 </script>
 </body>
 </html>
