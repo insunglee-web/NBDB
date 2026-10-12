@@ -42,6 +42,9 @@
   ];
   const iconOf = (s, d = '✨') => (ICON.find(([re]) => re.test(s)) || [null, d])[1];
 
+  // 놀발 CDN은 CORS 허용 → 그대로, 나머지(공급사 이미지 서버 등)는 price-scraper 중계로
+  const viaProxy = (u) => (!u || /^data:/.test(u) || /^https:\/\/cdn\.nolbal\.com\//.test(u) ? u : `${API}/img?url=${encodeURIComponent(u)}`);
+
   async function getJSON(url) {
     const r = await fetch(url);
     return r.json();
@@ -278,12 +281,12 @@
 
   function render(el, m) {
     const pct = m.listPrice ? Math.round((1 - m.price / m.listPrice) * 100) : null;
-    const imgAt = (i) => (m.images.length ? m.images[i % m.images.length] : m.hero);
+    const imgAt = (i) => viaProxy(m.images.length ? m.images[i % m.images.length] : m.hero);
     const stars = (r) => '★★★★★'.slice(0, Math.round(r || 0)) + '☆☆☆☆☆'.slice(0, 5 - Math.round(r || 0));
     const h = [];
     h.push(`<div class="sg-cv">`);
     // HERO — 위 350px(접힌 화면)에 배지·마감·훅 2줄·숙소명
-    h.push(`<section class="sg-hero">${m.hero ? `<img src="${esc(m.hero)}" crossorigin="anonymous" alt="">` : ''}
+    h.push(`<section class="sg-hero">${m.hero ? `<img src="${esc(viaProxy(m.hero))}" crossorigin="anonymous" alt="">` : ''}
       <div class="sg-hero-in">
         <div class="sg-top"><span class="sg-badge">${esc(m.badge)}</span>${m.due ? `<span class="sg-due">⏰ ${esc(m.due)}</span>` : ''}</div>
         <p class="sg-h1 sg-fit">${mark(m.hook1)}</p>
@@ -305,7 +308,7 @@
     if (m.points.length) {
       h.push(`<section class="sg-sec"><div class="sg-sec-h"><small>WHY HERE</small><h3>${esc(m.name)},<br>여기라서 좋은 이유</h3></div>`);
       m.points.forEach((p, i) => {
-        const img = p.image || imgAt(i);
+        const img = p.image && p.image !== 'none' ? viaProxy(p.image) : p.image || imgAt(i);
         h.push(`<div class="sg-pt${p.star ? ' star' : ''}">${p.star ? '<span class="sg-pick">놀발 PICK</span>' : ''}
           <div class="sg-pt-head"><span class="sg-pt-no">${String(i + 1).padStart(2, '0')}</span>
           <div><p class="sg-pt-t">${esc(p.icon ? p.icon + ' ' : '')}${mark(p.title)}</p>${p.desc ? `<p class="sg-pt-d">${mark(p.desc)}</p>` : ''}</div></div>
@@ -364,12 +367,38 @@
     });
   }
 
-  // 이미지가 다 로드될 때까지 (폰트 포함)
+  // 이미지가 다 로드될 때까지 (폰트 포함).
+  //  - 그래도 못 읽은 이미지는 지운다(저장이 통째로 실패하지 않게) → 반환값 failed 에 주소
+  //  - 큰 원본은 폭 1000px JPEG 로 줄여 넣는다(저장 파일·변환 메모리 절약)
   async function ready(el) {
     const imgs = [...el.querySelectorAll('img')];
-    await Promise.all(imgs.map((i) => (i.complete ? null : new Promise((r) => { i.onload = i.onerror = r; }))));
+    await Promise.all(
+      imgs.map((i) => (i.complete ? null : new Promise((r) => { i.addEventListener('load', r, { once: true }); i.addEventListener('error', r, { once: true }); })))
+    );
+    const failed = [];
+    for (const i of imgs) {
+      if (!i.naturalWidth) {
+        failed.push(i.src);
+        i.remove();
+        continue;
+      }
+      if (/^data:/.test(i.src) || i.naturalWidth <= 1000) continue;
+      try {
+        const w = 1000;
+        const h = Math.round((i.naturalHeight * w) / i.naturalWidth);
+        const c = document.createElement('canvas');
+        c.width = w;
+        c.height = h;
+        c.getContext('2d').drawImage(i, 0, 0, w, h);
+        const url = c.toDataURL('image/jpeg', 0.9);
+        await new Promise((r) => { i.addEventListener('load', r, { once: true }); i.addEventListener('error', r, { once: true }); i.src = url; });
+      } catch (_) {
+        /* 줄이기 실패하면 원본 그대로 */
+      }
+    }
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     fit(el);
+    return { failed };
   }
 
   // "제목 | 설명" 줄 → 강조 포인트

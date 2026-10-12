@@ -3805,7 +3805,10 @@ loadData();
       document.body.append(a); a.click(); a.remove();
       msg(m, `저장했어요 (1000×${node.offsetHeight}px). 놀발 어드민 숙소 상세의 특가 이미지(deal_images)에 올리면 객실 목록 위에 접힌 채로 보여요.`);
     } catch (e) {
-      msg(m, '저장 실패: ' + (e.message || e), true);
+      const why = e && e.message ? e.message
+        : e && e.target && e.target.src ? '이미지를 읽지 못했어요 (' + String(e.target.src).slice(0, 80) + '…)'
+        : '이미지 변환 중 오류 (' + String(e && e.type || e) + ')';
+      msg(m, '저장 실패: ' + why + ' — PK와 함께 Claude에게 알려주세요.', true);
     }
   });
 
