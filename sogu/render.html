@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1000">
+<title>특가 소구 이미지 렌더</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="sogu.css">
+<style>html,body{margin:0;background:#fff;} #out{width:1000px;}</style>
+</head>
+<body>
+<!-- sogu/make.mjs 가 ?pk=… 로 열고, window.__OVER__ (사용자 소구포인트/문구)를 주입한 뒤 #out 을 캡처한다. -->
+<div id="out"></div>
+<script src="sogu.js"></script>
+<script>
+(async () => {
+  const q = new URLSearchParams(location.search);
+  try {
+    const data = window.__DATA__ || (await Sogu.load(q.get('pk')));
+    const model = Sogu.build(data, window.__OVER__ || {});
+    window.__MODEL__ = model;
+    const el = document.getElementById('out');
+    Sogu.render(el, model);
+    await Sogu.ready(el);
+    window.__DONE__ = { ok: true, name: model.name, height: el.firstElementChild.offsetHeight };
+  } catch (e) {
+    window.__DONE__ = { ok: false, error: String(e.message || e) };
+  }
+})();
+</script>
+</body>
+</html>

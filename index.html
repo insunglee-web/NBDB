@@ -6,6 +6,9 @@
 <title>놀이의발견 숙박사업실 KPI 대시보드</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="sogu/sogu.css">
+<script src="sogu/sogu.js"></script>
 <style>
 :root{
   --bg:#0A0F1A;
@@ -512,6 +515,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
     <div class="tab" data-tab="lowest">최저가상품</div>
     <div class="tab" data-tab="yearprice">연도별 시설금액</div>
     <div class="tab" data-tab="promo">프로모션 관리</div>
+    <div class="tab" data-tab="sogu">특가 소구 이미지</div>
   </div>
 
   <div class="wrap">
@@ -903,6 +907,105 @@ tr:hover td{background:rgba(47,211,196,0.04);}
       </div>
 
       <div id="ypResult" style="margin-top:14px;"></div>
+    </div>
+
+    <!-- 특가 소구 이미지 (엔진: sogu/sogu.js, 템플릿: sogu/sogu.css, 데이터: price-scraper /api/stay-detail) -->
+    <div class="section" id="sec-sogu">
+      <div class="section-title"><span class="num">14</span>특가 소구 이미지 (놀발 숙소 상세 · 객실 위 접힌 이미지)</div>
+      <style>
+        #sec-sogu [hidden]{display:none !important;}
+        .su-app{display:grid; grid-template-columns:400px minmax(0,1fr); gap:16px; align-items:start;}
+        @media (max-width:1000px){.su-app{grid-template-columns:minmax(0,1fr);}}
+        .su-panel{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; min-width:0;}
+        .su-panel h4{font-size:12.5px; color:var(--sub); font-weight:600; margin:16px 0 6px;}
+        .su-panel h4:first-child{margin-top:0;}
+        .su-row{display:flex; gap:8px; align-items:center;}
+        #sec-sogu input[type=text],#sec-sogu textarea{width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+          border-radius:7px; padding:8px 10px; font-size:13px; font-family:var(--body);}
+        #sec-sogu textarea{resize:vertical; min-height:84px; line-height:1.5;}
+        #sec-sogu input:focus,#sec-sogu textarea:focus{outline:none; border-color:var(--teal);}
+        #sec-sogu :focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+        .su-pk{font-family:var(--mono); font-size:15px !important;}
+        .su-hint{font-size:11.5px; color:var(--sub); line-height:1.5; margin-top:5px;}
+        .su-msg{font-size:12.5px; margin-top:8px; line-height:1.5;}
+        .su-msg.err{color:var(--coral);}
+        .su-msg b{color:var(--teal);}
+        .su-btn-main{background:var(--teal); color:#0A0F1A; border-color:var(--teal); font-weight:600; white-space:nowrap; flex:none;}
+        .su-auto label{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:6px 0; border-bottom:1px dashed var(--line); cursor:pointer;}
+        .su-auto label span{flex:1; line-height:1.45;}
+        .su-auto select{background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:5px; font-size:11.5px; padding:2px 4px;}
+        .su-thumbs{display:grid; grid-template-columns:repeat(6,1fr); gap:6px;}
+        .su-thumbs button{position:relative; padding:0; border:2px solid transparent; border-radius:6px; overflow:hidden; aspect-ratio:1; cursor:pointer; background:var(--panel-2);}
+        .su-thumbs button img{width:100%; height:100%; object-fit:cover; display:block;}
+        .su-thumbs button i{position:absolute; left:2px; top:2px; font-style:normal; font-size:10px; background:rgba(0,0,0,.65); color:#fff; padding:0 4px; border-radius:3px; font-family:var(--mono);}
+        .su-thumbs button[aria-pressed=true]{border-color:var(--teal);}
+        .su-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;}
+        .su-stage{display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;}
+        .su-col h5{font-size:12px; color:var(--sub); font-weight:600; margin-bottom:8px;}
+        .su-phone{width:375px; background:#fff; border-radius:14px; overflow:hidden; border:1px solid var(--line); color:#14161F;}
+        .su-phone .bar{padding:10px 14px; font-size:12px; font-weight:700; border-bottom:1px solid #eee;}
+        .su-fold{position:relative; height:240px; overflow:hidden;}
+        .su-fold::after{content:''; position:absolute; left:0; right:0; bottom:0; height:64px; background:linear-gradient(transparent,#fff);}
+        .su-fold .su-scale{transform-origin:0 0;}
+        .su-more{margin:12px 20px 14px; border:1px solid #FF2D55; color:#FF2D55; border-radius:6px; text-align:center; font-size:13px; font-weight:700; padding:9px 0;}
+        .su-rooms{padding:0 14px 14px; font-size:11.5px; color:#999;}
+        .su-full{width:500px; max-height:1400px; overflow:auto; border-radius:10px; border:1px solid var(--line); background:#fff;}
+        .su-full .su-scale{transform:scale(.5); transform-origin:0 0;}
+        .su-empty{padding:60px 20px; text-align:center; color:var(--sub); font-size:13px;}
+        #suRender{position:fixed; left:-12000px; top:0; width:1000px; pointer-events:none;}
+      </style>
+      <div class="su-app">
+        <form class="su-panel" id="suForm" autocomplete="off" onsubmit="return false">
+          <h4>① 숙소 PK 번호</h4>
+          <div class="su-row">
+            <input type="text" id="suPk" class="su-pk" inputmode="numeric" placeholder="예: 26711" aria-label="숙소 PK 번호">
+            <button class="btn su-btn-main" id="suLoad" type="button">불러오기</button>
+          </div>
+          <p class="su-hint">nolbal.com/stay/detail/<b>PK</b> 의 번호. 사진·시설·후기·객실 최저가(앞으로 92일)를 가져오고, 프로모션 관리에 같은 PK 일정이 있으면 판매 마감을 넣어요.</p>
+          <p class="su-msg" id="suMsg" role="status"></p>
+
+          <div id="suFields" hidden>
+            <h4>② 꼭 넣을 소구포인트 (놀발 PICK)</h4>
+            <textarea id="suStars" placeholder="한 줄에 하나 · 제목 | 설명&#10;예) 키즈 패키지 단독 구성 | 조식 3인 + 키즈월드 입장권 포함&#10;예) 12월까지 **주말도** 같은 가격 | 토요일 투숙도 특가 적용"></textarea>
+            <p class="su-hint">맨 앞에 강조 카드로 들어가고, 첫 줄은 첫 화면 훅에도 쓰여요. <b>**글자**</b>는 노란 강조.</p>
+
+            <h4>③ 첫 화면 훅 (접혀도 보이는 부분)</h4>
+            <input type="text" id="suHook1" placeholder="1줄 (작게) — 비우면 자동">
+            <input type="text" id="suHook2" placeholder="2줄 (크게) — 비우면 자동" style="margin-top:6px">
+            <div class="su-row" style="margin-top:6px">
+              <input type="text" id="suDue" placeholder="마감 배지 예: 10.18(일)까지 특가">
+              <input type="text" id="suBadge" placeholder="놀발 단독 특가">
+            </div>
+            <input type="text" id="suChips" placeholder="사진 위 칩 3개 (쉼표로) — 비우면 소구포인트 앞 3개" style="margin-top:6px">
+
+            <h4>④ 자동 소구포인트 (체크 해제하면 빠짐 · 사진 번호 지정)</h4>
+            <div class="su-auto" id="suAuto"></div>
+
+            <h4>⑤ 대표 사진 (첫 화면 배경)</h4>
+            <div class="su-thumbs" id="suThumbs"></div>
+
+            <h4>⑥ 가격</h4>
+            <div class="su-row">
+              <input type="text" id="suList" placeholder="정상가 (선택, 넣으면 할인율 표시)" inputmode="numeric">
+              <input type="text" id="suPriceText" placeholder="가격 문구 직접 (선택)">
+            </div>
+            <input type="text" id="suCta" placeholder="맨 아래 문구 — 기본: 아래에서 객실을 골라보세요" style="margin-top:6px">
+
+            <div class="su-actions">
+              <button class="btn su-btn-main" id="suDown" type="button">JPG 다운로드</button>
+              <button class="btn" id="suCopy" type="button">Claude에게 보낼 설정 복사</button>
+            </div>
+            <p class="su-msg" id="suMsg2" role="status"></p>
+          </div>
+        </form>
+
+        <div class="su-panel">
+          <div class="su-stage" id="suStage">
+            <div class="su-empty" style="width:100%">PK 번호를 넣고 불러오면 미리보기가 나와요.</div>
+          </div>
+        </div>
+      </div>
+      <div id="suRender" aria-hidden="true"></div>
     </div>
 
     <!-- PROMOTIONS -->
@@ -3554,6 +3657,164 @@ loadData();
   document.getElementById('tabs').addEventListener('click', (e) => {
     const t = e.target.closest('.tab');
     if (t && t.dataset.tab === 'promo' && !loaded) load();
+  });
+})();
+</script>
+<script>
+// ---------------- 특가 소구 이미지 (엔진: sogu/sogu.js) ----------------
+(function(){
+  const $ = (id) => document.getElementById(id);
+  document.body.append($('suRender')); // 캡처용 원본(1000px)은 탭이 숨겨져도 크기가 잡히도록 body 바로 아래에
+  let data = null;      // Sogu.load 결과
+  let model = null;     // 마지막으로 그린 모델
+  let heroIndex = 0;
+  const pointImages = {}; // 자동 포인트 key → 사진 번호
+  const hidden = new Set();
+
+  function msg(el, text, err){ el.textContent = ''; el.className = 'su-msg' + (err ? ' err' : ''); el.innerHTML = text; }
+
+  function over(){
+    const v = (id) => $(id).value.trim();
+    const chips = v('suChips') ? v('suChips').split(',').map(s => s.trim()).filter(Boolean) : [];
+    const o = {
+      stars: Sogu.parseStars($('suStars').value),
+      hide: [...hidden],
+      pointImages: { ...pointImages },
+      heroIndex,
+    };
+    if (v('suHook1')) o.hook1 = v('suHook1');
+    if (v('suHook2')) o.hook2 = v('suHook2');
+    if (v('suDue')) o.due = v('suDue');
+    if (v('suBadge')) o.badge = v('suBadge');
+    if (chips.length) o.chips = chips;
+    if (v('suList')) o.listPrice = v('suList');
+    if (v('suPriceText')) o.priceText = v('suPriceText');
+    if (v('suCta')) o.cta = v('suCta');
+    return o;
+  }
+
+  function imgOptions(sel){
+    const n = (data.detail.images || []).length;
+    let h = '<option value="">사진 자동</option><option value="none">사진 없음</option>';
+    for (let i = 0; i < n; i++) h += `<option value="${i}"${String(sel) === String(i) ? ' selected' : ''}>사진 ${i}</option>`;
+    return h;
+  }
+
+  function fillSide(){
+    // 자동 소구포인트 체크리스트
+    const box = $('suAuto'); box.innerHTML = '';
+    const auto = model.autoPoints;
+    if (!auto.length) box.innerHTML = '<p class="su-hint">데이터에서 뽑을 포인트가 없어요. ②에 직접 넣어주세요.</p>';
+    for (const p of auto) {
+      const lb = document.createElement('label');
+      lb.innerHTML = `<input type="checkbox" ${hidden.has(p.key) ? '' : 'checked'}><span>${p.icon} ${p.title.replace(/</g,'&lt;')}</span><select aria-label="사진 선택">${imgOptions(pointImages[p.key])}</select>`;
+      lb.querySelector('input').addEventListener('change', (e) => { e.target.checked ? hidden.delete(p.key) : hidden.add(p.key); draw(); });
+      const sel = lb.querySelector('select');
+      sel.addEventListener('change', () => { if (sel.value === '') delete pointImages[p.key]; else pointImages[p.key] = sel.value; draw(); });
+      box.append(lb);
+    }
+    // 대표 사진
+    const th = $('suThumbs'); th.innerHTML = '';
+    (data.detail.images || []).forEach((src, i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.setAttribute('aria-pressed', String(i === heroIndex)); b.setAttribute('aria-label', '대표 사진 ' + i);
+      b.innerHTML = `<img src="${src}" alt="" loading="lazy"><i>${i}</i>`;
+      b.addEventListener('click', () => { heroIndex = i; th.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === i))); draw(); });
+      th.append(b);
+    });
+  }
+
+  let drawSeq = 0;
+  async function draw(){
+    if (!data) return;
+    const seq = ++drawSeq;
+    model = Sogu.build(data, over());
+    const r = $('suRender');
+    Sogu.render(r, model);
+    await Sogu.ready(r);
+    if (seq !== drawSeq) return;
+    const cv = r.firstElementChild;
+    const H = cv.offsetHeight;
+    const stage = $('suStage'); stage.innerHTML = '';
+    // 1) 놀발 모바일 화면(폭 375) — 240px까지만 보이고 아래 64px 흐림
+    const c1 = document.createElement('div'); c1.className = 'su-col';
+    c1.innerHTML = `<h5>놀발 앱에서 보이는 첫 화면 (폭 375 · 접힌 상태)</h5>
+      <div class="su-phone"><div class="bar">${model.name.replace(/</g,'&lt;')}</div><div class="su-fold"><div class="su-scale" style="transform:scale(.375)"></div></div>
+      <div class="su-more">상세정보 더보기</div><div class="su-rooms">▼ 이 아래에 객실 목록</div></div>
+      <p class="su-hint" style="width:375px">PC(폭 500)에서는 더 적게 보여요: 위쪽 약 35%. 훅·숙소명·마감 배지가 이 안에 들어가게 짜여 있어요.</p>`;
+    c1.querySelector('.su-scale').append(cv.cloneNode(true));
+    // 2) 전체 이미지 (50%)
+    const c2 = document.createElement('div'); c2.className = 'su-col';
+    c2.innerHTML = `<h5>전체 이미지 · 1000×${H}px (50% 크기로 보기)</h5><div class="su-full"><div style="height:${Math.ceil(H/2)}px; width:500px; overflow:hidden"><div class="su-scale"></div></div></div>`;
+    c2.querySelector('.su-scale').append(cv.cloneNode(true));
+    stage.append(c1, c2);
+  }
+
+  let t = null;
+  const later = () => { clearTimeout(t); t = setTimeout(draw, 400); };
+  ['suStars','suHook1','suHook2','suDue','suBadge','suChips','suList','suPriceText','suCta'].forEach(id => $(id).addEventListener('input', later));
+
+  async function load(){
+    const pk = $('suPk').value.trim();
+    const m = $('suMsg');
+    msg(m, '불러오는 중… (놀발 상세 + 객실 요금 92일, 10초 정도)');
+    $('suLoad').disabled = true;
+    try {
+      data = await Sogu.load(pk);
+      heroIndex = 0; hidden.clear(); for (const k in pointImages) delete pointImages[k];
+      $('suDue').value = '';
+      const p = data.promotion;
+      const s = data.sales;
+      msg(m, `<b>${Sogu.build(data, {}).name}</b> · ${data.detail.region || ''}${s && s.minPrice ? ` · 최저 ${Sogu.won(s.minPrice)}원` : ''}${data.adminError ? ' · 객실 요금 못 읽음' : ''}<br>`
+        + (p ? `프로모션 관리: ${p.type || ''} ${p.start}~${p.end} (${p.confirm || '-'}) → 마감 배지 자동` : '프로모션 관리에 이 PK 일정이 없어요 → 마감 배지는 직접 입력'));
+      $('suFields').hidden = false;
+      model = Sogu.build(data, over());
+      fillSide();
+      await draw();
+    } catch (e) {
+      msg(m, String(e.message || e), true);
+    } finally {
+      $('suLoad').disabled = false;
+    }
+  }
+  $('suLoad').addEventListener('click', load);
+  $('suPk').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
+
+  function loadLib(){
+    if (window.htmlToImage) return Promise.resolve();
+    return new Promise((ok, bad) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js';
+      s.onload = ok; s.onerror = () => bad(new Error('이미지 변환 도구를 불러오지 못했어요.'));
+      document.head.append(s);
+    });
+  }
+
+  $('suDown').addEventListener('click', async () => {
+    const m = $('suMsg2');
+    if (!model) return;
+    msg(m, '이미지 만드는 중…');
+    try {
+      await loadLib();
+      await draw();
+      const node = $('suRender').firstElementChild;
+      const url = await htmlToImage.toJpeg(node, { quality: 0.92, pixelRatio: 1, backgroundColor: '#ffffff', width: 1000, height: node.offsetHeight });
+      const day = new Date(Date.now() + 9*3600e3).toISOString().slice(0,10).replace(/-/g,'');
+      const a = document.createElement('a');
+      a.href = url; a.download = `${model.pk}_${model.name.replace(/[\\/:*?"<>|\s]+/g,'_')}_${day}.jpg`;
+      document.body.append(a); a.click(); a.remove();
+      msg(m, `저장했어요 (1000×${node.offsetHeight}px). 놀발 어드민 숙소 상세의 특가 이미지(deal_images)에 올리면 객실 목록 위에 접힌 채로 보여요.`);
+    } catch (e) {
+      msg(m, '저장 실패: ' + (e.message || e), true);
+    }
+  });
+
+  $('suCopy').addEventListener('click', async () => {
+    if (!model) return;
+    const o = over();
+    const text = `소구 이미지 만들어줘\nPK ${model.pk} (${model.name})\n` + JSON.stringify(o, null, 1);
+    try { await navigator.clipboard.writeText(text); msg($('suMsg2'), '복사했어요. Claude 채팅에 붙여넣으면 같은 설정으로 파일을 만들어요.'); }
+    catch (e) { msg($('suMsg2'), '복사가 막혔어요. 아래 내용을 직접 복사하세요:<br><code style="white-space:pre-wrap">' + text.replace(/</g,'&lt;') + '</code>'); }
   });
 })();
 </script>

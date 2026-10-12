@@ -1,0 +1,90 @@
+/* 특가 소구 이미지 템플릿 (폭 1000px 원본, 놀발 deal_images 용)
+   놀발 숙소 페이지는 이 이미지를 화면 폭(최대 500px)에 맞춰 보여 주고 높이 240px까지만 노출,
+   아래 64px는 흐리게 처리 → 원본 기준 위쪽 약 350px 안에 훅이 다 들어가야 한다. */
+.sg-cv{
+  --acc:#FF2D55; --acc2:#FF6A3D; --hl:#FFE24A; --ink:#14161F; --sub:#5B6070; --line:#ECEDF2; --soft:#FFF3F5;
+  width:1000px; background:#fff; color:var(--ink);
+  font-family:'Pretendard Variable','Pretendard',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  letter-spacing:-0.025em; word-break:keep-all; overflow:hidden; position:relative;
+}
+.sg-cv *{box-sizing:border-box; margin:0; padding:0;}
+.sg-cv em{font-style:normal; color:var(--acc); font-weight:800;}
+.sg-hero em,.sg-cta em{color:var(--hl);}
+
+/* ── HERO ───────────────────────────────────── */
+.sg-hero{position:relative; height:1060px; overflow:hidden; background:#222;}
+.sg-hero > img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+.sg-hero::before{content:''; position:absolute; inset:0; z-index:1;
+  background:linear-gradient(180deg, rgba(8,10,18,.90) 0%, rgba(8,10,18,.78) 24%, rgba(8,10,18,.20) 48%, rgba(8,10,18,0) 62%, rgba(8,10,18,.55) 86%, rgba(8,10,18,.82) 100%);}
+.sg-hero-in{position:relative; z-index:2; padding:30px 40px 0;}
+.sg-top{display:flex; justify-content:space-between; align-items:center; gap:16px; height:56px;}
+.sg-badge{display:inline-flex; align-items:center; height:52px; padding:0 22px; border-radius:26px;
+  background:linear-gradient(90deg,var(--acc),var(--acc2)); color:#fff; font-size:27px; font-weight:800;}
+.sg-due{display:inline-flex; align-items:center; height:52px; padding:0 22px; border-radius:26px;
+  background:#fff; color:var(--acc); font-size:26px; font-weight:800; white-space:nowrap;}
+.sg-h1{margin-top:22px; color:#fff; font-size:46px; font-weight:700; line-height:1.15; white-space:nowrap;}
+.sg-h2{margin-top:6px; color:#fff; font-size:78px; font-weight:900; line-height:1.12; white-space:nowrap; letter-spacing:-0.045em;}
+.sg-name{display:inline-flex; align-items:center; gap:14px; margin-top:20px; max-width:920px;
+  padding:10px 22px; background:#fff; border-radius:12px; white-space:nowrap; overflow:hidden;}
+.sg-name b{font-size:36px; font-weight:800; color:var(--ink);}
+.sg-name span{font-size:24px; font-weight:600; color:var(--sub);}
+.sg-chips{position:absolute; left:40px; right:40px; bottom:40px; z-index:2; display:flex; gap:16px;}
+.sg-chip{flex:1; min-height:150px; padding:22px 18px; border-radius:22px; background:rgba(255,255,255,.94);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:8px;}
+.sg-chip i{font-style:normal; font-size:44px; line-height:1;}
+.sg-chip b{font-size:28px; font-weight:800; line-height:1.25; color:var(--ink);}
+
+/* ── PRICE ──────────────────────────────────── */
+.sg-price{padding:64px 40px 56px; text-align:center; background:var(--soft);}
+.sg-price .lbl{display:inline-block; padding:8px 20px; border-radius:22px; background:var(--ink); color:#fff; font-size:26px; font-weight:700;}
+.sg-price .row{margin-top:22px; display:flex; justify-content:center; align-items:baseline; gap:18px;}
+.sg-price .old{font-size:34px; color:#9AA0AE; text-decoration:line-through; font-weight:600;}
+.sg-price .pct{font-size:64px; color:var(--acc); font-weight:900;}
+.sg-price .now{font-size:96px; font-weight:900; letter-spacing:-0.05em; color:var(--ink);}
+.sg-price .now small{font-size:44px; font-weight:800;}
+.sg-price .note{margin-top:14px; font-size:24px; color:var(--sub);}
+.sg-price .stay{margin-top:26px; display:inline-flex; gap:12px; flex-wrap:wrap; justify-content:center;}
+.sg-price .stay span{padding:10px 20px; border:2px solid var(--line); border-radius:12px; background:#fff; font-size:25px; font-weight:700;}
+
+/* ── SECTION ────────────────────────────────── */
+.sg-sec{padding:84px 40px 20px;}
+.sg-sec-h{text-align:center; margin-bottom:44px;}
+.sg-sec-h small{display:block; color:var(--acc); font-size:26px; font-weight:800; letter-spacing:.02em;}
+.sg-sec-h h3{margin-top:10px; font-size:52px; font-weight:900; line-height:1.25;}
+.sg-pt{margin-bottom:64px;}
+.sg-pt-head{display:flex; align-items:flex-start; gap:20px; margin-bottom:22px;}
+.sg-pt-no{flex:none; font-size:58px; font-weight:900; color:var(--acc); line-height:1;}
+.sg-pt-t{font-size:42px; font-weight:800; line-height:1.3;}
+.sg-pt-d{margin-top:10px; font-size:28px; color:var(--sub); line-height:1.55; white-space:pre-line;}
+.sg-pt img{display:block; width:100%; height:540px; object-fit:cover; border-radius:28px;}
+.sg-pt.star{padding:36px 36px 40px; border-radius:32px; background:var(--soft); border:4px solid var(--acc); position:relative;}
+.sg-pt.star .sg-pick{position:absolute; top:-22px; left:36px; padding:6px 18px; border-radius:20px; background:var(--acc); color:#fff; font-size:24px; font-weight:800;}
+
+/* ── PACKAGES ───────────────────────────────── */
+.sg-pk{display:flex; flex-direction:column; gap:18px;}
+.sg-pk-i{display:flex; align-items:center; justify-content:space-between; gap:24px; padding:30px 34px; border:3px solid var(--line); border-radius:24px;}
+.sg-pk-i:first-child{border-color:var(--acc);}
+.sg-pk-i small{display:block; color:var(--acc); font-size:22px; font-weight:800;}
+.sg-pk-i b{display:block; margin-top:4px; font-size:32px; font-weight:800; line-height:1.3;}
+.sg-pk-i p{margin-top:6px; font-size:23px; color:var(--sub);}
+.sg-pk-i .pr{flex:none; text-align:right; font-size:44px; font-weight:900;}
+.sg-pk-i .pr small{color:var(--sub); font-size:22px; font-weight:600;}
+
+/* ── INFO / REVIEW ──────────────────────────── */
+.sg-info{padding:34px 36px; border-radius:24px; background:#F6F7FA;}
+.sg-info li{list-style:none; font-size:27px; line-height:1.6; padding-left:36px; position:relative;}
+.sg-info li::before{content:'✓'; position:absolute; left:0; color:var(--acc); font-weight:900;}
+.sg-rv-score{text-align:center; font-size:30px; color:var(--sub); font-weight:700;}
+.sg-rv-score b{display:block; font-size:88px; color:var(--ink); font-weight:900;}
+.sg-rv-score .stars{color:#FFB800; font-size:44px; letter-spacing:4px;}
+.sg-rv-list{margin-top:34px; display:flex; flex-direction:column; gap:18px;}
+.sg-rv{padding:30px 34px; border-radius:24px; background:#F6F7FA; font-size:28px; line-height:1.55;}
+.sg-rv::before{content:'“'; display:block; font-size:60px; line-height:.6; color:var(--acc); font-weight:900;}
+.sg-rv small{display:block; margin-top:10px; font-size:22px; color:#9AA0AE;}
+
+/* ── CTA ────────────────────────────────────── */
+.sg-cta{margin-top:70px; padding:70px 40px 76px; text-align:center; color:#fff; background:linear-gradient(135deg,var(--acc),var(--acc2));}
+.sg-cta h3{font-size:54px; font-weight:900; line-height:1.3;}
+.sg-cta p{margin-top:16px; font-size:30px; font-weight:600; opacity:.95;}
+.sg-cta .arrow{margin-top:20px; font-size:60px;}
+.sg-foot{padding:26px 40px 34px; font-size:20px; line-height:1.6; color:#9AA0AE; background:#fff;}
