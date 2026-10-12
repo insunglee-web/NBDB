@@ -200,10 +200,14 @@
     const hidden = new Set(over.hide || []);
     const autoUse = auto.filter((p) => !hidden.has(p.key));
     const stars = (over.stars || []).filter((s) => s && s.title).map((s, i) => ({ ...s, key: 'star' + i, star: true, icon: s.icon || '🔥' }));
+    // 사용자가 추가한 일반 소구포인트(PICK 강조 없이 자동 포인트 뒤에 붙음)
+    const extras = (over.extras || [])
+      .filter((s) => s && s.title)
+      .map((s, i) => ({ ...s, key: 'extra' + i, icon: s.icon || iconOf(s.title + ' ' + (s.desc || '')), chip: s.chip || s.title }));
     // 포인트별 사진 지정: 강조 포인트의 imageIndex 또는 over.pointImages[key] (사진 번호, 'none'=사진 없음)
     const pim = over.pointImages || {};
     const pick = (i) => (i === 'none' ? 'none' : i != null && i !== '' && (d.images || [])[+i] ? d.images[+i] : null);
-    const points = [...stars, ...autoUse].map((p) => {
+    const points = [...stars, ...autoUse, ...extras].map((p) => {
       const img = pick(p.imageIndex != null ? p.imageIndex : pim[p.key]);
       return img ? { ...p, image: img } : p;
     });
@@ -283,7 +287,7 @@
       hero,
       images: rest,
       chips,
-      points: points.slice(0, over.maxPoints || 6),
+      points: points.slice(0, over.maxPoints || 10),
       autoPoints: auto,
       price: minPrice,
       priceText: over.priceText || '',

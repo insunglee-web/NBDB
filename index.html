@@ -933,7 +933,13 @@ tr:hover td{background:rgba(47,211,196,0.04);}
         .su-btn-main{background:var(--teal); color:#0A0F1A; border-color:var(--teal); font-weight:600; white-space:nowrap; flex:none;}
         .su-auto label{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:6px 0; border-bottom:1px dashed var(--line); cursor:pointer;}
         .su-auto label span{flex:1; line-height:1.45;}
-        .su-auto select{background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:5px; font-size:11.5px; padding:2px 4px;}
+        .su-auto select,#sec-sogu select{background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:5px; font-size:11.5px; padding:2px 4px;}
+        .su-extras .su-ex{display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:6px; padding:8px 0; border-bottom:1px dashed var(--line);}
+        .su-extras .su-ex input[type=text]{font-size:12.5px; padding:6px 8px;}
+        .su-extras .su-ex .su-ex-desc{grid-column:1 / -1;}
+        .su-extras .su-ex button{padding:4px 9px;}
+        .su-add{display:flex; flex-direction:column; gap:6px; margin-top:10px; padding:10px; border:1px dashed var(--line); border-radius:8px;}
+        .su-add .su-row select{flex:1;}
         .su-thumbs{display:grid; grid-template-columns:repeat(6,1fr); gap:6px;}
         .su-thumbs button{position:relative; padding:0; border:2px solid transparent; border-radius:6px; overflow:hidden; aspect-ratio:1; cursor:pointer; background:var(--panel-2);}
         .su-thumbs button img{width:100%; height:100%; object-fit:cover; display:block;}
@@ -980,6 +986,16 @@ tr:hover td{background:rgba(47,211,196,0.04);}
 
             <h4>④ 자동 소구포인트 (체크 해제하면 빠짐 · 사진 번호 지정)</h4>
             <div class="su-auto" id="suAuto"></div>
+            <div class="su-extras" id="suExtras"></div>
+            <div class="su-add">
+              <input type="text" id="suExTitle" placeholder="+ 소구포인트 추가: 제목 (예: 전 객실 **오션뷰**)">
+              <input type="text" id="suExDesc" placeholder="설명 (선택, 줄바꿈은 \n 대신 / 로)">
+              <div class="su-row">
+                <select id="suExImg" aria-label="추가 포인트 사진"></select>
+                <button class="btn" id="suExAdd" type="button">추가</button>
+              </div>
+            </div>
+            <p class="su-hint">추가한 포인트는 자동 포인트 뒤에 일반 카드로 들어가요. 맨 앞 강조 카드로 넣으려면 ②에 쓰세요.</p>
 
             <h4>⑤ 대표 사진 (첫 화면 배경)</h4>
             <div class="su-thumbs" id="suThumbs"></div>
@@ -3670,6 +3686,7 @@ loadData();
   let heroIndex = 0;
   const pointImages = {}; // 자동 포인트 key → 사진 번호
   const hidden = new Set();
+  const extras = [];      // 직접 추가한 일반 소구포인트 [{title, desc, imageIndex}]
 
   function msg(el, text, err){ el.textContent = ''; el.className = 'su-msg' + (err ? ' err' : ''); el.innerHTML = text; }
 
@@ -3678,6 +3695,11 @@ loadData();
     const chips = v('suChips') ? v('suChips').split(',').map(s => s.trim()).filter(Boolean) : [];
     const o = {
       stars: Sogu.parseStars($('suStars').value),
+      extras: extras.filter(x => x.title.trim()).map(x => {
+        const e = { title: x.title.trim(), desc: x.desc.trim().replace(/\s*\/\s*/g, '\n') };
+        if (x.imageIndex !== '') e.imageIndex = x.imageIndex;
+        return e;
+      }),
       hide: [...hidden],
       pointImages: { ...pointImages },
       heroIndex,
@@ -3700,6 +3722,31 @@ loadData();
     return h;
   }
 
+  // 직접 추가한 포인트 목록 (제목·설명 바로 수정, ✕로 삭제)
+  function drawExtras(){
+    const box = $('suExtras'); box.innerHTML = '';
+    extras.forEach((x, i) => {
+      const row = document.createElement('div'); row.className = 'su-ex';
+      row.innerHTML = `<input type="text" aria-label="추가 포인트 ${i+1} 제목"><select aria-label="추가 포인트 ${i+1} 사진">${imgOptions(x.imageIndex)}</select>
+        <button class="btn" type="button" aria-label="추가 포인트 ${i+1} 삭제">✕</button><input type="text" class="su-ex-desc" aria-label="추가 포인트 ${i+1} 설명" placeholder="설명 (선택)">`;
+      const [t, d] = row.querySelectorAll('input');
+      t.value = x.title; d.value = x.desc;
+      t.addEventListener('input', () => { x.title = t.value; later(); });
+      d.addEventListener('input', () => { x.desc = d.value; later(); });
+      row.querySelector('select').addEventListener('change', (e) => { x.imageIndex = e.target.value; draw(); });
+      row.querySelector('button').addEventListener('click', () => { extras.splice(i, 1); drawExtras(); draw(); });
+      box.append(row);
+    });
+  }
+  function addExtra(){
+    const title = $('suExTitle').value.trim();
+    if (!title) { $('suExTitle').focus(); return; }
+    extras.push({ title, desc: $('suExDesc').value, imageIndex: $('suExImg').value });
+    $('suExTitle').value = ''; $('suExDesc').value = ''; $('suExImg').value = '';
+    drawExtras(); draw();
+    $('suExTitle').focus();
+  }
+
   function fillSide(){
     // 자동 소구포인트 체크리스트
     const box = $('suAuto'); box.innerHTML = '';
@@ -3713,6 +3760,8 @@ loadData();
       sel.addEventListener('change', () => { if (sel.value === '') delete pointImages[p.key]; else pointImages[p.key] = sel.value; draw(); });
       box.append(lb);
     }
+    $('suExImg').innerHTML = imgOptions('');
+    drawExtras();
     // 대표 사진
     const th = $('suThumbs'); th.innerHTML = '';
     (data.detail.images || []).forEach((src, i) => {
@@ -3761,7 +3810,7 @@ loadData();
     $('suLoad').disabled = true;
     try {
       data = await Sogu.load(pk);
-      heroIndex = 0; hidden.clear(); for (const k in pointImages) delete pointImages[k];
+      heroIndex = 0; hidden.clear(); for (const k in pointImages) delete pointImages[k]; extras.length = 0;
       $('suDue').value = '';
       const p = data.promotion;
       const s = data.sales;
@@ -3780,6 +3829,8 @@ loadData();
     }
   }
   $('suLoad').addEventListener('click', load);
+  $('suExAdd').addEventListener('click', addExtra);
+  ['suExTitle','suExDesc'].forEach(id => $(id).addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); addExtra(); } }));
   $('suPk').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
 
   function loadLib(){

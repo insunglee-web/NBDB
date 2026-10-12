@@ -2,6 +2,7 @@
 //   node NBDB/sogu/make.mjs <PK> [--over 문구.json] [--out 폴더]
 //   문구.json (모두 선택): { "hook1": "...", "hook2": "... **강조** ...", "due": "10.18(일)까지 특가",
 //     "stars": [{ "title": "강조 포인트", "desc": "설명", "hook": "훅 2줄째에 쓸 짧은 표현" }],
+//     "extras": [{ "title": "일반 카드로 추가할 포인트", "desc": "설명", "imageIndex": 3 }],
 //     "hide": ["rooms"], "chips": ["워터파크", "아이 추가 무료", "평점 4.7"], "heroIndex": 0,
 //     "listPrice": 192000, "cta": "..." }
 //   결과: <폴더>/<PK>_<숙소명>_<날짜>.jpg (업로드용 전체) + _fold.png (놀발 접힌 화면 미리보기) + .json (모델)
