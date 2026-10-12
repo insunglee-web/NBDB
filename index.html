@@ -3117,10 +3117,14 @@ loadData();
     { v: '기획전+공구', color: 'var(--amber)' },
     { v: '브랜드기획전', color: 'var(--violet)' },
     { v: '특가', color: 'var(--coral)' },
+    { v: '공구', color: '#C98A2E' },
+    { v: '번특+공구', color: '#D9645A' },
+    { v: '테마기획전', color: '#6C7BD9' },
+    { v: '숙소파트 일정', color: '#8A94A6' },
     { v: '기타', color: 'var(--teal)' },
   ];
-  const CONFIRMS = [{ v: '확정', cls: 'pm-ok' }, { v: '체크중', cls: 'pm-warn' }, { v: '미정', cls: 'pm-none' }, { v: '일정미뤄짐', cls: 'pm-bad' }];
-  const SETTINGS = [{ v: '미세팅', cls: 'pm-none' }, { v: '세팅중', cls: 'pm-warn' }, { v: '진행중', cls: 'pm-info-c' }, { v: '종료', cls: 'pm-none' }];
+  const CONFIRMS = [{ v: '확정', cls: 'pm-ok' }, { v: '체크중', cls: 'pm-warn' }, { v: '미정', cls: 'pm-none' }, { v: '일정미뤄짐', cls: 'pm-bad' }, { v: '불가', cls: 'pm-bad' }, { v: '취소', cls: 'pm-bad' }];
+  const SETTINGS = [{ v: '미세팅', cls: 'pm-none' }, { v: '세팅요청', cls: 'pm-warn' }, { v: '세팅중', cls: 'pm-warn' }, { v: '세팅완료', cls: 'pm-ok' }, { v: '진행중', cls: 'pm-info-c' }, { v: '종료', cls: 'pm-none' }, { v: '취소', cls: 'pm-bad' }];
   const VIRALS = ['공구', '바이럴진행요청', '사전홍보', '인플루언서', '맘카페', '홈아이콘'];
 
   const $ = (id) => document.getElementById(id);
@@ -3128,7 +3132,7 @@ loadData();
   const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
   const md = (s) => { const d = parse(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
-  const typeOf = (v) => TYPES.find((t) => t.v === v) || TYPES[3];
+  const typeOf = (v) => TYPES.find((t) => t.v === v) || TYPES[TYPES.length - 1];
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 
@@ -3312,7 +3316,7 @@ loadData();
     }
   }
   function needsSetup(it) {
-    if (it.confirm !== '확정' || (it.setting && it.setting !== '미세팅') || !it.start) return false;
+    if (it.confirm !== '확정' || (it.setting && !['미세팅', '세팅요청'].includes(it.setting)) || !it.start) return false;
     const days = (parse(it.start) - parse(todayIso)) / 864e5;
     return days <= 7 && (it.end || it.start) >= todayIso;
   }
