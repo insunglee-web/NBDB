@@ -1007,6 +1007,13 @@ tr:hover td{background:rgba(47,211,196,0.04);}
             </div>
             <input type="text" id="suCta" placeholder="맨 아래 문구 — 기본: 아래에서 객실을 골라보세요" style="margin-top:6px">
 
+            <h4>⑦ 예약 전 확인하세요</h4>
+            <textarea id="suInfos" placeholder="한 줄에 하나 · 비우면 이 칸은 이미지에서 빠져요"></textarea>
+            <div class="su-row" style="justify-content:space-between; margin-top:4px">
+              <p class="su-hint" style="margin:0">처음엔 놀발 어드민 '추가요금 정보'에서 자동으로 채워요.</p>
+              <button class="btn" id="suInfosReset" type="button" style="padding:4px 9px; white-space:nowrap">자동으로 되돌리기</button>
+            </div>
+
             <div class="su-actions">
               <button class="btn su-btn-main" id="suDown" type="button">JPG 다운로드</button>
               <button class="btn" id="suCopy" type="button">Claude에게 보낼 설정 복사</button>
@@ -3712,6 +3719,8 @@ loadData();
     if (v('suList')) o.listPrice = v('suList');
     if (v('suPriceText')) o.priceText = v('suPriceText');
     if (v('suCta')) o.cta = v('suCta');
+    // 예약 전 확인: 손댄 뒤에는 입력한 줄 그대로(빈칸이면 섹션 빠짐)
+    if ($('suInfos').dataset.edited) o.infos = $('suInfos').value.split('\n').map(s => s.replace(/^[-*•✓\s]+/, '').trim()).filter(Boolean);
     return o;
   }
 
@@ -3802,6 +3811,13 @@ loadData();
   let t = null;
   const later = () => { clearTimeout(t); t = setTimeout(draw, 400); };
   ['suStars','suHook1','suHook2','suDue','suBadge','suChips','suList','suPriceText','suCta'].forEach(id => $(id).addEventListener('input', later));
+  $('suInfos').addEventListener('input', () => { $('suInfos').dataset.edited = '1'; later(); });
+  $('suInfosReset').addEventListener('click', () => {
+    if (!data) return;
+    delete $('suInfos').dataset.edited;
+    $('suInfos').value = Sogu.build(data, over()).infos.join('\n');
+    draw();
+  });
 
   async function load(){
     const pk = $('suPk').value.trim();
@@ -3819,7 +3835,9 @@ loadData();
         + (!(s && s.minPrice) ? '<br>⚠ 놀발 객실 요금이 없어요(공급사 연동 상품 등) → 가격은 ⑥ "가격 문구 직접"에 넣어주세요.' : '')
         + (Sogu.build(data, {}).autoPoints.length < 3 ? '<br>⚠ 놀발 데이터에서 뽑을 소구포인트가 적어요 → ②에 강조 포인트를 넣어주세요(첫 화면 훅에도 쓰여요).' : ''));
       $('suFields').hidden = false;
+      delete $('suInfos').dataset.edited;
       model = Sogu.build(data, over());
+      $('suInfos').value = model.infos.join('\n');
       fillSide();
       await draw();
     } catch (e) {
