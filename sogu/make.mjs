@@ -3,6 +3,7 @@
 //   문구.json (모두 선택): { "hook1": "...", "hook2": "... **강조** ...", "due": "10.18(일)까지 특가",
 //     "stars": [{ "title": "강조 포인트", "desc": "설명", "hook": "훅 2줄째에 쓸 짧은 표현" }],
 //     "extras": [{ "title": "일반 카드로 추가할 포인트", "desc": "설명", "imageIndex": 3 }],
+//     "uploads": ["C:/…/내사진.jpg"],  (놀발 사진 뒤 번호로 이어짐 → imageIndex/heroIndex 로 지정)
 //     "hide": ["rooms"], "chips": ["워터파크", "아이 추가 무료", "평점 4.7"], "heroIndex": 0,
 //     "listPrice": 192000, "cta": "..." }
 //   결과: <폴더>/<PK>_<숙소명>_<날짜>.jpg (업로드용 전체) + _fold.png (놀발 접힌 화면 미리보기) + .json (모델)
@@ -27,6 +28,11 @@ if (!pk) {
   process.exit(1);
 }
 const over = opt('--over') ? JSON.parse(fs.readFileSync(opt('--over'), 'utf8')) : {};
+// "uploads": ["C:/…/사진.jpg", …] — 사용자가 보낸 사진 파일. 놀발 사진 뒤에 번호가 이어진다(엔진과 같음).
+if (Array.isArray(over.uploads)) {
+  const mime = (f) => ({ '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif' })[path.extname(f).toLowerCase()] || 'image/jpeg';
+  over.uploads = over.uploads.map((f) => (/^data:/.test(f) ? f : `data:${mime(f)};base64,${fs.readFileSync(f).toString('base64')}`));
+}
 const outDir = opt('--out') || path.join(process.env.USERPROFILE || 'C:/Users/leeinsung', 'sogu-output');
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -59,7 +65,18 @@ try {
     document.body.prepend(wrap);
   });
   await (await page.$('#foldpv')).screenshot({ path: base + '_fold.png' });
-  fs.writeFileSync(base + '.json', JSON.stringify({ over, model }, null, 2));
+  const strip = (u) => (/^data:/.test(u) ? u.slice(0, 40) + '…' : u); // 사진 데이터는 json 에 넣지 않음
+  fs.writeFileSync(
+    base + '.json',
+    JSON.stringify(
+      {
+        over: { ...over, uploads: (over.uploads || []).map(strip) },
+        model: { ...model, hero: strip(model.hero), images: model.images.map(strip), points: model.points.map((p) => ({ ...p, image: p.image && strip(p.image) })) },
+      },
+      null,
+      2
+    )
+  );
   console.log(JSON.stringify({ ok: true, file: base + '.jpg', fold: base + '_fold.png', height: done.height, name: model.name }));
 } finally {
   await browser.close();

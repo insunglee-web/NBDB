@@ -206,7 +206,9 @@
       .map((s, i) => ({ ...s, key: 'extra' + i, icon: s.icon || iconOf(s.title + ' ' + (s.desc || '')), chip: s.chip || s.title }));
     // 포인트별 사진 지정: 강조 포인트의 imageIndex 또는 over.pointImages[key] (사진 번호, 'none'=사진 없음)
     const pim = over.pointImages || {};
-    const pick = (i) => (i === 'none' ? 'none' : i != null && i !== '' && (d.images || [])[+i] ? d.images[+i] : null);
+    // 사진 목록 = 놀발 사진 + 사용자가 올린 사진(over.uploads, data URL) — 번호는 이어서 매김
+    const allImages = [...(d.images || []), ...(over.uploads || [])];
+    const pick = (i) => (i === 'none' ? 'none' : i != null && i !== '' && allImages[+i] ? allImages[+i] : null);
     const points = [...stars, ...autoUse, ...extras].map((p) => {
       const img = pick(p.imageIndex != null ? p.imageIndex : pim[p.key]);
       return img ? { ...p, image: img } : p;
@@ -240,7 +242,7 @@
           ? `투숙 ${md(stayFrom)} ~ ${stayTo && stayTo < sales.to ? md(stayTo) : ''}`.trim()
           : '';
 
-    const images = d.images || [];
+    const images = allImages;
     const heroIdx = Math.min(Math.max(+over.heroIndex || 0, 0), Math.max(images.length - 1, 0));
     const hero = over.heroImage || images[heroIdx] || '';
     const rest = images.filter((_, i) => i !== heroIdx);
@@ -422,15 +424,23 @@
     return { failed };
   }
 
-  // "제목 | 설명" 줄 → 강조 포인트
+  // "제목 | 설명 | 사진번호" 줄 → 강조 포인트 (사진번호는 선택: 숫자 또는 '없음')
   function parseStars(text) {
     return String(text || '')
       .split('\n')
       .map((l) => l.trim())
       .filter(Boolean)
       .map((l) => {
-        const [title, ...rest] = l.split('|');
-        return { title: title.trim(), desc: rest.join('|').trim() };
+        const parts = l.split('|').map((s) => s.trim());
+        const last = parts.length >= 3 ? parts[parts.length - 1] : null;
+        let imageIndex;
+        if (last != null && /^(\d+|없음|none)$/.test(last)) {
+          imageIndex = /^\d+$/.test(last) ? last : 'none';
+          parts.pop();
+        }
+        const s = { title: parts[0], desc: parts.slice(1).join(' | ') };
+        if (imageIndex != null) s.imageIndex = imageIndex;
+        return s;
       });
   }
 
