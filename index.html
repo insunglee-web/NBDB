@@ -379,6 +379,11 @@ tr:hover td{background:rgba(47,211,196,0.04);}
 .pm-table .pm-prodc{max-width:280px; color:var(--sub);}
 .pm-table .pm-pk{font-family:var(--mono); font-size:12px; white-space:nowrap;}
 .pm-table th,.pm-table .pm-typec{white-space:nowrap;}
+.pm-export{background:var(--panel); border:1px solid var(--line); border-radius:12px; margin-bottom:12px;}
+.pm-export summary{cursor:pointer; padding:10px 14px; font-size:12.5px; font-weight:600; color:var(--sub);}
+.pm-export[open] summary{color:var(--text); border-bottom:1px solid var(--line);}
+.pm-export-body{display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; padding:12px 14px; font-size:12.5px;}
+.pm-export-body label{display:inline-flex; align-items:center; gap:6px;}
 .pm-table .pm-prod{white-space:normal; max-width:300px; overflow-wrap:anywhere;}
 .pm-table .pm-gmvc{font-family:var(--mono); font-size:12px; white-space:nowrap; text-align:right;}
 .pm-gmvc small{display:block; color:var(--sub); font-size:11px;}
@@ -921,6 +926,17 @@ tr:hover td{background:rgba(47,211,196,0.04);}
     <!-- PROMOTIONS -->
     <div class="section" id="sec-promo">
       <div class="section-title"><span class="num">13</span>프로모션 관리 (숙박 공구·브랜드기획전·특가)</div>
+      <details class="pm-export" id="pmExport">
+        <summary>엑셀로 내보내기 (기간 지정)</summary>
+        <div class="pm-export-body">
+          <label>시작일 <input type="date" id="pmExFrom"></label>
+          <label>종료일 <input type="date" id="pmExTo"></label>
+          <label class="pm-check"><input type="checkbox" id="pmExConfirmed"> 확정만</label>
+          <label class="pm-check"><input type="checkbox" id="pmExType" checked> 위 구분 필터 적용</label>
+          <button class="btn pm-small" id="pmExBtn" type="button">엑셀 다운로드</button>
+          <span class="pm-hint" id="pmExMsg">기간과 겹치는 프로모션을 모두 담아요. 기간 거래액도 함께 넣어요.</span>
+        </div>
+      </details>
       <div class="pm-app">
         <section class="pm-board" aria-label="프로모션 일정">
           <div class="pm-head">
@@ -3326,6 +3342,52 @@ loadData();
     topSc.hidden = gridWrap.scrollWidth <= gridWrap.clientWidth + 1;
   }
   window.addEventListener('resize', () => syncTopScroll());
+
+  // ---------- 엑셀 내보내기 (기간과 겹치는 프로모션) ----------
+  (function initExport() {
+    const first = new Date(today.getFullYear(), today.getMonth(), 1), last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    $('pmExFrom').value = iso(first); $('pmExTo').value = iso(last);
+  })();
+  let xlsxLoading = null;
+  function loadXlsx() {
+    if (window.XLSX) return Promise.resolve();
+    if (!xlsxLoading) xlsxLoading = new Promise((ok, bad) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = () => ok(); s.onerror = () => { xlsxLoading = null; bad(new Error('엑셀 모듈을 불러오지 못했어요.')); };
+      document.head.append(s);
+    });
+    return xlsxLoading;
+  }
+  $('pmExBtn').addEventListener('click', async () => {
+    const from = $('pmExFrom').value, to = $('pmExTo').value, msg = $('pmExMsg');
+    if (!from || !to || to < from) { msg.textContent = '시작일과 종료일을 확인해주세요.'; return; }
+    if (!loaded) { msg.textContent = '프로모션 목록을 먼저 불러와주세요.'; return; }
+    const rows = items.filter((x) => x.start && x.start <= to && (x.end || x.start) >= from)
+      .filter((x) => !$('pmExConfirmed').checked || x.confirm === '확정')
+      .filter((x) => !$('pmExType').checked || !typeFilter.size || typeFilter.has(x.type || '기타'))
+      .sort((a, b) => a.start.localeCompare(b.start) || a.facility.localeCompare(b.facility, 'ko'));
+    if (!rows.length) { msg.textContent = '기간에 해당하는 프로모션이 없어요.'; return; }
+    msg.textContent = '만드는 중…';
+    try {
+      await loadXlsx();
+      await loadPkNames();
+      const data = rows.map((x) => {
+        const g = gmvFor(x);
+        return {
+          '시작일': x.start, '종료일': x.end || '', '일정 메모': x.scheduleNote || '', '시설명': x.facility, '종류': x.type || '',
+          '상품안 / 상품명': x.product || '', '확정 여부': x.confirm || '', '세팅': x.setting || '미세팅', 'PK번호': x.pk || '',
+          '기간 거래액': g && g.gmv != null ? g.gmv : '', '거래 건수': g && g.gmv != null ? g.n : '',
+          '바이럴 요청': (x.viral || []).join(', '), '바이럴 메모': x.viralNote || '', '메모': x.memo || '', '출처': x.source || '',
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(data);
+      ws['!cols'] = [10, 10, 14, 24, 12, 40, 10, 9, 12, 13, 9, 22, 30, 40, 26].map((w) => ({ wch: w }));
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '프로모션');
+      XLSX.writeFile(wb, `프로모션_${from}_${to}.xlsx`);
+      msg.textContent = `${rows.length}건을 내보냈어요. 기간 거래액은 PK가 있는 건만 채워져요.`;
+    } catch (e) { msg.textContent = e.message; }
+  });
 
   // ---------- 기간 거래액 (판매내역 DERIVED 기준: PK → 놀발 숙소명 → 판매내역 숙소명, 예약 생성일이 프로모션 기간 안, 취소 제외) ----------
   let pkNames = null, pkLoading = false;
