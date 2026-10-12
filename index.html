@@ -3766,7 +3766,9 @@ loadData();
       const p = data.promotion;
       const s = data.sales;
       msg(m, `<b>${Sogu.build(data, {}).name}</b> · ${data.detail.region || ''}${s && s.minPrice ? ` · 최저 ${Sogu.won(s.minPrice)}원` : ''}${data.adminError ? ' · 객실 요금 못 읽음' : ''}<br>`
-        + (p ? `프로모션 관리: ${p.type || ''} ${p.start}~${p.end} (${p.confirm || '-'}) → 마감 배지 자동` : '프로모션 관리에 이 PK 일정이 없어요 → 마감 배지는 직접 입력'));
+        + (p ? `프로모션 관리: ${p.type || ''} ${p.start}~${p.end} (${p.confirm || '-'}) → 마감 배지 자동` : '프로모션 관리에 이 PK 일정이 없어요 → 마감 배지는 직접 입력')
+        + (!(s && s.minPrice) ? '<br>⚠ 놀발 객실 요금이 없어요(공급사 연동 상품 등) → 가격은 ⑥ "가격 문구 직접"에 넣어주세요.' : '')
+        + (Sogu.build(data, {}).autoPoints.length < 3 ? '<br>⚠ 놀발 데이터에서 뽑을 소구포인트가 적어요 → ②에 강조 포인트를 넣어주세요(첫 화면 훅에도 쓰여요).' : ''));
       $('suFields').hidden = false;
       model = Sogu.build(data, over());
       fillSide();

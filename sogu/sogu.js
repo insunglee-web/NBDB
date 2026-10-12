@@ -113,17 +113,32 @@
       });
     }
     // 인원 추가 무료 조건
-    const freeLine = (d.extraChargeInfo || '')
-      .split('\n')
-      .map((l) => l.replace(/^[-*•\s]+/, '').trim())
-      .find((l) => /무료/.test(l));
+    // '무료' 조건 + 그 줄이 속한 안내 제목([인원 추가 요금], 📢 조식 안내 …)을 함께 — 맥락 없이 쓰면 오해 소지
+    let head = '';
+    let freeLine = null;
+    let freeHead = '';
+    for (const raw of (d.extraChargeInfo || '').split('\n')) {
+      const l = raw.replace(/^[-*•✅\s]+/, '').trim();
+      if (!l) continue;
+      const hm = l.match(/^\[(.+)\]$/) || (/(안내|요금|정보)\s*$/.test(l) && !/\d+\s*원/.test(l) ? [l, l] : null);
+      if (hm) {
+        head = hm[1].replace(/[^\p{L}\p{N}\s]/gu, '').replace(/\s*(안내|요금|정보)\s*$/, '').trim();
+        continue;
+      }
+      if (!freeLine && /무료/.test(l)) {
+        freeLine = l;
+        freeHead = head;
+      }
+    }
     if (freeLine) {
+      const isPeople = !freeHead || /인원/.test(freeHead);
+      const title = isPeople ? freeLine : `${freeHead} ${freeLine}`;
       pts.push({
         key: 'free',
-        icon: '👶',
-        chip: freeLine.length <= 12 ? freeLine : '아이 추가 무료',
-        title: freeLine,
-        desc: '인원 추가 요금 안내 기준이에요. (기준·최대 인원은 객실마다 달라요)',
+        icon: isPeople ? '👶' : iconOf(freeHead, '🎁'),
+        chip: title.length <= 12 ? title : isPeople ? '아이 추가 무료' : `${freeHead} 아이 무료`,
+        title,
+        desc: isPeople ? '인원 추가 요금 안내 기준이에요. (기준·최대 인원은 객실마다 달라요)' : `숙소 추가요금 안내의 '${freeHead}' 항목 기준이에요.`,
       });
     }
     const pkgHi = pkgs.find((p) => /올인|조식|뷔페|패키지|워터|키즈|입장/.test(p.tag));
@@ -206,7 +221,9 @@
         ? over.hook2
         : minPrice
           ? `${feature} **1박 ${shortPrice(minPrice)}**`
-          : `**${feature}**`;
+          : stars.length
+            ? `**${feature}**`
+            : `놀발에서만 만나는 **${d.type || '숙소'} 특가**`;
 
     const promo = data.promotion;
     const due = over.due != null ? over.due : promo && promo.end ? `${md(promo.end)}까지 특가` : '';
