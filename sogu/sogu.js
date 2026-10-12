@@ -208,7 +208,11 @@
     const pim = over.pointImages || {};
     // 사진 목록 = 놀발 사진 + 사용자가 올린 사진(over.uploads, data URL) — 번호는 이어서 매김
     const allImages = [...(d.images || []), ...(over.uploads || [])];
-    const pick = (i) => (i === 'none' ? 'none' : i != null && i !== '' && allImages[+i] ? allImages[+i] : null);
+    const pick = (i) => {
+      if (i === 'none') return 'none';
+      if (/^u\d+$/.test(String(i))) return (over.uploads || [])[+String(i).slice(1) - 1] || null; // 'u1' = 내 사진 1
+      return i != null && i !== '' && allImages[+i] ? allImages[+i] : null;
+    };
     const points = [...stars, ...autoUse, ...extras].map((p) => {
       const img = pick(p.imageIndex != null ? p.imageIndex : pim[p.key]);
       return img ? { ...p, image: img } : p;
@@ -434,8 +438,8 @@
         const parts = l.split('|').map((s) => s.trim());
         const last = parts.length >= 3 ? parts[parts.length - 1] : null;
         let imageIndex;
-        if (last != null && /^(\d+|없음|none)$/.test(last)) {
-          imageIndex = /^\d+$/.test(last) ? last : 'none';
+        if (last != null && /^(\d+|내\s*\d+|없음|none)$/.test(last)) {
+          imageIndex = /^\d+$/.test(last) ? last : /^내/.test(last) ? 'u' + last.replace(/\D/g, '') : 'none';
           parts.pop();
         }
         const s = { title: parts[0], desc: parts.slice(1).join(' | ') };
