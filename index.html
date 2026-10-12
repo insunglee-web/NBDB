@@ -507,10 +507,8 @@ tr:hover td{background:rgba(47,211,196,0.04);}
     <div class="tab" data-tab="product">상품·공급사</div>
     <div class="tab" data-tab="region">지역·채널</div>
     <div class="tab" data-tab="customer">고객 분석</div>
-    <div class="tab" data-tab="goal">목표관리</div>
     <div class="tab" data-tab="coupon">쿠폰 사용</div>
     <div class="tab" data-tab="competitor">경쟁사 가격</div>
-    <div class="tab" data-tab="anomaly">이상징후·인사이트</div>
     <div class="tab" data-tab="lowest">최저가상품</div>
     <div class="tab" data-tab="yearprice">연도별 시설금액</div>
     <div class="tab" data-tab="promo">프로모션 관리</div>
@@ -551,6 +549,12 @@ tr:hover td{background:rgba(47,211,196,0.04);}
           <div class="insight-list" id="execActions"></div>
         </div>
       </div>
+
+      <div class="section-title" style="margin-top:26px; font-size:13px;"><span class="num">01-B</span>이상징후 자동 탐지</div>
+      <div class="insight-list" id="anomalyList"></div>
+
+      <div class="section-title" style="margin-top:26px; font-size:13px;"><span class="num">01-C</span>추천 인사이트 · MD 액션 아이템</div>
+      <div class="insight-list" id="insightList"></div>
     </div>
 
     <!-- PARTNER (연동사별 실적) -->
@@ -742,19 +746,6 @@ tr:hover td{background:rgba(47,211,196,0.04);}
       </div>
     </div>
 
-    <!-- GOAL -->
-    <div class="section" id="sec-goal">
-      <div class="section-title"><span class="num">07</span>목표관리 Dashboard</div>
-      <div class="card">
-        <div class="goal-row">
-          <span style="font-size:12.5px; color:var(--sub);">이번 달 거래액(GMV) 목표</span>
-          <input type="number" id="monthlyGoalInput" placeholder="예: 300000000" oninput="renderGoal()">
-          <span style="font-size:12px; color:var(--sub);">원 · 값을 입력하면 아래 진행률이 자동 계산됩니다 (브라우저에만 저장, 새로고침 시 유지되지 않음)</span>
-        </div>
-        <div id="goalBody"></div>
-      </div>
-    </div>
-
     <!-- COUPON -->
     <div class="section" id="sec-coupon">
       <div class="section-title"><span class="num">08</span>쿠폰 사용 분석</div>
@@ -832,15 +823,6 @@ tr:hover td{background:rgba(47,211,196,0.04);}
       </div>
 
       <div id="cmpResult" style="margin-top:14px;"></div>
-    </div>
-
-    <!-- ANOMALY -->
-    <div class="section" id="sec-anomaly">
-      <div class="section-title"><span class="num">09</span>이상징후 자동 탐지</div>
-      <div class="insight-list" id="anomalyList"></div>
-
-      <div class="section-title" style="margin-top:26px;"><span class="num">10</span>추천 인사이트 · MD 액션 아이템</div>
-      <div class="insight-list" id="insightList"></div>
     </div>
 
     <!-- LOWEST PRICE PRODUCT -->
@@ -1440,7 +1422,6 @@ function refreshAll(){
   safeRun('computeAndRenderProduct', computeAndRenderProduct);
   safeRun('computeAndRenderRegionChannel', computeAndRenderRegionChannel);
   safeRun('computeAndRenderCustomer', computeAndRenderCustomer);
-  safeRun('renderGoal', renderGoal);
   safeRun('computeAndRenderCoupon', computeAndRenderCoupon);
   safeRun('computeAndRenderAnomaly', computeAndRenderAnomaly);
 }
@@ -2205,38 +2186,6 @@ function computeAndRenderMonthlyKpi(){
     {label:'매출(순이익)', data:rows.map(r=>r.profit), backgroundColor:PALETTE[2]},
     {label:'목표매출(순이익)', data:rows.map(r=>r.profitGoal), type:'line', borderColor:PALETTE[3], backgroundColor:'rgba(240,102,92,0.08)', borderDash:[5,4], pointRadius:3, tension:0}
   ]);
-}
-
-// ---------------- GOAL ----------------
-function renderGoal(){
-  if(!VIEW.length) return;
-  const goal = parseFloat(document.getElementById('monthlyGoalInput').value)||0;
-  const maxDate = maxDateOf(VIEW);
-  if(!maxDate) return;
-  const monthStart = new Date(maxDate.getFullYear(), maxDate.getMonth(),1);
-  const monthEnd = new Date(maxDate.getFullYear(), maxDate.getMonth()+1,0);
-  const daysInMonth = monthEnd.getDate();
-  const daysElapsed = maxDate.getDate();
-  const daysLeft = Math.max(daysInMonth - daysElapsed,0);
-  const curGmv = activeRows(VIEW).filter(d=>d.created>=monthStart && d.created<=maxDate).reduce((a,d)=>a+d.price,0);
-  const achieveRate = goal? curGmv/goal : 0;
-  const remain = Math.max(goal-curGmv,0);
-  const dailyNeeded = daysLeft? remain/daysLeft : 0;
-  const dailyAvgSoFar = daysElapsed? curGmv/daysElapsed:0;
-
-  document.getElementById('goalBody').innerHTML = goal? `
-    <div style="margin:18px 0 8px 0; display:flex; justify-content:space-between; font-size:12.5px; color:var(--sub);">
-      <span>달성률</span><span style="font-family:var(--mono); color:var(--text);">${fmtWonShort(curGmv)}원 / ${fmtWonShort(goal)}원</span>
-    </div>
-    <div class="progress-outer"><div class="progress-inner" style="width:${Math.min(achieveRate*100,100)}%">${fmtPct(achieveRate)}</div></div>
-    <div class="kpi-grid" style="margin-top:20px; grid-template-columns:repeat(4,1fr);">
-      <div class="kpi"><div class="label">잔여 목표액</div><div class="value">${fmtWonShort(remain)}원</div></div>
-      <div class="kpi"><div class="label">잔여 일수</div><div class="value">${daysLeft}일</div></div>
-      <div class="kpi"><div class="label">일평균 필요매출</div><div class="value">${fmtWonShort(dailyNeeded)}원</div></div>
-      <div class="kpi"><div class="label">현재 일평균 실적</div><div class="value">${fmtWonShort(dailyAvgSoFar)}원</div></div>
-    </div>
-    <div class="footnote" style="margin-top:14px;">${dailyNeeded > dailyAvgSoFar*1.15 ? '⚠ 남은 기간 필요 일매출이 현재 페이스보다 15% 이상 높습니다. 프로모션/특가 편성을 검토하세요.' : '✅ 현재 페이스 유지 시 목표 달성이 가능한 궤도입니다.'}</div>
-  ` : `<div class="footnote" style="margin-top:14px;">상단에 이번 달 목표 거래액을 입력하면 달성률/잔여목표/일평균 필요매출이 계산됩니다.</div>`;
 }
 
 // ---------------- COUPON ----------------
