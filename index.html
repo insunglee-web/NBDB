@@ -378,6 +378,14 @@ tr:hover td{background:rgba(47,211,196,0.04);}
 .pm-table .pm-when{white-space:nowrap;}
 .pm-table .pm-prodc{max-width:280px; color:var(--sub);}
 .pm-table .pm-pk{font-family:var(--mono); font-size:12px; white-space:nowrap;}
+.pm-table th,.pm-table .pm-typec{white-space:nowrap;}
+.pm-table .pm-gmvc{font-family:var(--mono); font-size:12px; white-space:nowrap; text-align:right;}
+.pm-gmvc small{display:block; color:var(--sub); font-size:11px;}
+.pm-gmv{color:#7FB5FF; background:rgba(127,181,255,.13); font-family:var(--mono);}
+.pm-topscroll{overflow-x:auto; overflow-y:hidden; height:14px; border-bottom:1px solid var(--line);}
+.pm-topscroll[hidden]{display:none;}
+.pm-topscroll>div{height:1px;}
+.pm-vtab[aria-pressed="true"]{background:var(--teal); color:#04140F;}
 .pm-table tr.pm-msep td{background:var(--panel-2); font-size:11.5px; font-weight:700; color:var(--sub); padding:6px 10px; cursor:default;}
 .pm-panel{padding:16px; position:sticky; top:84px;}
 @media (max-width:1100px){.pm-panel{position:static;}}
@@ -919,6 +927,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
               <button type="button" class="pm-vtab" id="pmTabMonth" role="tab">월별 보기</button>
               <button type="button" class="pm-vtab" id="pmTabList" role="tab">리스트로 보기</button>
             </div>
+            <div class="pm-tabs"><button type="button" class="pm-vtab" id="pmOnlyConfirmed" aria-pressed="false">확정만 보기</button></div>
             <div class="pm-monthnav" id="pmMonthNav">
               <button class="pm-icon" id="pmPrev" type="button" aria-label="이전 달">‹</button>
               <div class="pm-mlabel" id="pmMonthLabel"></div>
@@ -933,7 +942,8 @@ tr:hover td{background:rgba(47,211,196,0.04);}
             <button class="btn pm-small" id="pmReload" type="button">새로고침</button>
           </div>
           <div class="pm-filters" id="pmFilters" role="group" aria-label="구분 필터"></div>
-          <div class="pm-grid"><div class="pm-grid-inner" id="pmGrid">
+          <div class="pm-topscroll" id="pmTopScroll" hidden><div></div></div>
+          <div class="pm-grid" id="pmGridWrap"><div class="pm-grid-inner" id="pmGrid">
             <div class="pm-empty"><strong>프로모션 탭을 열면 목록을 불러와요</strong></div>
           </div></div>
           <div id="pmUndated"></div>
@@ -3141,6 +3151,8 @@ loadData();
   let view = { y: today.getFullYear(), m: today.getMonth() };
   let mode = store.get('pm-mode') === 'list' ? 'list' : 'month';
   let typeFilter = new Set();
+  let onlyConfirmed = store.get('pm-only-confirmed') === '1';
+  const pool = () => (onlyConfirmed ? items.filter((x) => x.confirm === '확정') : items);
   let items = [];
   let loaded = false, loading = false, loadError = '';
   let writeLocked = false;
@@ -3302,6 +3314,55 @@ loadData();
   $('pmQ').addEventListener('input', () => render());
   $('pmHidePast').addEventListener('change', () => render());
   $('pmReload').addEventListener('click', () => load());
+  $('pmOnlyConfirmed').addEventListener('click', () => { onlyConfirmed = !onlyConfirmed; store.set('pm-only-confirmed', onlyConfirmed ? '1' : '0'); render(); });
+
+  // 위쪽 가로 스크롤바: 표가 길어도 맨 위에서 좌우로 움직일 수 있게 아래 스크롤과 맞춘다
+  const topSc = $('pmTopScroll'), gridWrap = $('pmGridWrap');
+  topSc.addEventListener('scroll', () => { if (gridWrap.scrollLeft !== topSc.scrollLeft) gridWrap.scrollLeft = topSc.scrollLeft; });
+  gridWrap.addEventListener('scroll', () => { if (topSc.scrollLeft !== gridWrap.scrollLeft) topSc.scrollLeft = gridWrap.scrollLeft; });
+  function syncTopScroll() {
+    topSc.firstElementChild.style.width = gridWrap.scrollWidth + 'px';
+    topSc.hidden = gridWrap.scrollWidth <= gridWrap.clientWidth + 1;
+  }
+  window.addEventListener('resize', () => syncTopScroll());
+
+  // ---------- 기간 거래액 (판매내역 DERIVED 기준: PK → 놀발 숙소명 → 판매내역 숙소명, 예약 생성일이 프로모션 기간 안, 취소 제외) ----------
+  let pkNames = null, pkLoading = false;
+  async function loadPkNames() {
+    if (pkNames || pkLoading) return;
+    pkLoading = true;
+    try {
+      const j = await (await fetch(FACILITIES_API)).json();
+      pkNames = {};
+      for (const f of j.facilities || []) pkNames[String(f.id)] = f.name;
+      render();
+    } catch (e) { pkNames = {}; } finally { pkLoading = false; }
+  }
+  const facKey = (n) => ypFacilityName(n).toLowerCase().replace(/[\s()\[\]{}·.,\/_\-]/g, '');
+  function gmvFor(it) {
+    if (!it.pk || !it.start) return null;
+    if (!pkNames) return { wait: true };
+    const names = it.pk.split(/[,\s]+/).filter(Boolean).map((k) => pkNames[k]).filter(Boolean);
+    if (!names.length) return { miss: true };
+    if (typeof DERIVED === 'undefined' || !DERIVED.length) return { noData: true };
+    const keys = new Set(names.map(facKey));
+    const from = parse(it.start), to = new Date(parse(it.end || it.start).getTime() + 864e5);
+    let gmv = 0, n = 0;
+    for (const d of DERIVED) {
+      if (d.cancelled || d.created < from || d.created >= to) continue;
+      if (!keys.has(facKey(d.stay))) continue;
+      gmv += d.price; n++;
+    }
+    return { gmv, n, names };
+  }
+  const won = (v) => v >= 1e8 ? (v / 1e8).toFixed(2).replace(/\.?0+$/, '') + '억' : v >= 1e4 ? Math.round(v / 1e4).toLocaleString() + '만' : v.toLocaleString();
+  function gmvText(g) {
+    if (!g) return '';
+    if (g.wait) return '불러오는 중';
+    if (g.miss) return 'PK 확인 필요';
+    if (g.noData) return '판매내역 없음';
+    return `₩${won(g.gmv)} · ${g.n}건`;
+  }
 
   function renderFilters(list) {
     const box = $('pmFilters'); box.textContent = '';
@@ -3327,6 +3388,7 @@ loadData();
     const setting = it.setting || '미세팅';
     if (!(ended && setting === '미세팅')) wrap.append(el('span', 'pm-chip ' + ((SETTINGS.find((c) => c.v === setting) || {}).cls || 'pm-none'), setting === '미세팅' ? '앱 미세팅' : '앱 ' + setting));
     if (it.pk && !opts.noPk) wrap.append(el('span', 'pm-chip pm-pkc', 'PK ' + it.pk));
+    if (!opts.noGmv) { const g = gmvFor(it); if (g) { const c = el('span', 'pm-chip pm-gmv', '거래액 ' + gmvText(g)); c.title = '프로모션 기간 예약 생성 기준, 취소 제외' + (g.names ? ' · ' + g.names.join(', ') : ''); wrap.append(c); } }
     if (needsSetup(it)) wrap.append(el('span', 'pm-chip pm-bad', '세팅 필요'));
     if (!opts.noViral) for (const v of it.viral || []) wrap.append(el('span', 'pm-chip pm-viralc', v));
     return wrap;
@@ -3344,6 +3406,8 @@ loadData();
     $('pmMonthLabel').textContent = `${y}년 ${m + 1}월`;
     $('pmTabMonth').setAttribute('aria-selected', mode === 'month' ? 'true' : 'false');
     $('pmTabList').setAttribute('aria-selected', mode === 'list' ? 'true' : 'false');
+    $('pmOnlyConfirmed').setAttribute('aria-pressed', onlyConfirmed ? 'true' : 'false');
+    if (loaded && !pkNames) loadPkNames();
     $('pmMonthNav').hidden = mode === 'list';
     $('pmListTools').hidden = mode !== 'list';
     $('pmGrid').classList.toggle('as-list', mode === 'list');
@@ -3355,11 +3419,11 @@ loadData();
       return;
     }
     fillFacList();
-    if (mode === 'list') return renderList();
+    if (mode === 'list') { renderList(); return syncTopScroll(); }
 
     const n = new Date(y, m + 1, 0).getDate();
     const mStart = `${y}-${pad(m + 1)}-01`, mEnd = `${y}-${pad(m + 1)}-${pad(n)}`;
-    const monthItems = items.filter((x) => x.start && x.start <= mEnd && (x.end ? x.end >= mStart : x.start >= mStart));
+    const monthItems = pool().filter((x) => x.start && x.start <= mEnd && (x.end ? x.end >= mStart : x.start >= mStart));
     renderFilters(monthItems);
     const shown = monthItems.filter((x) => !typeFilter.size || typeFilter.has(x.type || '기타'))
       .sort((a, b) => a.start.localeCompare(b.start) || (a.end || a.start).localeCompare(b.end || b.start) || a.facility.localeCompare(b.facility, 'ko'));
@@ -3403,7 +3467,7 @@ loadData();
       row.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); fillForm(it); } });
       gi.append(row);
     }
-    const und = items.filter((x) => !x.start && (!typeFilter.size || typeFilter.has(x.type || '기타')));
+    const und = pool().filter((x) => !x.start && (!typeFilter.size || typeFilter.has(x.type || '기타')));
     if (und.length) {
       const t = el('div', 'pm-sec'); t.append(el('span', null, `날짜 미정 · ${und.length}건`), el('span', null, '일정이 정해지면 날짜를 넣어주세요'));
       const g = el('div', 'pm-undated');
@@ -3419,12 +3483,13 @@ loadData();
       }
       $('pmUndated').append(t, g);
     }
+    syncTopScroll();
   }
 
   function renderList() {
     const q = $('pmQ').value.trim().toLowerCase();
     const hidePast = $('pmHidePast').checked;
-    const base = items.filter((x) => {
+    const base = pool().filter((x) => {
       if (hidePast && x.start && (x.end || x.start) < todayIso) return false;
       if (q && ![x.facility, x.product, x.pk, x.memo, x.scheduleNote].some((v) => (v || '').toLowerCase().includes(q))) return false;
       return true;
@@ -3439,14 +3504,14 @@ loadData();
     const gi = $('pmGrid');
     if (!shown.length) { gi.append(emptyMsg(items.length ? '조건에 맞는 프로모션이 없어요' : '아직 등록된 프로모션이 없어요', items.length ? '검색어나 필터를 바꿔보세요.' : '오른쪽에서 일정과 시설명을 넣으면 여기에 표시돼요.')); return; }
     const t = el('table', 'pm-table'); const thead = el('thead'); const hr = el('tr');
-    ['일정', '시설명', '종류', '상품안 / 상품명', '확정·세팅', 'PK번호', '바이럴 요청'].forEach((h) => hr.append(el('th', null, h)));
+    ['일정', '시설명', '종류', '상품안 / 상품명', '확정·세팅', 'PK번호', '기간 거래액', '바이럴 요청'].forEach((h) => hr.append(el('th', null, h)));
     thead.append(hr); t.append(thead);
     const tb = el('tbody'); let last = null;
     for (const it of shown) {
       const mk = it.start ? it.start.slice(0, 7) : 'none';
       if (mk !== last) {
         last = mk;
-        const sep = el('tr', 'pm-msep'); const td = el('td'); td.colSpan = 7;
+        const sep = el('tr', 'pm-msep'); const td = el('td'); td.colSpan = 8;
         td.textContent = it.start ? `${Number(mk.slice(0, 4))}년 ${Number(mk.slice(5))}월` : '날짜 미정';
         sep.append(td); tb.append(sep);
       }
@@ -3458,11 +3523,13 @@ loadData();
       const tdFac = el('td'); const fc = el('div', 'pm-fac'); const d = el('span', 'pm-dot'); d.style.background = typeOf(it.type).color;
       fc.append(d, el('span', null, it.facility)); tdFac.append(fc);
       if (it.memo) tdFac.append(el('div', 'pm-prod', it.memo));
-      const tdState = el('td'); tdState.append(chipsFor(it, { noPk: true, noViral: true }));
+      const tdState = el('td'); tdState.append(chipsFor(it, { noPk: true, noViral: true, noGmv: true }));
+      const g = gmvFor(it); const tdG = el('td', 'pm-gmvc', g ? (g.gmv != null ? '₩' + g.gmv.toLocaleString() : gmvText(g)) : '—');
+      if (g && g.gmv != null) tdG.append(el('small', null, g.n + '건'));
       const tdV = el('td'); const vc = el('div', 'pm-chips');
       for (const v of it.viral || []) vc.append(el('span', 'pm-chip pm-viralc', v));
       tdV.append(vc); if (it.viralNote) tdV.append(el('div', 'pm-prod', it.viralNote));
-      tr.append(tdWhen, tdFac, el('td', null, it.type || ''), el('td', 'pm-prodc', it.product || ''), tdState, el('td', 'pm-pk', it.pk || '—'), tdV);
+      tr.append(tdWhen, tdFac, el('td', 'pm-typec', it.type || ''), el('td', 'pm-prodc', it.product || ''), tdState, el('td', 'pm-pk', it.pk || '—'), tdG, tdV);
       tr.addEventListener('click', () => fillForm(it));
       tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); fillForm(it); } });
       tb.append(tr);
