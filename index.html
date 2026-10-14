@@ -7,8 +7,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
-<link rel="stylesheet" href="sogu/sogu.css?v=20261014b">
-<script src="sogu/sogu.js?v=20261014b"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
+<link rel="stylesheet" href="sogu/sogu.css?v=20261014c">
+<script src="sogu/sogu.js?v=20261014c"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
 <style>
 :root{
   --bg:#0A0F1A;
@@ -4071,7 +4071,7 @@ loadData();
       await loadLib();
       await draw();
       const node = $('suRender').firstElementChild;
-      const url = await htmlToImage.toJpeg(node, { quality: 0.92, pixelRatio: 1, backgroundColor: '#ffffff', width: 1000, height: node.offsetHeight });
+      const url = await htmlToImage.toJpeg(node, { includeQueryParams: true /* 사진 주소 ?photo=… 별로 따로 (없으면 다 같은 사진으로 캐시됨) */, quality: 0.92, pixelRatio: 1, backgroundColor: '#ffffff', width: 1000, height: node.offsetHeight });
       const day = new Date(Date.now() + 9*3600e3).toISOString().slice(0,10).replace(/-/g,'');
       const a = document.createElement('a');
       a.href = url; a.download = `${model.pk}_${model.name.replace(/[\\/:*?"<>|\s]+/g,'_')}_${day}.jpg`;
