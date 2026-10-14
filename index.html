@@ -7,8 +7,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
-<link rel="stylesheet" href="sogu/sogu.css?v=20261012f">
-<script src="sogu/sogu.js?v=20261012f"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
+<link rel="stylesheet" href="sogu/sogu.css?v=20261014b">
+<script src="sogu/sogu.js?v=20261014b"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
 <style>
 :root{
   --bg:#0A0F1A;
@@ -934,7 +934,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
         .su-auto label{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:6px 0; border-bottom:1px dashed var(--line); cursor:pointer;}
         .su-auto label span{flex:1; line-height:1.45;}
         .su-auto select,#sec-sogu select{background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:5px; font-size:11.5px; padding:2px 4px;}
-        .su-extras .su-ex{display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:6px; padding:8px 0; border-bottom:1px dashed var(--line);}
+        .su-extras .su-ex{display:grid; grid-template-columns:minmax(0,1fr) auto auto auto auto; gap:6px; padding:8px 0; border-bottom:1px dashed var(--line);}
         .su-extras .su-ex input[type=text]{font-size:12.5px; padding:6px 8px;}
         .su-extras .su-ex .su-ex-desc{grid-column:1 / -1;}
         .su-extras .su-ex button{padding:4px 9px;}
@@ -946,10 +946,13 @@ tr:hover td{background:rgba(47,211,196,0.04);}
         .su-add{display:flex; flex-direction:column; gap:6px; margin-top:10px; padding:10px; border:1px dashed var(--line); border-radius:8px;}
         .su-add .su-row select{flex:1;}
         .su-thumbs{display:grid; grid-template-columns:repeat(6,1fr); gap:6px;}
-        .su-thumbs button{position:relative; padding:0; border:2px solid transparent; border-radius:6px; overflow:hidden; aspect-ratio:1; cursor:pointer; background:var(--panel-2);}
-        .su-thumbs button img{width:100%; height:100%; object-fit:cover; display:block;}
-        .su-thumbs button i{position:absolute; left:2px; top:2px; font-style:normal; font-size:10px; background:rgba(0,0,0,.65); color:#fff; padding:0 4px; border-radius:3px; font-family:var(--mono);}
-        .su-thumbs button[aria-pressed=true]{border-color:var(--teal);}
+        .su-th{position:relative;}
+        .su-th > button:first-child{position:relative; width:100%; padding:0; border:2px solid transparent; border-radius:6px; overflow:hidden; aspect-ratio:1; cursor:pointer; background:var(--panel-2);}
+        .su-th > button:first-child img{width:100%; height:100%; object-fit:cover; display:block;}
+        .su-th-del{position:absolute; right:3px; top:3px; width:22px; height:22px; padding:0; border:0; border-radius:50%; background:rgba(0,0,0,.72); color:#fff; font-size:11px; line-height:22px; cursor:pointer;}
+        .su-th-del:hover{background:var(--coral);}
+        .su-th > button:first-child i{position:absolute; left:2px; top:2px; font-style:normal; font-size:10px; background:rgba(0,0,0,.65); color:#fff; padding:0 4px; border-radius:3px; font-family:var(--mono);}
+        .su-th > button[aria-pressed=true]{border-color:var(--teal);}
         .su-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;}
         .su-stage{display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;}
         .su-col h5{font-size:12px; color:var(--sub); font-weight:600; margin-bottom:8px;}
@@ -978,50 +981,56 @@ tr:hover td{background:rgba(47,211,196,0.04);}
           <div id="suFields" hidden>
             <h4>② 꼭 넣을 소구포인트 (놀발 PICK)</h4>
             <textarea id="suStars" placeholder="한 줄에 하나 · 제목 | 설명&#10;예) 키즈 패키지 단독 구성 | 조식 3인 + 키즈월드 입장권 포함&#10;예) 12월까지 **주말도** 같은 가격 | 토요일 투숙도 특가 적용"></textarea>
-            <p class="su-hint">맨 앞에 강조 카드로 들어가고, 첫 줄은 첫 화면 훅에도 쓰여요. <b>**글자**</b>는 강조색. 사진을 고르려면 끝에 <b>| 사진번호</b> — ⑤에 보이는 번호 그대로 (예: <code>… | 설명 | 3</code>, 올린 사진은 <code>| 내1</code>, 사진 빼기는 <code>| 없음</code>).</p>
+            <p class="su-hint">맨 앞에 강조 카드로 들어가요. 카드 제목은 무엇을 주는지 분명하게(홍보 문구 X), 설명은 이용 조건까지 — 합니다체로. <b>**글자**</b>는 강조색. 사진을 고르려면 끝에 <b>| 사진번호</b> — ⑤에 보이는 번호 그대로 (예: <code>… | 설명 | 3</code>, 올린 사진은 <code>| 내1</code>, 사진 빼기는 <code>| 없음</code>).</p>
 
-            <h4>③ 첫 화면 훅 (접혀도 보이는 부분)</h4>
-            <input type="text" id="suHook1" placeholder="1줄 (작게) — 비우면 자동">
-            <input type="text" id="suHook2" placeholder="2줄 (크게) — 비우면 자동" style="margin-top:6px">
+            <h4>③ 첫 화면 (접혀도 보이는 부분)</h4>
+            <input type="text" id="suHook2" placeholder="상품명 (크게, 숙소명 아래) 예: 조식+야식 PKG — 비우면 자동">
+            <input type="text" id="suHook1" placeholder="서브카피 (작게) 예: 가을부터 겨울까지 즐기는 강원도 양양 여행 — 비우면 자동" style="margin-top:6px">
             <div class="su-row" style="margin-top:6px">
-              <input type="text" id="suDue" placeholder="마감 배지 예: 10.18(일)까지 특가">
-              <input type="text" id="suBadge" placeholder="놀발 단독 특가">
+              <input type="text" id="suDue" placeholder="마감 예: 10월 18일까지">
+              <input type="text" id="suBadge" placeholder="놀발 단독특가">
             </div>
-            <input type="text" id="suChips" placeholder="사진 위 칩 3개 (쉼표로) — 비우면 소구포인트 앞 3개" style="margin-top:6px">
+            <p class="su-hint">배지는 「마감 + 배지」 한 줄로 나와요 → "10월 18일까지 놀발 단독특가". 마감은 맨 아래에도 들어가요.</p>
+            <h4>인트로 칩 3개 — 핵심만 짧게</h4>
+            <div class="su-row">
+              <input type="text" id="suChip1" placeholder="예: 닭강정 세트 제공" aria-label="칩 1">
+              <input type="text" id="suChip2" placeholder="키즈클래스 1+1 제공" aria-label="칩 2">
+              <input type="text" id="suChip3" placeholder="주중 1시간 레이트 체크아웃" aria-label="칩 3">
+            </div>
+            <p class="su-hint">칩은 혜택 이름만(예: <code>닭강정 세트 제공</code>), 이용 조건·유료 여부·포함 내용은 아래 카드 제목/설명에 구체적으로. 비운 칸은 소구포인트 순서대로 채워져요. 아이콘은 문구에 맞춰 자동.</p>
 
-            <h4>④ 자동 소구포인트 (체크 해제하면 빠짐 · 사진 번호 지정)</h4>
+            <h4>④ 소구 카드 (자동 포인트 + 직접 만든 카드)</h4>
+            <button class="btn" id="suAutoAll" type="button" style="padding:4px 9px; margin-bottom:4px">자동 포인트 모두 빼기 (직접 만들기)</button>
             <div class="su-auto" id="suAuto"></div>
             <div class="su-extras" id="suExtras"></div>
             <div class="su-add">
-              <input type="text" id="suExTitle" placeholder="+ 소구포인트 추가: 제목 (예: 전 객실 **오션뷰**)">
-              <input type="text" id="suExDesc" placeholder="설명 (선택 · / 를 넣으면 거기서 줄바꿈)">
+              <input type="text" id="suExTitle" placeholder="+ 카드 추가: 제목 — 무엇을 주는지 분명하게 (예: 야식 닭강정 세트 제공)">
+              <input type="text" id="suExDesc" placeholder="설명 — 포함 내용·이용 조건, 합니다체 (선택 · / 를 넣으면 줄바꿈)">
               <div class="su-row">
                 <select id="suExImg" aria-label="추가 포인트 사진"></select>
                 <button class="btn" id="suExAdd" type="button">추가</button>
               </div>
             </div>
-            <p class="su-hint">추가한 포인트는 자동 포인트 뒤에 일반 카드로 들어가요. 맨 앞 강조 카드로 넣으려면 ②에 쓰세요.</p>
+            <p class="su-hint"><b>처음부터 직접 만들기:</b> 「자동 포인트 모두 빼기」 → 여기서 카드를 순서대로 추가(↑↓로 순서 변경) → ③ 칩 3칸·⑦ 확인 사항 입력. 직접 만든 카드는 자동 포인트 뒤에 붙고, 테두리 강조(놀발 PICK) 카드는 ②에 쓰세요.</p>
 
-            <h4>⑤ 사진 (누르면 첫 화면 배경 · 내 사진 올리기)</h4>
+            <h4>⑤ 사진 (누르면 첫 화면 배경 · 내 사진은 저장돼서 다음에도 나와요)</h4>
             <div class="su-thumbs" id="suThumbs"></div>
             <label class="su-drop" id="suDrop">
               <input type="file" id="suUpload" accept="image/*" multiple hidden>
               <b>＋ 내 사진 올리기</b><span>클릭하거나 여기로 끌어다 놓기 · 여러 장 가능</span>
             </label>
-            <div class="su-row" style="justify-content:space-between">
-              <p class="su-msg" id="suUpMsg" role="status" style="margin:4px 0 0"></p>
-              <button class="btn" id="suUpClear" type="button" style="padding:4px 9px; white-space:nowrap; margin-top:4px">올린 사진 비우기</button>
-            </div>
+            <p class="su-msg" id="suUpMsg" role="status" style="margin:4px 0 0"></p>
+            <p class="su-hint">내 사진(「내1」…)은 이 PK에 저장돼요. 사진 위 ✕로 삭제.</p>
 
             <h4>⑥ 가격</h4>
             <div class="su-row">
               <input type="text" id="suList" placeholder="정상가 (선택, 넣으면 할인율 표시)" inputmode="numeric">
               <input type="text" id="suPriceText" placeholder="가격 문구 직접 (선택)">
             </div>
-            <input type="text" id="suCta" placeholder="맨 아래 문구 — 기본: 아래에서 객실을 골라보세요" style="margin-top:6px">
+            <input type="text" id="suCta" placeholder="맨 아래 문구 — 기본: 특별한 가격으로 만나보세요" style="margin-top:6px">
 
-            <h4>⑦ 예약 전 확인하세요</h4>
-            <textarea id="suInfos" placeholder="한 줄에 하나 · 비우면 이 칸은 이미지에서 빠져요"></textarea>
+            <h4>⑦ 예약 전 확인해주세요</h4>
+            <textarea id="suInfos" placeholder="한 줄에 하나 · 비우면 이 칸은 이미지에서 빠져요 (제목과 겹치는 '예약 전 확인하세요' 줄은 자동으로 빠져요)"></textarea>
             <div class="su-row" style="justify-content:space-between; margin-top:4px">
               <p class="su-hint" style="margin:0">처음엔 놀발 어드민 '추가요금 정보'에서 자동으로 채워요.</p>
               <button class="btn" id="suInfosReset" type="button" style="padding:4px 9px; white-space:nowrap">자동으로 되돌리기</button>
@@ -1030,7 +1039,9 @@ tr:hover td{background:rgba(47,211,196,0.04);}
             <div class="su-actions">
               <button class="btn su-btn-main" id="suDown" type="button">JPG 다운로드</button>
               <button class="btn" id="suCopy" type="button">Claude에게 보낼 설정 복사</button>
+              <button class="btn" id="suReset" type="button">입력 초기화</button>
             </div>
+            <p class="su-msg" id="suSaveMsg" role="status"></p>
             <p class="su-msg" id="suMsg2" role="status"></p>
           </div>
         </form>
@@ -3700,39 +3711,55 @@ loadData();
 </script>
 <script>
 // ---------------- 특가 소구 이미지 (엔진: sogu/sogu.js) ----------------
+// 입력한 설정과 내 사진은 PK별로 price-scraper /api/sogu 에 자동 저장 → 다음에 같은 PK를 불러오면 그대로 이어서.
 (function(){
   const $ = (id) => document.getElementById(id);
+  const SAVE_API = Sogu.API + '/sogu';
   document.body.append($('suRender')); // 캡처용 원본(1000px)은 탭이 숨겨져도 크기가 잡히도록 body 바로 아래에
   let data = null;      // Sogu.load 결과
   let model = null;     // 마지막으로 그린 모델
-  let heroIndex = 0;
-  const pointImages = {}; // 자동 포인트 key → 사진 번호
+  // 사진 참조(ref): '' = 자동, 'none' = 사진 없음, '3' = 놀발 사진 3, 'id:<사진id>' = 내 사진
+  let heroRef = '0';
+  const pointImages = {}; // 자동 포인트 key → ref
   const hidden = new Set();
-  const extras = [];      // 직접 추가한 일반 소구포인트 [{title, desc, imageIndex}]
-  const uploads = [];     // 내가 올린 사진 (data URL)
+  const extras = [];      // 직접 추가한 소구 카드 [{title, desc, imageIndex(ref)}]
+  const uploads = [];     // 저장된 내 사진 [{id, url}]
+  const FIELDS = ['suStars','suHook1','suHook2','suDue','suBadge','suChip1','suChip2','suChip3','suList','suPriceText','suCta','suInfos'];
 
   function msg(el, text, err){ el.textContent = ''; el.className = 'su-msg' + (err ? ' err' : ''); el.innerHTML = text; }
+  const escH = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+  // ref → 엔진 번호 ('u1' = 내 사진 1)
+  function toEngine(ref){
+    ref = ref == null ? '' : String(ref);
+    if (!ref.startsWith('id:')) return ref;
+    const k = uploads.findIndex(u => u.id === ref.slice(3));
+    return k < 0 ? '' : 'u' + (k + 1);
+  }
 
   function over(){
     const v = (id) => $(id).value.trim();
-    const chips = v('suChips') ? v('suChips').split(',').map(s => s.trim()).filter(Boolean) : [];
+    const chipIn = ['suChip1','suChip2','suChip3'].map(v); // 비운 칸은 엔진이 소구포인트로 채운다
+    const pim = {};
+    for (const k in pointImages) { const e = toEngine(pointImages[k]); if (e !== '') pim[k] = e; }
     const o = {
       stars: Sogu.parseStars($('suStars').value),
       extras: extras.filter(x => x.title.trim()).map(x => {
         const e = { title: x.title.trim(), desc: x.desc.trim().replace(/\s*\/\s*/g, '\n') };
-        if (x.imageIndex !== '') e.imageIndex = x.imageIndex;
+        const img = toEngine(x.imageIndex);
+        if (img !== '') e.imageIndex = img;
         return e;
       }),
       hide: [...hidden],
-      pointImages: { ...pointImages },
-      heroIndex,
-      uploads: [...uploads],
+      pointImages: pim,
+      heroIndex: toEngine(heroRef) || 0,
+      uploads: uploads.map(u => u.url),
     };
     if (v('suHook1')) o.hook1 = v('suHook1');
     if (v('suHook2')) o.hook2 = v('suHook2');
     if (v('suDue')) o.due = v('suDue');
     if (v('suBadge')) o.badge = v('suBadge');
-    if (chips.length) o.chips = chips;
+    if (chipIn.some(Boolean)) o.chipSlots = chipIn;
     if (v('suList')) o.listPrice = v('suList');
     if (v('suPriceText')) o.priceText = v('suPriceText');
     if (v('suCta')) o.cta = v('suCta');
@@ -3741,16 +3768,60 @@ loadData();
     return o;
   }
 
-  // 사진 번호: 0..n-1 = 놀발 사진, n.. = 내가 올린 사진(uploads)
-  const allImgs = () => [...(data.detail.images || []), ...uploads];
-  const imgLabel = (i) => { const n = (data.detail.images || []).length; return i < n ? `사진 ${i}` : `내 사진 ${i - n + 1}`; };
+  // ---- 자동 저장 (PK별) ----
+  let restoring = false, saveT = null, lastSaved = '';
+  function state(){
+    const fields = {};
+    FIELDS.forEach(id => { fields[id] = $(id).value; });
+    return { v: 1, fields, infosEdited: !!$('suInfos').dataset.edited, hidden: [...hidden], pointImages: { ...pointImages },
+      extras: extras.map(x => ({ ...x })), heroRef, over: over() }; // over = make.mjs 가 그대로 쓰는 설정
+  }
+  function writeKey(){ try { return localStorage.getItem('pm-key') || ''; } catch (e) { return ''; } }
+  async function post(body){
+    const r = await fetch(SAVE_API, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-promo-key': writeKey() }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({ ok: false, error: `저장 서버 오류 (${r.status})` }));
+    if (!j.ok) throw new Error(j.code === 'bad_key' ? '편집 비밀번호가 필요해요 — 프로모션 관리 탭에서 한 번 저장하면 여기도 저장돼요.' : j.error);
+    return j;
+  }
+  function scheduleSave(){
+    if (!data || restoring) return;
+    clearTimeout(saveT);
+    saveT = setTimeout(saveNow, 1200);
+  }
+  async function saveNow(){
+    if (!data) return;
+    const st = state();
+    const json = JSON.stringify(st);
+    if (json === lastSaved) return;
+    const pk = data.pk;
+    try {
+      await post({ action: 'saveSetup', pk, setup: st });
+      if (data && data.pk === pk) { lastSaved = json; msg($('suSaveMsg'), `자동 저장됨 · ${new Date().toTimeString().slice(0,5)} — 다음에 PK ${pk}를 불러오면 이어서 작업해요.`); }
+    } catch (e) { msg($('suSaveMsg'), '저장 실패: ' + escH(e.message || e), true); }
+  }
+  function restore(st){
+    restoring = true;
+    FIELDS.forEach(id => { $(id).value = (st && st.fields && st.fields[id]) || ''; });
+    if (st && st.infosEdited) $('suInfos').dataset.edited = '1'; else delete $('suInfos').dataset.edited;
+    hidden.clear(); ((st && st.hidden) || []).forEach(k => hidden.add(k));
+    for (const k in pointImages) delete pointImages[k];
+    Object.assign(pointImages, (st && st.pointImages) || {});
+    extras.length = 0; ((st && st.extras) || []).forEach(x => extras.push({ title: x.title || '', desc: x.desc || '', imageIndex: x.imageIndex || '' }));
+    heroRef = st && st.heroRef != null ? String(st.heroRef) : '0';
+    restoring = false;
+  }
+
+  // 사진 번호: 0..n-1 = 놀발 사진, 그 뒤 = 내 사진
+  const nNol = () => (data.detail.images || []).length;
+  const allImgs = () => [...(data.detail.images || []).map((src, i) => ({ ref: String(i), src, label: `사진 ${i}`, tag: String(i) })),
+    ...uploads.map((u, k) => ({ ref: 'id:' + u.id, src: u.url, label: `내 사진 ${k + 1}`, tag: '내' + (k + 1), id: u.id }))];
   function imgOptions(sel){
     let h = '<option value="">사진 자동</option><option value="none">사진 없음</option>';
-    allImgs().forEach((_, i) => { h += `<option value="${i}"${String(sel) === String(i) ? ' selected' : ''}>${imgLabel(i)}</option>`; });
+    allImgs().forEach((p) => { h += `<option value="${p.ref}"${String(sel) === p.ref ? ' selected' : ''}>${p.label}</option>`; });
     return h;
   }
 
-  // 내 사진 올리기: 폭 1000px JPEG 로 줄여 data URL 로 보관(이 화면에서만, 다른 PK 불러오면 비워짐)
+  // 내 사진 올리기: 폭 1000px JPEG 로 줄여 서버에 저장 (같은 PK를 다시 불러오면 그대로 나옴)
   function shrink(file){
     return new Promise((ok, bad) => {
       const url = URL.createObjectURL(file);
@@ -3760,7 +3831,7 @@ loadData();
         const c = document.createElement('canvas'); c.width = w; c.height = h;
         c.getContext('2d').drawImage(im, 0, 0, w, h);
         URL.revokeObjectURL(url);
-        ok(c.toDataURL('image/jpeg', 0.9));
+        ok(c.toDataURL('image/jpeg', 0.86));
       };
       im.onerror = () => { URL.revokeObjectURL(url); bad(new Error(file.name + ' 을(를) 열 수 없어요')); };
       im.src = url;
@@ -3770,28 +3841,60 @@ loadData();
     const list = [...files].filter(f => /^image\//.test(f.type));
     if (!list.length || !data) return;
     const m = $('suUpMsg');
-    msg(m, `사진 ${list.length}장 넣는 중…`);
-    const before = allImgs().length;
+    const first = uploads.length + 1;
+    let done = 0;
     for (const f of list) {
-      try { uploads.push(await shrink(f)); } catch (e) { msg(m, String(e.message || e), true); }
+      msg(m, `사진 저장 중… (${done + 1}/${list.length})`);
+      try {
+        const j = await post({ action: 'addPhoto', pk: data.pk, data: await shrink(f) });
+        uploads.push({ id: j.photo.id, url: j.photo.url });
+        done++;
+      } catch (e) { msg(m, escH(f.name) + ': ' + escH(e.message || e), true); await new Promise(r => setTimeout(r, 1500)); }
     }
-    msg(m, `내 사진 ${uploads.length}장 · 새로 넣은 사진은 「${imgLabel(before)}」부터예요. 대표 사진을 누르거나 ④·②에서 번호를 고르세요.`);
+    if (done) msg(m, `내 사진 ${done}장 저장 · 「내${first}」부터예요. 대표 사진을 누르거나 ④·②에서 골라 쓰세요.`);
+    fillSide(); draw();
+  }
+  async function deleteUpload(id){
+    const k = uploads.findIndex(u => u.id === id);
+    if (k < 0) return;
+    if (!confirm(`내 사진 ${k + 1}을(를) 지울까요? 저장된 사진이 삭제돼서 되돌릴 수 없어요.`)) return;
+    const m = $('suUpMsg');
+    try { await post({ action: 'deletePhoto', pk: data.pk, id }); }
+    catch (e) { msg(m, '삭제 실패: ' + escH(e.message || e), true); return; }
+    uploads.splice(k, 1);
+    const ref = 'id:' + id;
+    // 이 사진을 쓰던 곳은 자동으로
+    if (heroRef === ref) heroRef = '0';
+    for (const key in pointImages) if (pointImages[key] === ref) delete pointImages[key];
+    extras.forEach(x => { if (x.imageIndex === ref) x.imageIndex = ''; });
+    // ② PICK 줄의 '| 내N' 번호도 맞춰 준다 (지운 사진은 사진 지정 해제)
+    const n = k + 1;
+    $('suStars').value = $('suStars').value.replace(/\|\s*내\s*(\d+)\s*$/gm, (all, d) => (+d === n ? '' : +d > n ? `| 내${+d - 1}` : all)).replace(/[ \t]+$/gm, '');
+    msg(m, `내 사진 ${n}을(를) 지웠어요.`);
     fillSide(); draw();
   }
 
-  // 직접 추가한 포인트 목록 (제목·설명 바로 수정, ✕로 삭제)
+  // 직접 추가한 카드 목록 (제목·설명 바로 수정, ↑↓ 순서, ✕ 삭제)
   function drawExtras(){
     const box = $('suExtras'); box.innerHTML = '';
     extras.forEach((x, i) => {
       const row = document.createElement('div'); row.className = 'su-ex';
-      row.innerHTML = `<input type="text" aria-label="추가 포인트 ${i+1} 제목"><select aria-label="추가 포인트 ${i+1} 사진">${imgOptions(x.imageIndex)}</select>
-        <button class="btn" type="button" aria-label="추가 포인트 ${i+1} 삭제">✕</button><input type="text" class="su-ex-desc" aria-label="추가 포인트 ${i+1} 설명" placeholder="설명 (선택)">`;
+      row.innerHTML = `<input type="text" aria-label="카드 ${i+1} 제목"><select aria-label="카드 ${i+1} 사진">${imgOptions(x.imageIndex)}</select>
+        <button class="btn" type="button" data-a="up" aria-label="카드 ${i+1} 위로"${i ? '' : ' disabled'}>↑</button>
+        <button class="btn" type="button" data-a="down" aria-label="카드 ${i+1} 아래로"${i < extras.length - 1 ? '' : ' disabled'}>↓</button>
+        <button class="btn" type="button" data-a="del" aria-label="카드 ${i+1} 삭제">✕</button>
+        <input type="text" class="su-ex-desc" aria-label="카드 ${i+1} 설명" placeholder="설명 (선택 · / 를 넣으면 줄바꿈)">`;
       const [t, d] = row.querySelectorAll('input');
       t.value = x.title; d.value = x.desc;
       t.addEventListener('input', () => { x.title = t.value; later(); });
       d.addEventListener('input', () => { x.desc = d.value; later(); });
       row.querySelector('select').addEventListener('change', (e) => { x.imageIndex = e.target.value; draw(); });
-      row.querySelector('button').addEventListener('click', () => { extras.splice(i, 1); drawExtras(); draw(); });
+      row.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+        const a = b.dataset.a;
+        if (a === 'del') extras.splice(i, 1);
+        else { const j = a === 'up' ? i - 1 : i + 1; [extras[i], extras[j]] = [extras[j], extras[i]]; }
+        drawExtras(); draw();
+      }));
       box.append(row);
     });
   }
@@ -3808,26 +3911,36 @@ loadData();
     // 자동 소구포인트 체크리스트
     const box = $('suAuto'); box.innerHTML = '';
     const auto = model.autoPoints;
-    if (!auto.length) box.innerHTML = '<p class="su-hint">데이터에서 뽑을 포인트가 없어요. ②에 직접 넣어주세요.</p>';
+    $('suAutoAll').hidden = !auto.length;
+    $('suAutoAll').textContent = auto.every(p => hidden.has(p.key)) ? '자동 포인트 모두 넣기' : '자동 포인트 모두 빼기 (직접 만들기)';
+    if (!auto.length) box.innerHTML = '<p class="su-hint">데이터에서 뽑을 자동 포인트가 없어요. 아래에 카드를 직접 추가하세요.</p>';
     for (const p of auto) {
       const lb = document.createElement('label');
-      lb.innerHTML = `<input type="checkbox" ${hidden.has(p.key) ? '' : 'checked'}><span>${p.icon} ${p.title.replace(/</g,'&lt;')}</span><select aria-label="사진 선택">${imgOptions(pointImages[p.key])}</select>`;
-      lb.querySelector('input').addEventListener('change', (e) => { e.target.checked ? hidden.delete(p.key) : hidden.add(p.key); draw(); });
+      lb.innerHTML = `<input type="checkbox" ${hidden.has(p.key) ? '' : 'checked'}><span>${p.icon} ${escH(p.title)}</span><select aria-label="사진 선택">${imgOptions(pointImages[p.key])}</select>`;
+      lb.querySelector('input').addEventListener('change', (e) => { e.target.checked ? hidden.delete(p.key) : hidden.add(p.key); fillSide(); draw(); });
       const sel = lb.querySelector('select');
       sel.addEventListener('change', () => { if (sel.value === '') delete pointImages[p.key]; else pointImages[p.key] = sel.value; draw(); });
       box.append(lb);
     }
     $('suExImg').innerHTML = imgOptions('');
     drawExtras();
-    // 대표 사진
+    // 대표 사진 + 내 사진 삭제
     const th = $('suThumbs'); th.innerHTML = '';
-    const nNol = (data.detail.images || []).length;
-    allImgs().forEach((src, i) => {
+    if (!allImgs().some(p => p.ref === heroRef)) heroRef = '0';
+    allImgs().forEach((p) => {
+      const cell = document.createElement('div'); cell.className = 'su-th';
       const b = document.createElement('button');
-      b.type = 'button'; b.setAttribute('aria-pressed', String(i === heroIndex)); b.setAttribute('aria-label', '대표 사진: ' + imgLabel(i));
-      b.innerHTML = `<img src="${src}" alt="" loading="lazy"><i>${i < nNol ? i : '내' + (i - nNol + 1)}</i>`;
-      b.addEventListener('click', () => { heroIndex = i; th.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === i))); draw(); });
-      th.append(b);
+      b.type = 'button'; b.setAttribute('aria-pressed', String(p.ref === heroRef)); b.setAttribute('aria-label', '대표 사진: ' + p.label);
+      b.innerHTML = `<img src="${escH(p.src)}" alt="" loading="lazy"><i>${p.tag}</i>`;
+      b.addEventListener('click', () => { heroRef = p.ref; th.querySelectorAll('.su-th > button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); draw(); });
+      cell.append(b);
+      if (p.id) {
+        const del = document.createElement('button');
+        del.type = 'button'; del.className = 'su-th-del'; del.textContent = '✕'; del.setAttribute('aria-label', p.label + ' 삭제');
+        del.addEventListener('click', () => deleteUpload(p.id));
+        cell.append(del);
+      }
+      th.append(cell);
     });
   }
 
@@ -3836,6 +3949,7 @@ loadData();
     if (!data) return;
     const seq = ++drawSeq;
     model = Sogu.build(data, over());
+    scheduleSave();
     const r = $('suRender');
     Sogu.render(r, model);
     await Sogu.ready(r);
@@ -3846,7 +3960,7 @@ loadData();
     // 1) 놀발 모바일 화면(폭 375) — 240px까지만 보이고 아래 64px 흐림
     const c1 = document.createElement('div'); c1.className = 'su-col';
     c1.innerHTML = `<h5>놀발 앱에서 보이는 첫 화면 (폭 375 · 접힌 상태)</h5>
-      <div class="su-phone"><div class="bar">${model.name.replace(/</g,'&lt;')}</div><div class="su-fold"><div class="su-scale" style="transform:scale(.375)"></div></div>
+      <div class="su-phone"><div class="bar">${escH(model.name)}</div><div class="su-fold"><div class="su-scale" style="transform:scale(.375)"></div></div>
       <div class="su-more">상세정보 더보기</div><div class="su-rooms">▼ 이 아래에 객실 목록</div></div>
       <p class="su-hint" style="width:375px">PC(폭 500)에서는 더 적게 보여요: 위쪽 약 35%. 훅·숙소명·마감 배지가 이 안에 들어가게 짜여 있어요.</p>`;
     c1.querySelector('.su-scale').append(cv.cloneNode(true));
@@ -3859,7 +3973,7 @@ loadData();
 
   let t = null;
   const later = () => { clearTimeout(t); t = setTimeout(draw, 400); };
-  ['suStars','suHook1','suHook2','suDue','suBadge','suChips','suList','suPriceText','suCta'].forEach(id => $(id).addEventListener('input', later));
+  FIELDS.filter(id => id !== 'suInfos').forEach(id => $(id).addEventListener('input', later));
   $('suInfos').addEventListener('input', () => { $('suInfos').dataset.edited = '1'; later(); });
   $('suInfosReset').addEventListener('click', () => {
     if (!data) return;
@@ -3867,30 +3981,46 @@ loadData();
     $('suInfos').value = Sogu.build(data, over()).infos.join('\n');
     draw();
   });
+  $('suAutoAll').addEventListener('click', () => {
+    if (!model) return;
+    const all = model.autoPoints.every(p => hidden.has(p.key));
+    model.autoPoints.forEach(p => all ? hidden.delete(p.key) : hidden.add(p.key));
+    fillSide(); draw();
+  });
 
   async function load(){
     const pk = $('suPk').value.trim();
     const m = $('suMsg');
+    clearTimeout(saveT);
+    if (data) await saveNow(); // 다른 PK로 넘어가기 전에 지금 것 저장
     msg(m, '불러오는 중… (놀발 상세 + 객실 요금 92일, 10초 정도)');
+    msg($('suSaveMsg'), '');
     $('suLoad').disabled = true;
     try {
-      data = await Sogu.load(pk);
-      heroIndex = 0; hidden.clear(); for (const k in pointImages) delete pointImages[k]; extras.length = 0; uploads.length = 0; msg($('suUpMsg'), '');
-      $('suDue').value = '';
+      const d = await Sogu.load(pk);
+      data = null; // 복원하는 동안 저장 안 함
+      uploads.length = 0;
+      (d.saved.photos || []).forEach(p => uploads.push({ id: p.id, url: p.url }));
+      restore(d.saved.setup);
+      msg($('suUpMsg'), '');
+      data = d;
       const p = data.promotion;
       const s = data.sales;
-      msg(m, `<b>${Sogu.build(data, {}).name}</b> · ${data.detail.region || ''}${s && s.minPrice ? ` · 최저 ${Sogu.won(s.minPrice)}원` : ''}${data.adminError ? ' · 객실 요금 못 읽음' : ''}<br>`
-        + (p ? `프로모션 관리: ${p.type || ''} ${p.start}~${p.end} (${p.confirm || '-'}) → 마감 배지 자동` : '프로모션 관리에 이 PK 일정이 없어요 → 마감 배지는 직접 입력')
+      const base = Sogu.build(data, {});
+      msg(m, `<b>${escH(base.name)}</b> · ${escH(data.detail.region || '')}${s && s.minPrice ? ` · 최저 ${Sogu.won(s.minPrice)}원` : ''}${data.adminError ? ' · 객실 요금 못 읽음' : ''}<br>`
+        + (p ? `프로모션 관리: ${escH(p.type || '')} ${p.start}~${p.end} (${escH(p.confirm || '-')}) → 마감 배지 자동` : '프로모션 관리에 이 PK 일정이 없어요 → 마감은 직접 입력')
+        + (d.saved.setup ? `<br>저장해 둔 설정${uploads.length ? `·내 사진 ${uploads.length}장` : ''}을 불러왔어요 (${escH(new Date(new Date(d.saved.setup.savedAt).getTime() + 9 * 3600e3).toISOString().slice(5, 16).replace('-', '/').replace('T', ' '))} 저장).`
+          : uploads.length ? `<br>저장해 둔 내 사진 ${uploads.length}장을 불러왔어요.` : '')
         + (!(s && s.minPrice) ? '<br>⚠ 놀발 객실 요금이 없어요(공급사 연동 상품 등) → 가격은 ⑥ "가격 문구 직접"에 넣어주세요.' : '')
-        + (Sogu.build(data, {}).autoPoints.length < 3 ? '<br>⚠ 놀발 데이터에서 뽑을 소구포인트가 적어요 → ②에 강조 포인트를 넣어주세요(첫 화면 훅에도 쓰여요).' : ''));
+        + (base.autoPoints.length < 3 ? '<br>⚠ 놀발 데이터에서 뽑을 소구포인트가 적어요 → ④에서 카드를 직접 추가하세요.' : ''));
       $('suFields').hidden = false;
-      delete $('suInfos').dataset.edited;
       model = Sogu.build(data, over());
-      $('suInfos').value = model.infos.join('\n');
+      if (!$('suInfos').dataset.edited) $('suInfos').value = model.infos.join('\n');
+      lastSaved = JSON.stringify(state()); // 열어 보기만 한 PK는 저장 안 함 — 손댄 뒤부터 저장
       fillSide();
       await draw();
     } catch (e) {
-      msg(m, String(e.message || e), true);
+      msg(m, escH(e.message || e), true);
     } finally {
       $('suLoad').disabled = false;
     }
@@ -3902,19 +4032,26 @@ loadData();
   ['dragenter','dragover'].forEach(t => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
   ['dragleave','drop'].forEach(t => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
   drop.addEventListener('drop', (e) => addUploads(e.dataTransfer.files));
-  $('suUpClear').addEventListener('click', () => {
-    if (!data || !uploads.length) return;
-    const n = (data.detail.images || []).length;
-    uploads.length = 0;
-    // 지운 사진을 가리키던 번호는 자동으로
-    if (heroIndex >= n) heroIndex = 0;
-    for (const k in pointImages) if (+pointImages[k] >= n) delete pointImages[k];
-    extras.forEach(x => { if (x.imageIndex !== '' && x.imageIndex !== 'none' && +x.imageIndex >= n) x.imageIndex = ''; });
-    msg($('suUpMsg'), '올린 사진을 비웠어요.');
+  $('suReset').addEventListener('click', async () => {
+    if (!data) return;
+    if (!confirm(`PK ${data.pk}의 입력 내용(문구·카드·칩)을 모두 지우고 자동 상태로 돌릴까요? 내 사진은 남아요.`)) return;
+    clearTimeout(saveT);
+    try { await post({ action: 'resetSetup', pk: data.pk }); } catch (e) { msg($('suSaveMsg'), '초기화 실패: ' + escH(e.message || e), true); return; }
+    restore(null);
+    model = Sogu.build(data, over());
+    $('suInfos').value = model.infos.join('\n');
+    lastSaved = JSON.stringify(state());
+    msg($('suSaveMsg'), '입력 내용을 지웠어요. 내 사진은 그대로 있어요.');
     fillSide(); draw();
   });
   ['suExTitle','suExDesc'].forEach(id => $(id).addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); addExtra(); } }));
   $('suPk').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
+  // 탭을 닫기 직전 저장 못 한 변경이 있으면 바로 저장
+  window.addEventListener('pagehide', () => {
+    if (!data) return;
+    const json = JSON.stringify(state());
+    if (json !== lastSaved) fetch(SAVE_API, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', 'x-promo-key': writeKey() }, body: JSON.stringify({ action: 'saveSetup', pk: data.pk, setup: JSON.parse(json) }) });
+  });
 
   function loadLib(){
     if (window.htmlToImage) return Promise.resolve();
@@ -3944,18 +4081,16 @@ loadData();
       const why = e && e.message ? e.message
         : e && e.target && e.target.src ? '이미지를 읽지 못했어요 (' + String(e.target.src).slice(0, 80) + '…)'
         : '이미지 변환 중 오류 (' + String(e && e.type || e) + ')';
-      msg(m, '저장 실패: ' + why + ' — PK와 함께 Claude에게 알려주세요.', true);
+      msg(m, '저장 실패: ' + escH(why) + ' — PK와 함께 Claude에게 알려주세요.', true);
     }
   });
 
   $('suCopy').addEventListener('click', async () => {
     if (!model) return;
-    const o = over();
-    const nUp = o.uploads.length;
-    delete o.uploads; // 사진 데이터는 너무 커서 빼고, 장수만 알린다
-    const text = `소구 이미지 만들어줘\nPK ${model.pk} (${model.name})\n` + (nUp ? `※ 내 사진 ${nUp}장을 올려서 썼어요 — 사진 파일은 따로 보낼게요\n` : '') + JSON.stringify(o, null, 1);
-    try { await navigator.clipboard.writeText(text); msg($('suMsg2'), '복사했어요. Claude 채팅에 붙여넣으면 같은 설정으로 파일을 만들어요.'); }
-    catch (e) { msg($('suMsg2'), '복사가 막혔어요. 아래 내용을 직접 복사하세요:<br><code style="white-space:pre-wrap">' + text.replace(/</g,'&lt;') + '</code>'); }
+    await saveNow();
+    const text = `소구 이미지 만들어줘\nPK ${model.pk} (${model.name}) — 탭에 저장된 설정 그대로 (node sogu/make.mjs ${model.pk} --saved)`;
+    try { await navigator.clipboard.writeText(text); msg($('suMsg2'), '복사했어요. 설정·내 사진은 서버에 저장돼 있어서 Claude가 PK로 그대로 불러와요.'); }
+    catch (e) { msg($('suMsg2'), '복사가 막혔어요. 아래 내용을 직접 복사하세요:<br><code style="white-space:pre-wrap">' + escH(text) + '</code>'); }
   });
 })();
 </script>

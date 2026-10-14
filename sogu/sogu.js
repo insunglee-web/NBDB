@@ -18,6 +18,12 @@
     const d = new Date(iso + 'T00:00:00+09:00');
     return `${d.getMonth() + 1}.${d.getDate()}(${DOW[d.getDay()]})`;
   };
+  // 10월 18일 (배지·하단 마감 문구용)
+  const mdKo = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso + 'T00:00:00+09:00');
+    return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+  };
   const shortPrice = (n) => (n >= 10000 ? `${Math.floor(n / 10000)}만원대` : `${won(n)}원`);
   const season = (m) => (m >= 3 && m <= 5 ? '봄' : m >= 6 && m <= 8 ? '여름' : m >= 9 && m <= 11 ? '가을' : '겨울');
   const nightsOf = (tag) => {
@@ -27,6 +33,9 @@
 
   // 시설/테마 → 아이콘
   const ICON = [
+    [/닭|치킨|야식/, '🍗'],
+    [/씨푸드|해산물|랍스터|크랩|대게/, '🦞'],
+    [/체크아웃|체크인|레이트|얼리/, '🛏️'],
     [/워터|수영|풀|물놀이|스파|온천|사우나/, '🌊'],
     [/미취학|유아|아동|소인/, '👶'],
     [/키즈|놀이|아이|어린이|티니핑|캐릭터/, '🧸'],
@@ -40,10 +49,10 @@
     [/주차/, '🅿️'],
     [/반려|펫/, '🐶'],
   ];
-  const iconOf = (s, d = '✨') => (ICON.find(([re]) => re.test(s)) || [null, d])[1];
+  const iconOf = (s, d = '🎁') => (ICON.find(([re]) => re.test(s)) || [null, d])[1];
 
-  // 놀발 CDN은 CORS 허용 → 그대로, 나머지(공급사 이미지 서버 등)는 price-scraper 중계로
-  const viaProxy = (u) => (!u || /^data:/.test(u) || /^https:\/\/cdn\.nolbal\.com\//.test(u) ? u : `${API}/img?url=${encodeURIComponent(u)}`);
+  // 놀발 CDN·저장한 내 사진(/api/sogu)은 CORS 허용 → 그대로, 나머지(공급사 이미지 서버 등)는 price-scraper 중계로
+  const viaProxy = (u) => (!u || /^data:/.test(u) || /^https:\/\/cdn\.nolbal\.com\//.test(u) || u.startsWith(API + '/sogu?') ? u : `${API}/img?url=${encodeURIComponent(u)}`);
 
   async function getJSON(url) {
     const r = await fetch(url);
@@ -53,9 +62,11 @@
   async function load(pk) {
     pk = String(pk || '').trim();
     if (!/^\d+$/.test(pk)) throw new Error('PK 번호(숫자)를 입력하세요.');
-    const [d, promo] = await Promise.all([
+    const [d, promo, saved] = await Promise.all([
       getJSON(`${API}/stay-detail?id=${pk}&days=92`),
       getJSON(`${API}/promotions`).catch(() => null),
+      // 탭에서 저장해 둔 설정·내 사진 (없거나 실패하면 빈 값)
+      getJSON(`${API}/sogu?pk=${pk}`).then((j) => (j.ok ? j : null)).catch(() => null),
     ]);
     if (!d.ok) throw new Error(d.error || '숙소 정보를 불러오지 못했어요.');
     // 프로모션 관리 DB에서 같은 PK의 일정(오늘 진행 중 → 가장 가까운 예정 순)
@@ -66,7 +77,7 @@
       .filter((x) => String(x.pk || '').trim() === pk && x.end && x.end >= today && !/불가|취소/.test(x.confirm || ''))
       .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
     promotion = mine.find((x) => x.start <= today) || mine[0] || null;
-    return { ...d, promotion, pk };
+    return { ...d, promotion, pk, saved: { setup: (saved && saved.setup) || null, photos: (saved && saved.photos) || [], writeLocked: !!(saved && saved.writeLocked) } };
   }
 
   // 판매 상품명 머리말([추캉스 올인클루시브 1박_10월])별 최저가 = 패키지
@@ -99,7 +110,7 @@
         icon: iconOf(kidItems.join(' '), '🧸'),
         chip: `${kidItems[0]}`,
         title: `아이와 함께 즐기는 ${kidItems.join(' · ')}`,
-        desc: `숙소 안 '아이와 함께 하는 시설'로 ${kidItems.join(', ')}이(가) 있어요.`,
+        desc: `숙소 안 '아이와 함께 하는 시설'로 ${kidItems.join(', ')}이(가) 있습니다.`,
       });
     }
     const themes = (d.themes || []).filter((t) => !kidItems.includes(t));
@@ -138,7 +149,7 @@
         icon: isPeople ? '👶' : iconOf(freeHead, '🎁'),
         chip: title.length <= 12 ? title : isPeople ? '아이 추가 무료' : `${freeHead} 아이 무료`,
         title,
-        desc: isPeople ? '인원 추가 요금 안내 기준이에요. (기준·최대 인원은 객실마다 달라요)' : `숙소 추가요금 안내의 '${freeHead}' 항목 기준이에요.`,
+        desc: isPeople ? '인원 추가 요금 안내 기준입니다. (기준·최대 인원은 객실마다 다릅니다)' : `숙소 추가요금 안내의 '${freeHead}' 항목 기준입니다.`,
       });
     }
     const pkgHi = pkgs.find((p) => /올인|조식|뷔페|패키지|워터|키즈|입장/.test(p.tag));
@@ -225,7 +236,7 @@
       : kid
         ? `${(d.facilitySections.find((s) => /아이/.test(s.title)) || {}).items?.[0] || ''} 품은 ${d.type || '숙소'}`
         : `${(d.themes || [])[0] ? d.themes[0] + ' ' : ''}${d.type || '숙소'}`;
-    const hook1 = over.hook1 != null && over.hook1 !== '' ? over.hook1 : `${city} ${season(now.getMonth() + 1)}여행,`;
+    const hook1 = over.hook1 != null && over.hook1 !== '' ? over.hook1 : `${city}에서 즐기는 ${season(now.getMonth() + 1)} 여행`;
     const hook2 =
       over.hook2 != null && over.hook2 !== ''
         ? over.hook2
@@ -236,7 +247,7 @@
             : `놀발에서만 만나는 **${d.type || '숙소'} 특가**`;
 
     const promo = data.promotion;
-    const due = over.due != null ? over.due : promo && promo.end ? `${md(promo.end)}까지 특가` : '';
+    const due = (over.due != null ? over.due : promo && promo.end ? `${mdKo(promo.end)}까지` : '').replace(/\s*특가\s*$/, '');
     const stayFrom = sales.firstOpen;
     const stayTo = sales.lastOpen;
     const stay =
@@ -247,13 +258,18 @@
           : '';
 
     const images = allImages;
-    const heroIdx = Math.min(Math.max(+over.heroIndex || 0, 0), Math.max(images.length - 1, 0));
+    // heroIndex: 사진 번호 또는 'u1'(내 사진 1)
+    const heroRaw = /^u\d+$/.test(String(over.heroIndex)) ? (d.images || []).length + +String(over.heroIndex).slice(1) - 1 : +over.heroIndex || 0;
+    const heroIdx = Math.min(Math.max(heroRaw, 0), Math.max(images.length - 1, 0));
     const hero = over.heroImage || images[heroIdx] || '';
     const rest = images.filter((_, i) => i !== heroIdx);
 
-    const chips = (over.chips && over.chips.length ? over.chips : points.slice(0, 3).map((p) => ({ icon: p.star ? iconOf(p.title, '🔥') : p.icon, label: (p.chip || p.title).replace(/\*\*/g, '') })))
+    const autoChips = points.slice(0, 3).map((p) => ({ icon: p.star || p.key.startsWith('extra') ? iconOf(p.chip || p.title) : p.icon, label: (p.chip || p.title).replace(/\*\*/g, '') }));
+    // chipSlots: 탭의 칩 3칸 (비운 칸은 소구포인트 순서대로)
+    const slotChips = over.chipSlots ? [0, 1, 2].map((i) => over.chipSlots[i] || autoChips[i]).filter(Boolean) : null;
+    const chips = (slotChips || (over.chips && over.chips.length ? over.chips : null) || autoChips)
       .slice(0, 3)
-      .map((c) => (typeof c === 'string' ? { icon: iconOf(c), label: c } : c));
+      .map((c) => (typeof c === 'string' ? { icon: iconOf(c), label: c } : { ...c, icon: c.icon || iconOf(c.label || '') }));
 
     // 후기: 별 5개 + 20자 이상, 글자 수 적당한 것 3개 (작성자 이름은 쓰지 않음)
     const quotes = ((d.reviews && d.reviews.items) || [])
@@ -285,7 +301,7 @@
       name,
       region,
       type: d.type,
-      badge: over.badge || '놀발 단독 특가',
+      badge: over.badge || '놀발 단독특가',
       due,
       stay,
       hook1,
@@ -299,9 +315,9 @@
       priceText: over.priceText || '',
       listPrice: listPrice && minPrice && listPrice > minPrice ? listPrice : null,
       packages: pkgs.slice(0, 4),
-      infos: over.infos || infos,
+      infos: (over.infos || infos).map((l) => l.replace(/\*+/g, '').trim()).filter((l) => l && !/^예약\s*전\s*(꼭\s*)?확인/.test(l)),
       reviews: { rating: d.reviews && d.reviews.rating, count: d.reviews && d.reviews.count, quotes },
-      cta: over.cta || '아래에서 객실을 골라보세요',
+      cta: over.cta || '특별한 가격으로 만나보세요',
       promotion: promo,
     };
   }
@@ -315,12 +331,12 @@
     // HERO — 위 350px(접힌 화면)에 배지·마감·훅 2줄·숙소명
     h.push(`<section class="sg-hero">${m.hero ? `<img src="${esc(viaProxy(m.hero))}" crossorigin="anonymous" alt="">` : ''}
       <div class="sg-hero-in">
-        <div class="sg-top"><span class="sg-badge">${esc(m.badge)}</span>${m.due ? `<span class="sg-due">⏰ ${esc(m.due)}</span>` : ''}</div>
-        <p class="sg-h1 sg-fit">${mark(m.hook1)}</p>
+        <span class="sg-badge">${esc(m.due ? m.due + ' ' + m.badge : m.badge)}</span>
+        <p class="sg-hname sg-fit">${esc(m.name)}</p>
         <p class="sg-h2 sg-fit">${mark(m.hook2)}</p>
-        <div class="sg-name"><b>${esc(m.name)}</b>${m.region ? `<span>${esc(m.region)}</span>` : ''}</div>
+        <p class="sg-h1 sg-fit">${mark(m.hook1)}</p>
       </div>
-      ${m.chips.length ? `<div class="sg-chips">${m.chips.map((c) => `<div class="sg-chip"><i>${esc(c.icon || '✨')}</i><b>${esc(c.label)}</b></div>`).join('')}</div>` : ''}
+      ${m.chips.length ? `<div class="sg-chips">${m.chips.map((c) => `<div class="sg-chip">${c.icon ? `<i>${esc(c.icon)}</i>` : ''}<b>${esc(c.label)}</b></div>`).join('')}</div>` : ''}
     </section>`);
     // PRICE
     if (m.price || m.priceText) {
@@ -328,7 +344,7 @@
         <div class="row">${m.listPrice ? `<span class="old">${won(m.listPrice)}원</span><span class="pct">${pct}%</span>` : ''}
         <span class="now">${m.priceText ? esc(m.priceText) : `${won(m.price)}<small>원~</small>`}</span></div>
         <p class="note">1박 · 객실 1개 기준 판매가 중 최저가 (날짜·객실별 요금 상이)</p>
-        ${m.stay || m.due ? `<div class="stay">${m.due ? `<span>🗓️ 판매 ${esc(m.due.replace(/\s*특가$/, ''))}</span>` : ''}${m.stay ? `<span>🛏️ ${esc(m.stay)}</span>` : ''}</div>` : ''}
+        ${m.stay || m.due ? `<div class="stay">${m.due ? `<span>판매 ${esc(m.due)}</span>` : ''}${m.stay ? `<span>${esc(m.stay)}</span>` : ''}</div>` : ''}
       </section>`);
     }
     // POINTS
@@ -337,8 +353,8 @@
       m.points.forEach((p, i) => {
         const img = p.image && p.image !== 'none' ? viaProxy(p.image) : p.image || imgAt(i);
         h.push(`<div class="sg-pt${p.star ? ' star' : ''}">${p.star ? '<span class="sg-pick">놀발 PICK</span>' : ''}
-          <div class="sg-pt-head"><span class="sg-pt-no">${String(i + 1).padStart(2, '0')}</span>
-          <div><p class="sg-pt-t">${esc(p.icon ? p.icon + ' ' : '')}${mark(p.title)}</p>${p.desc ? `<p class="sg-pt-d">${mark(p.desc)}</p>` : ''}</div></div>
+          <div class="sg-pt-head"><span class="sg-pt-no">${i + 1}</span>
+          <div><p class="sg-pt-t">${mark(p.title)}</p>${p.desc ? `<p class="sg-pt-d">${mark(p.desc)}</p>` : ''}</div></div>
           ${img && p.image !== 'none' ? `<img src="${esc(img)}" crossorigin="anonymous" alt="">` : ''}</div>`);
       });
       h.push(`</section>`);
@@ -354,7 +370,7 @@
     }
     // INFO
     if (m.infos.length) {
-      h.push(`<section class="sg-sec"><div class="sg-sec-h"><small>CHECK</small><h3>예약 전 확인하세요</h3></div><ul class="sg-info">${m.infos.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></section>`);
+      h.push(`<section class="sg-sec gap"><div class="sg-sec-h"><small>CHECK</small><h3>예약 전 확인해주세요</h3></div><ul class="sg-info">${m.infos.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></section>`);
     }
     // REVIEWS
     if (m.reviews.rating && m.reviews.count >= 3) {
@@ -363,8 +379,9 @@
         ${m.reviews.quotes.length ? `<div class="sg-rv-list">${m.reviews.quotes.map((q) => `<div class="sg-rv">${esc(q.text)}${q.room ? `<small>${esc(q.room)} 투숙</small>` : ''}</div>`).join('')}</div>` : ''}
       </section>`);
     }
-    h.push(`<section class="sg-cta"><h3>${mark(m.cta)}</h3>${m.due ? `<p>${esc(m.due)} · 놓치면 이 가격 다시 없어요</p>` : ''}<div class="arrow">👇</div></section>`);
-    h.push(`<p class="sg-foot">* 가격은 제작 시점(${new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10)}) 놀이의발견 판매가 기준이며 날짜·객실·재고에 따라 달라질 수 있어요. 사진은 이해를 돕기 위한 이미지예요.</p>`);
+    h.push(`<section class="sg-cta">${m.due ? `<small>${esc(m.due)}</small>` : ''}<h3>${mark(m.cta)}</h3><svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="#14161F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5l6 6 6-6M6 12l6 6 6-6"/></svg></section>`);
+    const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+    h.push(`<p class="sg-foot">가격은 ${today.slice(0, 4)}년 ${mdKo(today)} 놀이의발견 판매가 기준이며, 객실 및 날짜에 따라 달라질 수 있습니다. 사진은 이해를 돕기 위한 이미지로 실제와 다를 수 있습니다.</p>`);
     h.push(`</div>`);
     el.innerHTML = h.join('');
     fit(el);
@@ -376,20 +393,11 @@
     el.querySelectorAll('.sg-fit').forEach((p) => {
       p.style.fontSize = '';
       let size = parseFloat(getComputedStyle(p).fontSize);
-      const max = 920;
+      const max = 888;
       let guard = 60;
       while (p.scrollWidth > max && size > 28 && guard--) {
         size -= 2;
         p.style.fontSize = size + 'px';
-      }
-    });
-    el.querySelectorAll('.sg-name').forEach((n) => {
-      const b = n.querySelector('b');
-      let size = 36;
-      let guard = 20;
-      while (n.scrollWidth > n.clientWidth + 1 && size > 24 && guard--) {
-        size -= 2;
-        b.style.fontSize = size + 'px';
       }
     });
   }
@@ -448,5 +456,5 @@
       });
   }
 
-  root.Sogu = { API, load, build, render, ready, fit, parseStars, packagesOf, autoPoints, md, won };
+  root.Sogu = { API, load, build, render, ready, fit, parseStars, packagesOf, autoPoints, md, mdKo, won };
 })(typeof window !== 'undefined' ? window : globalThis);
