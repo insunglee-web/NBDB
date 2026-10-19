@@ -315,7 +315,9 @@
       price: minPrice,
       priceText: over.priceText || '',
       listPrice: listPrice && minPrice && listPrice > minPrice ? listPrice : null,
-      packages: pkgs.slice(0, 4),
+      // over.packages: 탭에서 직접 넣은 상품 목록(빈 배열 = 섹션 빼기) → 1개여도 보여줌
+      packages: over.packages ? over.packages.slice(0, 6) : pkgs.slice(0, 4),
+      pkManual: !!over.packages,
       infos: (over.infos || infos).map((l) => l.replace(/\*+/g, '').trim()).filter((l) => l && !/^예약\s*전\s*(꼭\s*)?확인/.test(l)),
       reviews: { rating: d.reviews && d.reviews.rating, count: d.reviews && d.reviews.count, quotes },
       cta: over.cta || '특별한 가격으로 만나보세요',
@@ -361,11 +363,11 @@
       h.push(`</section>`);
     }
     // PACKAGES
-    if (m.packages.length > 1) {
+    if (m.packages.length > (m.pkManual ? 0 : 1)) {
       h.push(`<section class="sg-sec"><div class="sg-sec-h"><small>PACKAGE</small><h3>지금 판매 중인 상품</h3></div><div class="sg-pk">`);
       m.packages.forEach((p, i) => {
-        h.push(`<div class="sg-pk-i"><div><small>PACKAGE ${i + 1}</small><b>${esc(p.tag)}</b><p>${esc(p.rooms.slice(0, 3).join(' · '))}${p.rooms.length > 3 ? ` 외 ${p.rooms.length - 3}개` : ''}</p></div>
-          <div class="pr">${won(p.price)}<small>원~</small></div></div>`);
+        h.push(`<div class="sg-pk-i"><div><small>PACKAGE ${i + 1}</small><b>${esc(p.tag)}</b>${p.desc != null ? (p.desc ? `<p>${esc(p.desc)}</p>` : '') : `<p>${esc(p.rooms.slice(0, 3).join(' · '))}${p.rooms.length > 3 ? ` 외 ${p.rooms.length - 3}개` : ''}</p>`}</div>
+          ${p.price ? `<div class="pr">${won(p.price)}<small>원~</small></div>` : p.priceText ? `<div class="pr">${esc(p.priceText)}</div>` : ''}</div>`);
       });
       h.push(`</div></section>`);
     }
@@ -457,5 +459,19 @@
       });
   }
 
-  root.Sogu = { API, load, build, render, ready, fit, parseStars, packagesOf, autoPoints, md, mdKo, won };
+  // 판매 상품 직접 입력: 한 줄에 하나 · 상품명 | 구성·객실 | 가격  ('없음' 한 줄 = 섹션 빼기)
+  function parsePackages(text) {
+    const lines = String(text || '').split('\n').map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 1 && /^(없음|none)$/.test(lines[0])) return [];
+    return lines.map((l) => {
+      const parts = l.split('|').map((x) => x.trim());
+      const last = parts.length >= 2 ? parts[parts.length - 1] : '';
+      const num = /^[\d,\s]+(원~?)?$/.test(last) ? +last.replace(/[^\d]/g, '') : 0;
+      const priceText = !num && parts.length >= 3 ? last : '';
+      if (num || priceText) parts.pop();
+      return { tag: parts[0], desc: parts.slice(1).join(' | '), price: num || null, priceText, rooms: [] };
+    });
+  }
+
+  root.Sogu = { API, load, build, render, ready, fit, parseStars, parsePackages, packagesOf, autoPoints, md, mdKo, won };
 })(typeof window !== 'undefined' ? window : globalThis);

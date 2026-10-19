@@ -7,8 +7,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
-<link rel="stylesheet" href="sogu/sogu.css?v=20261019a">
-<script src="sogu/sogu.js?v=20261019a"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
+<link rel="stylesheet" href="sogu/sogu.css?v=20261019b">
+<script src="sogu/sogu.js?v=20261019b"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
 <style>
 :root{
   --bg:#0A0F1A;
@@ -1031,6 +1031,13 @@ tr:hover td{background:rgba(47,211,196,0.04);}
             <input type="text" id="suPriceText" placeholder="가격 문구 통째로 직접 (선택) 예: 1박 129,000원~" style="margin-top:6px">
             <p class="su-hint">판매가 숫자를 넣으면 가운데 금액·할인율·상품명의 「1박 OO만원대」에 그대로 반영돼요.</p>
             <input type="text" id="suCta" placeholder="맨 아래 문구 — 기본: 특별한 가격으로 만나보세요" style="margin-top:6px">
+
+            <h4>지금 판매 중인 상품</h4>
+            <textarea id="suPkgs" placeholder="한 줄에 하나 · 상품명 | 구성·객실 | 가격&#10;예) 조식 2인 패키지 | 디럭스 · 스위트 | 129000&#10;예) 키즈 패키지 | 키즈월드 입장권 2매 포함 | 159,000&#10;비우면 놀발 판매 상품 자동 · '없음' 한 줄이면 섹션 빼기"></textarea>
+            <div class="su-row" style="justify-content:space-between; margin-top:4px">
+              <p class="su-hint" style="margin:0">가격은 숫자면 「129,000원~」으로, 글자면 그대로 나와요. 가격 칸은 빼도 돼요.</p>
+              <button class="btn" id="suPkgsAuto" type="button" style="padding:4px 9px; white-space:nowrap">자동 상품 불러오기</button>
+            </div>
 
             <h4>⑦ 예약 전 확인해주세요</h4>
             <textarea id="suInfos" placeholder="한 줄에 하나 · 비우면 이 칸은 이미지에서 빠져요 (제목과 겹치는 '예약 전 확인하세요' 줄은 자동으로 빠져요)"></textarea>
@@ -3727,7 +3734,7 @@ loadData();
   const hidden = new Set();
   const extras = [];      // 직접 추가한 소구 카드 [{title, desc, imageIndex(ref)}]
   const uploads = [];     // 저장된 내 사진 [{id, url}]
-  const FIELDS = ['suName','suPrice','suStars','suHook1','suHook2','suDue','suBadge','suChip1','suChip2','suChip3','suList','suPriceText','suCta','suInfos'];
+  const FIELDS = ['suName','suPrice','suStars','suHook1','suHook2','suDue','suBadge','suChip1','suChip2','suChip3','suList','suPriceText','suPkgs','suCta','suInfos'];
 
   function msg(el, text, err){ el.textContent = ''; el.className = 'su-msg' + (err ? ' err' : ''); el.innerHTML = text; }
   const escH = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
@@ -3767,6 +3774,7 @@ loadData();
     if (v('suPrice')) o.price = v('suPrice');
     if (v('suList')) o.listPrice = v('suList');
     if (v('suPriceText')) o.priceText = v('suPriceText');
+    if (v('suPkgs')) o.packages = Sogu.parsePackages(v('suPkgs'));
     if (v('suCta')) o.cta = v('suCta');
     // 예약 전 확인: 손댄 뒤에는 입력한 줄 그대로(빈칸이면 섹션 빠짐)
     if ($('suInfos').dataset.edited) o.infos = $('suInfos').value.split('\n').map(s => s.replace(/^[-*•✓\s]+/, '').trim()).filter(Boolean);
@@ -4048,6 +4056,13 @@ loadData();
     lastSaved = JSON.stringify(state());
     msg($('suSaveMsg'), '입력 내용을 지웠어요. 내 사진은 그대로 있어요.');
     fillSide(); draw();
+  });
+  // 지금 판매 중인 상품: 자동 목록을 칸에 채워 손보기
+  $('suPkgsAuto').addEventListener('click', () => {
+    if (!data) return;
+    const auto = Sogu.build(data, {}).packages;
+    $('suPkgs').value = auto.map(p => `${p.tag} | ${p.rooms.slice(0, 3).join(' · ')}${p.rooms.length > 3 ? ` 외 ${p.rooms.length - 3}개` : ''} | ${p.price}`).join('\n');
+    $('suPkgs').dispatchEvent(new Event('input'));
   });
   ['suExTitle','suExDesc'].forEach(id => $(id).addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); addExtra(); } }));
   $('suPk').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
