@@ -7,8 +7,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
-<link rel="stylesheet" href="sogu/sogu.css?v=20261014c">
-<script src="sogu/sogu.js?v=20261014c"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
+<link rel="stylesheet" href="sogu/sogu.css?v=20261019a">
+<script src="sogu/sogu.js?v=20261019a"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
 <style>
 :root{
   --bg:#0A0F1A;
@@ -984,6 +984,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
             <p class="su-hint">맨 앞에 강조 카드로 들어가요. 카드 제목은 무엇을 주는지 분명하게(홍보 문구 X), 설명은 이용 조건까지 — 합니다체로. <b>**글자**</b>는 강조색. 사진을 고르려면 끝에 <b>| 사진번호</b> — ⑤에 보이는 번호 그대로 (예: <code>… | 설명 | 3</code>, 올린 사진은 <code>| 내1</code>, 사진 빼기는 <code>| 없음</code>).</p>
 
             <h4>③ 첫 화면 (접혀도 보이는 부분)</h4>
+            <input type="text" id="suName" placeholder="숙소명 (맨 위) — 비우면 놀발 숙소명 그대로" aria-label="숙소명" style="margin-bottom:6px">
             <input type="text" id="suHook2" placeholder="상품명 (크게, 숙소명 아래) 예: 조식+야식 PKG — 비우면 자동">
             <input type="text" id="suHook1" placeholder="서브카피 (작게) 예: 가을부터 겨울까지 즐기는 강원도 양양 여행 — 비우면 자동" style="margin-top:6px">
             <div class="su-row" style="margin-top:6px">
@@ -997,7 +998,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
               <input type="text" id="suChip2" placeholder="키즈클래스 1+1 제공" aria-label="칩 2">
               <input type="text" id="suChip3" placeholder="주중 1시간 레이트 체크아웃" aria-label="칩 3">
             </div>
-            <p class="su-hint">칩은 혜택 이름만(예: <code>닭강정 세트 제공</code>), 이용 조건·유료 여부·포함 내용은 아래 카드 제목/설명에 구체적으로. 비운 칸은 소구포인트 순서대로 채워져요. 아이콘은 문구에 맞춰 자동.</p>
+            <p class="su-hint">칩은 혜택 이름만(예: <code>닭강정 세트 제공</code>), 이용 조건·유료 여부·포함 내용은 아래 카드 제목/설명에 구체적으로. 비운 칸은 소구포인트 순서대로 채워져요. 아이콘은 들어가지 않고 자리만 비워둬요(직접 넣기).</p>
 
             <h4>④ 소구 카드 (자동 포인트 + 직접 만든 카드)</h4>
             <button class="btn" id="suAutoAll" type="button" style="padding:4px 9px; margin-bottom:4px">자동 포인트 모두 빼기 (직접 만들기)</button>
@@ -1024,9 +1025,11 @@ tr:hover td{background:rgba(47,211,196,0.04);}
 
             <h4>⑥ 가격</h4>
             <div class="su-row">
+              <input type="text" id="suPrice" placeholder="판매가 — 비우면 최저가 자동" inputmode="numeric" aria-label="판매가">
               <input type="text" id="suList" placeholder="정상가 (선택, 넣으면 할인율 표시)" inputmode="numeric">
-              <input type="text" id="suPriceText" placeholder="가격 문구 직접 (선택)">
             </div>
+            <input type="text" id="suPriceText" placeholder="가격 문구 통째로 직접 (선택) 예: 1박 129,000원~" style="margin-top:6px">
+            <p class="su-hint">판매가 숫자를 넣으면 가운데 금액·할인율·상품명의 「1박 OO만원대」에 그대로 반영돼요.</p>
             <input type="text" id="suCta" placeholder="맨 아래 문구 — 기본: 특별한 가격으로 만나보세요" style="margin-top:6px">
 
             <h4>⑦ 예약 전 확인해주세요</h4>
@@ -3724,7 +3727,7 @@ loadData();
   const hidden = new Set();
   const extras = [];      // 직접 추가한 소구 카드 [{title, desc, imageIndex(ref)}]
   const uploads = [];     // 저장된 내 사진 [{id, url}]
-  const FIELDS = ['suStars','suHook1','suHook2','suDue','suBadge','suChip1','suChip2','suChip3','suList','suPriceText','suCta','suInfos'];
+  const FIELDS = ['suName','suPrice','suStars','suHook1','suHook2','suDue','suBadge','suChip1','suChip2','suChip3','suList','suPriceText','suCta','suInfos'];
 
   function msg(el, text, err){ el.textContent = ''; el.className = 'su-msg' + (err ? ' err' : ''); el.innerHTML = text; }
   const escH = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
@@ -3760,6 +3763,8 @@ loadData();
     if (v('suDue')) o.due = v('suDue');
     if (v('suBadge')) o.badge = v('suBadge');
     if (chipIn.some(Boolean)) o.chipSlots = chipIn;
+    if (v('suName')) o.name = v('suName');
+    if (v('suPrice')) o.price = v('suPrice');
     if (v('suList')) o.listPrice = v('suList');
     if (v('suPriceText')) o.priceText = v('suPriceText');
     if (v('suCta')) o.cta = v('suCta');

@@ -201,11 +201,12 @@
     const d = data.detail;
     const sales = data.sales || {};
     const pkgs = packagesOf(sales);
-    const name = cleanName(d.name);
+    const name = over.name ? String(over.name).trim() : cleanName(d.name);
     const region = d.region || '';
     const city = region.split(' ').pop() || region;
     const now = new Date(Date.now() + 9 * 3600e3);
-    const minPrice = pkgs.length ? pkgs[0].price : sales.minPrice || null;
+    const priceIn = over.price ? +String(over.price).replace(/[^\d]/g, '') : 0; // 탭에서 직접 넣은 판매가
+    const minPrice = priceIn || (pkgs.length ? pkgs[0].price : sales.minPrice || null);
 
     const auto = autoPoints(data, pkgs);
     const hidden = new Set(over.hide || []);
@@ -336,7 +337,7 @@
         <p class="sg-h2 sg-fit">${mark(m.hook2)}</p>
         <p class="sg-h1 sg-fit">${mark(m.hook1)}</p>
       </div>
-      ${m.chips.length ? `<div class="sg-chips">${m.chips.map((c) => `<div class="sg-chip">${c.icon ? `<i>${esc(c.icon)}</i>` : ''}<b>${esc(c.label)}</b></div>`).join('')}</div>` : ''}
+      ${m.chips.length ? `<div class="sg-chips">${m.chips.map((c) => `<div class="sg-chip"><i aria-hidden="true"></i><b>${esc(c.label)}</b></div>`).join('')}</div>` : ''}
     </section>`);
     // PRICE
     if (m.price || m.priceText) {

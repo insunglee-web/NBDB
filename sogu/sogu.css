@@ -26,7 +26,7 @@
 .sg-chips{position:absolute; left:56px; right:56px; bottom:44px; z-index:2; display:flex; gap:20px;}
 .sg-chip{flex:1; min-height:178px; padding:26px 16px; border-radius:20px; background:#fff; box-shadow:0 8px 24px rgba(0,0,0,.12);
   display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px;}
-.sg-chip i{font-style:normal; font-size:44px; line-height:1;}
+.sg-chip i{display:block; width:44px; height:44px;} /* 아이콘 자리(비워둠 — 직접 넣기) */
 .sg-chip b{font-size:28px; font-weight:700; line-height:1.4; color:var(--ink); text-wrap:balance;}
 
 /* ── PRICE ──────────────────────────────────── */
