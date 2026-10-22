@@ -1029,7 +1029,8 @@ tr:hover td{background:rgba(47,211,196,0.04);}
               <input type="text" id="suList" placeholder="정상가 (선택, 넣으면 할인율 표시)" inputmode="numeric">
             </div>
             <input type="text" id="suPriceText" placeholder="가격 문구 통째로 직접 (선택) 예: 1박 129,000원~" style="margin-top:6px">
-            <p class="su-hint">판매가 숫자를 넣으면 가운데 금액·할인율·상품명의 「1박 OO만원대」에 그대로 반영돼요.</p>
+            <input type="text" id="suStay" placeholder="투숙 기간 — 비우면 자동 예: 투숙 10.23(금) ~ 12.31(수)" style="margin-top:6px">
+            <p class="su-hint">판매가 숫자를 넣으면 가운데 금액·할인율·상품명의 「1박 OO만원대」에 그대로 반영돼요. 투숙 기간은 가격 아래 칸에 쓴 그대로 나오고, <code>없음</code>이면 빠져요.</p>
             <input type="text" id="suCta" placeholder="맨 아래 문구 — 기본: 특별한 가격으로 만나보세요" style="margin-top:6px">
 
             <h4>지금 판매 중인 상품</h4>
@@ -3734,7 +3735,7 @@ loadData();
   const hidden = new Set();
   const extras = [];      // 직접 추가한 소구 카드 [{title, desc, imageIndex(ref)}]
   const uploads = [];     // 저장된 내 사진 [{id, url}]
-  const FIELDS = ['suName','suPrice','suStars','suHook1','suHook2','suDue','suBadge','suChip1','suChip2','suChip3','suList','suPriceText','suPkgs','suCta','suInfos'];
+  const FIELDS = ['suName','suPrice','suStars','suHook1','suHook2','suDue','suBadge','suChip1','suChip2','suChip3','suList','suPriceText','suStay','suPkgs','suCta','suInfos'];
 
   function msg(el, text, err){ el.textContent = ''; el.className = 'su-msg' + (err ? ' err' : ''); el.innerHTML = text; }
   const escH = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
@@ -3774,6 +3775,7 @@ loadData();
     if (v('suPrice')) o.price = v('suPrice');
     if (v('suList')) o.listPrice = v('suList');
     if (v('suPriceText')) o.priceText = v('suPriceText');
+    if (v('suStay')) o.stay = /^(없음|none)$/.test(v('suStay')) ? '' : v('suStay');
     if (v('suPkgs')) o.packages = Sogu.parsePackages(v('suPkgs'));
     if (v('suCta')) o.cta = v('suCta');
     // 예약 전 확인: 손댄 뒤에는 입력한 줄 그대로(빈칸이면 섹션 빠짐)
