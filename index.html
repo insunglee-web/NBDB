@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" crossorigin="anonymous"><!-- crossorigin 필수: 없으면 소구 이미지 JPG 다운로드(html-to-image)가 이 폰트를 못 읽어 맑은 고딕으로 나옴 -->
 <link rel="stylesheet" href="sogu/sogu.css?v=20261019b">
 <script src="sogu/sogu.js?v=20261019b"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
+<link rel="stylesheet" href="detail/detail.css?v=20261031">
+<script src="detail/detail.js?v=20261031"></script>
 <style>
 :root{
   --bg:#0A0F1A;
@@ -516,6 +518,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
     <div class="tab" data-tab="yearprice">연도별 시설금액</div>
     <div class="tab" data-tab="promo">프로모션 관리</div>
     <div class="tab" data-tab="sogu">특가 소구 이미지</div>
+    <div class="tab" data-tab="detail">상세페이지</div>
   </div>
 
   <div class="wrap">
@@ -1064,6 +1067,84 @@ tr:hover td{background:rgba(47,211,196,0.04);}
         </div>
       </div>
       <div id="suRender" aria-hidden="true"></div>
+    </div>
+
+    <!-- 스마트스토어 상세페이지 (엔진: detail/detail.js, 템플릿: detail/detail.css, 데이터: price-scraper /api/stay-detail) -->
+    <div class="section" id="sec-detail">
+      <div class="section-title"><span class="num">15</span>스마트스토어 상세페이지 (놀발 숙소 정보 → 상세 이미지)</div>
+      <style>
+        #sec-detail [hidden]{display:none !important;}
+        #sec-detail input[type=text],#sec-detail textarea{width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+          border-radius:7px; padding:8px 10px; font-size:13px; font-family:var(--body);}
+        #sec-detail textarea{resize:vertical; min-height:84px; line-height:1.5;}
+        #sec-detail input:focus,#sec-detail textarea:focus{outline:none; border-color:var(--teal);}
+        #sec-detail :focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+        .dt-panel-btn{padding:4px 9px; margin-top:6px;}
+        .dt-blocks label{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:6px 0; border-bottom:1px dashed var(--line); cursor:pointer;}
+        .dt-blocks label span{flex:1; line-height:1.45;}
+        .dt-blocks label small{display:block; color:var(--sub); font-size:11.5px;}
+        .dt-prev{width:430px; max-height:1600px; overflow:auto; border-radius:10px; border:1px solid var(--line); background:#fff;}
+        .dt-prev .dt-scale{zoom:.5;}
+        #dtRender{position:fixed; left:-12000px; top:0; width:860px; pointer-events:none;}
+      </style>
+      <div class="su-app">
+        <form class="su-panel" id="dtForm" autocomplete="off" onsubmit="return false">
+          <h4>① 숙소 PK 번호</h4>
+          <div class="su-row">
+            <input type="text" id="dtPk" class="su-pk" inputmode="numeric" placeholder="예: 100727" aria-label="숙소 PK 번호">
+            <button class="btn su-btn-main" id="dtLoad" type="button">불러오기</button>
+          </div>
+          <p class="su-hint">놀발 숙소 상세(사진·시설·안내·취소 규정)와 판매 중인 상품·객실을 모아 스마트스토어용 상세 이미지(폭 860px)를 만들어요. 문구는 놀발에 등록된 내용 그대로 쓰고, 아래 칸에서 고칠 수 있어요.</p>
+          <p class="su-msg" id="dtMsg" role="status"></p>
+
+          <div id="dtFields" hidden>
+            <h4>② 첫 화면</h4>
+            <input type="text" id="dtName" placeholder="숙소명 — 비우면 놀발 숙소명 그대로" aria-label="숙소명">
+            <input type="text" id="dtCopy" placeholder="한 줄 소개 — 비우면 「지역 · 유형」, 없음이면 빼기" aria-label="한 줄 소개" style="margin-top:6px">
+            <input type="text" id="dtSale" placeholder="판매기간 (선택) 예: 2026.11.01(일) ~ 2026.11.07(토)" aria-label="판매기간" style="margin-top:6px">
+            <input type="text" id="dtStay" placeholder="투숙기간 — 비우면 판매 중인 날짜로 자동, 없음이면 빼기" aria-label="투숙기간" style="margin-top:6px">
+
+            <h4>③ 사진 (눌러서 대표 사진 고르기)</h4>
+            <div class="su-thumbs" id="dtThumbs"></div>
+            <input type="text" id="dtGallery" placeholder="갤러리 사진 번호 예: 1, 2, 5, 8 — 비우면 대표 다음 6장" aria-label="갤러리 사진 번호" style="margin-top:8px">
+
+            <h4>④ 구매 전 꼭 확인</h4>
+            <textarea id="dtNotice" placeholder="한 줄에 하나 — 비우면 놀발 안내 맨 앞 문구, 없음이면 빼기&#10;예) 2박 이상은 1박씩 각각 구매해주세요"></textarea>
+
+            <h4>⑤ 상품 구성</h4>
+            <textarea id="dtPkgs" placeholder="한 줄에 하나 · 상품명 | 구성·객실 | 가격 — 비우면 판매 중인 상품 자동, 없음이면 빼기&#10;예) 스파 2인 패키지 | 객실 1박 + 해브나인 스파 2인 | 236000"></textarea>
+            <button class="btn dt-panel-btn" id="dtPkgsAuto" type="button">자동 상품을 칸에 채워 고치기</button>
+
+            <h4>⑥ 객실 안내</h4>
+            <textarea id="dtRooms" placeholder="한 줄에 하나 · 객실명 | 설명 | 사진번호 — 비우면 놀발 객실 정보 자동, 없음이면 빼기&#10;설명 안의 / 는 줄바꿈. 예) 디럭스 패밀리 | 기준 2인 / 최대 4인 / 퀸 침대 1 | 7"></textarea>
+            <button class="btn dt-panel-btn" id="dtRoomsAuto" type="button">자동 객실을 칸에 채워 고치기</button>
+
+            <h4>⑦ 부대시설 카드 (선택)</h4>
+            <textarea id="dtFac" placeholder="한 줄에 하나 · 시설명 | 위치·운영시간·요금 | 사진번호&#10;예) 해브나인 스파 | 실내 09:00~18:00 / 실외 10:00~18:00 | 12"></textarea>
+            <p class="su-hint">시설 목록(놀발 '아이와 함께 하는 시설' 등)은 자동으로 들어가요. 사진과 함께 크게 보여 줄 시설만 여기에 적어요.</p>
+
+            <h4>⑧ 예약 및 이용 방법 (선택)</h4>
+            <textarea id="dtSteps" placeholder="한 줄에 한 단계&#10;예) 원하는 날짜·객실 옵션을 골라 결제"></textarea>
+
+            <h4>⑨ 이용 안내에 넣을 놀발 안내</h4>
+            <div class="dt-blocks" id="dtBlocks"></div>
+            <p class="su-hint">「취소·환불」 제목은 취소 규정 칸으로, 「고객센터·문의」 제목은 문의 칸으로, 제목 없는 맨 앞 문구는 「구매 전 꼭 확인」으로 들어가요.</p>
+
+            <h4>⑩ 예약 문의 (선택)</h4>
+            <input type="text" id="dtContact" placeholder="예: 놀이의발견 고객센터 0000-0000 (평일 10:00~18:00)" aria-label="예약 문의">
+
+            <div class="su-actions">
+              <button class="btn su-btn-main" id="dtDown" type="button">JPG 다운로드</button>
+              <button class="btn" id="dtReset" type="button">입력 지우기</button>
+            </div>
+            <p class="su-msg" id="dtMsg2" role="status"></p>
+          </div>
+        </form>
+        <div class="su-panel">
+          <div id="dtStage"><div class="su-empty">PK 번호를 넣고 불러오면 미리보기가 나와요.</div></div>
+        </div>
+      </div>
+      <div id="dtRender" aria-hidden="true"></div>
     </div>
 
     <!-- PROMOTIONS -->
@@ -4113,6 +4194,181 @@ loadData();
     const text = `소구 이미지 만들어줘\nPK ${model.pk} (${model.name}) — 탭에 저장된 설정 그대로 (node sogu/make.mjs ${model.pk} --saved)`;
     try { await navigator.clipboard.writeText(text); msg($('suMsg2'), '복사했어요. 설정·내 사진은 서버에 저장돼 있어서 Claude가 PK로 그대로 불러와요.'); }
     catch (e) { msg($('suMsg2'), '복사가 막혔어요. 아래 내용을 직접 복사하세요:<br><code style="white-space:pre-wrap">' + escH(text) + '</code>'); }
+  });
+})();
+
+// ---------------- 스마트스토어 상세페이지 (엔진: detail/detail.js) ----------------
+// 입력한 내용은 이 브라우저에 PK별로 저장(localStorage) → 같은 PK를 다시 불러오면 이어서.
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const KEY = 'nbdb-detail-';
+  const FIELDS = ['dtName','dtCopy','dtSale','dtStay','dtGallery','dtNotice','dtPkgs','dtRooms','dtFac','dtSteps','dtContact'];
+  document.body.append($('dtRender')); // 캡처용 원본(860px)은 탭이 숨겨져도 크기가 잡히도록 body 바로 아래에
+  let data = null, model = null, heroIdx = 0, t = null;
+  const hideBlocks = new Set();
+
+  function msg(el, html, err){ el.className = 'su-msg' + (err ? ' err' : ''); el.innerHTML = html; }
+  const escH = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  const isNone = (s) => /^(없음|none)$/.test(s);
+  const linesOf = (id) => $(id).value.split('\n').map(s => s.trim()).filter(Boolean);
+
+  function over(){
+    const v = (id) => $(id).value.trim();
+    const o = { heroIndex: heroIdx, hideBlocks: [...hideBlocks] };
+    if (v('dtName')) o.name = v('dtName');
+    if (v('dtCopy')) o.copy = isNone(v('dtCopy')) ? '' : v('dtCopy');
+    if (v('dtSale')) o.salePeriod = v('dtSale');
+    if (v('dtStay')) o.stayPeriod = isNone(v('dtStay')) ? '' : v('dtStay');
+    if (v('dtGallery')) o.gallery = isNone(v('dtGallery')) ? [] : v('dtGallery').split(/[,\s]+/).filter(x => /^\d+$/.test(x));
+    if (v('dtNotice')) o.notice = isNone(v('dtNotice')) ? [] : linesOf('dtNotice');
+    if (v('dtPkgs')) o.packages = Sogu.parsePackages(v('dtPkgs')); // '없음' 한 줄 = 섹션 빼기
+    if (v('dtRooms')) o.rooms = isNone(v('dtRooms')) ? [] : Detail.parseCards(v('dtRooms'));
+    if (v('dtFac')) o.facilityCards = Detail.parseCards(v('dtFac'));
+    if (v('dtSteps')) o.steps = linesOf('dtSteps');
+    if (v('dtContact')) o.contactNote = v('dtContact');
+    return o;
+  }
+
+  function save(){
+    if (!data) return;
+    const fields = {};
+    FIELDS.forEach(id => { fields[id] = $(id).value; });
+    try { localStorage.setItem(KEY + data.pk, JSON.stringify({ fields, heroIdx, hide: [...hideBlocks] })); } catch (e) { /* 저장 못 해도 만들기는 됨 */ }
+  }
+  function restore(pk){
+    let st = null;
+    try { st = JSON.parse(localStorage.getItem(KEY + pk) || 'null'); } catch (e) { st = null; }
+    FIELDS.forEach(id => { $(id).value = (st && st.fields && st.fields[id]) || ''; });
+    heroIdx = (st && st.heroIdx) || 0;
+    hideBlocks.clear();
+    ((st && st.hide) || []).forEach(k => hideBlocks.add(k));
+    return !!st;
+  }
+
+  function fillSide(){
+    $('dtThumbs').innerHTML = data.detail.images.map((u, i) =>
+      `<div class="su-th"><button type="button" data-i="${i}" aria-pressed="${i === heroIdx}" aria-label="사진 ${i}${i === heroIdx ? ' (대표)' : ''}"><img src="${escH(u)}" alt="" loading="lazy"><i>${i}</i></button></div>`).join('');
+    const all = Detail.build(data, {}).blocks;
+    $('dtBlocks').innerHTML = all.length ? all.map(b =>
+      `<label><input type="checkbox" data-k="${b.key}" ${hideBlocks.has(b.key) ? '' : 'checked'}><span>${escH(b.title || '(제목 없는 맨 앞 안내)')}<small>${escH(b.lines[0].slice(0, 60))}</small></span></label>`).join('')
+      : '<p class="su-hint">놀발에 등록된 안내 문구가 없어요.</p>';
+  }
+  $('dtThumbs').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-i]');
+    if (!b) return;
+    heroIdx = +b.dataset.i;
+    $('dtThumbs').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.i === heroIdx)));
+    save(); draw();
+  });
+  $('dtBlocks').addEventListener('change', (e) => {
+    const k = e.target.dataset.k;
+    if (!k) return;
+    e.target.checked ? hideBlocks.delete(k) : hideBlocks.add(k);
+    save(); draw();
+  });
+
+  function draw(){
+    if (!data) return;
+    model = Detail.build(data, over());
+    const cv = Detail.render($('dtRender'), model);
+    const stage = $('dtStage');
+    stage.innerHTML = '<div class="dt-prev"><div class="dt-scale"></div></div>';
+    stage.querySelector('.dt-scale').append(cv.cloneNode(true));
+  }
+  const later = () => { clearTimeout(t); t = setTimeout(() => { save(); draw(); }, 400); };
+  FIELDS.forEach(id => $(id).addEventListener('input', later));
+
+  async function load(){
+    const pk = $('dtPk').value.trim();
+    const m = $('dtMsg');
+    msg(m, '불러오는 중… (놀발 상세 + 판매 상품 92일, 10초 정도)');
+    $('dtLoad').disabled = true;
+    try {
+      const d = await Sogu.load(pk);
+      data = null;
+      const had = restore(d.pk);
+      data = d;
+      const base = Detail.build(data, {});
+      msg(m, `<b>${escH(base.name)}</b> · ${escH(data.detail.region || '')} · 사진 ${data.detail.images.length}장 · 상품 ${base.packages.length}개 · 객실 ${base.rooms.length}개`
+        + (had ? '<br>이 브라우저에 저장해 둔 입력 내용을 불러왔어요.' : '')
+        + (data.adminError ? `<br>⚠ 놀발 어드민에서 판매 상품·객실을 못 읽었어요 (${escH(data.adminError)}) → ⑤ 상품 구성, ⑥ 객실 안내를 직접 입력하세요.` : '')
+        + (!data.adminError && !base.rooms.length ? '<br>⚠ 놀발 객실 정보가 없어요 → ⑥ 객실 안내를 직접 입력하세요.' : ''), !!data.adminError);
+      $('dtFields').hidden = false;
+      fillSide();
+      draw();
+    } catch (e) {
+      msg(m, escH(e.message || e), true);
+    } finally {
+      $('dtLoad').disabled = false;
+    }
+  }
+  $('dtLoad').addEventListener('click', load);
+  $('dtPk').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
+
+  $('dtPkgsAuto').addEventListener('click', () => {
+    if (!data) return;
+    $('dtPkgs').value = Detail.build(data, {}).packages.map(p => `${p.tag} | ${p.desc} | ${p.price}`).join('\n');
+    save(); draw();
+  });
+  $('dtRoomsAuto').addEventListener('click', () => {
+    if (!data) return;
+    // 사진번호를 안 적으면 같은 이름 객실의 놀발 객실 사진이 그대로 쓰여요
+    $('dtRooms').value = Detail.build(data, {}).rooms.map(r => `${r.title} | ${r.desc.replace(/\n/g, ' / ')}`).join('\n');
+    save(); draw();
+  });
+  $('dtReset').addEventListener('click', () => {
+    if (!data || !confirm(`PK ${data.pk}의 입력 내용을 모두 지우고 자동 상태로 돌릴까요?`)) return;
+    try { localStorage.removeItem(KEY + data.pk); } catch (e) { /* 무시 */ }
+    restore(data.pk);
+    fillSide(); draw();
+  });
+
+  function loadLib(){
+    if (window.htmlToImage) return Promise.resolve();
+    return new Promise((ok, bad) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js';
+      s.onload = ok; s.onerror = () => bad(new Error('이미지 변환 도구를 불러오지 못했어요.'));
+      document.head.append(s);
+    });
+  }
+
+  // 한 장으로 그린 뒤 섹션 경계에서 최대 3000px씩 나눠 저장 (긴 이미지 한 장은 스마트스토어 편집기에서 다루기 어려움)
+  $('dtDown').addEventListener('click', async () => {
+    const m = $('dtMsg2');
+    if (!data) return;
+    msg(m, '이미지 만드는 중…');
+    $('dtDown').disabled = true;
+    try {
+      await loadLib();
+      draw();
+      const { failed } = await Sogu.ready($('dtRender'));
+      const cv = $('dtRender').firstElementChild;
+      const W = 860, H = cv.offsetHeight;
+      const all = await htmlToImage.toCanvas(cv, { includeQueryParams: true, pixelRatio: 1, backgroundColor: '#ffffff', width: W, height: H });
+      const parts = Detail.cuts(cv, 3000);
+      const day = new Date(Date.now() + 9*3600e3).toISOString().slice(0,10).replace(/-/g,'');
+      const base = `${model.pk}_${model.name.replace(/[\\/:*?"<>|\s]+/g,'_')}_상세_${day}`;
+      for (let i = 0; i < parts.length; i++) {
+        const [y0, y1] = parts[i];
+        const c = document.createElement('canvas');
+        c.width = W; c.height = y1 - y0;
+        c.getContext('2d').drawImage(all, 0, y0, W, y1 - y0, 0, 0, W, y1 - y0);
+        const a = document.createElement('a');
+        a.href = c.toDataURL('image/jpeg', 0.92);
+        a.download = `${base}_${String(i + 1).padStart(2, '0')}.jpg`;
+        document.body.append(a); a.click(); a.remove();
+        await new Promise(r => setTimeout(r, 400)); // 연속 다운로드가 막히지 않게
+      }
+      msg(m, `${parts.length}장 저장했어요 (폭 860px, 전체 높이 ${H}px). 스마트스토어 상세 편집에서 _01부터 순서대로 올리세요.`
+        + (parts.length > 1 ? '<br>브라우저가 「여러 파일 다운로드」를 물으면 허용해 주세요.' : '')
+        + (failed.length ? `<br>⚠ 사진 ${failed.length}장을 못 읽어서 빼고 만들었어요.` : ''));
+    } catch (e) {
+      const why = e && e.message ? e.message : '이미지 변환 중 오류 (' + String(e && e.type || e) + ')';
+      msg(m, '저장 실패: ' + escH(why) + ' — PK와 함께 Claude에게 알려주세요.', true);
+    } finally {
+      $('dtDown').disabled = false;
+    }
   });
 })();
 </script>

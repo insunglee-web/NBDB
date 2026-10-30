@@ -1,0 +1,92 @@
+/* 스마트스토어 상세페이지 템플릿 (폭 860px, 네이버 스마트스토어 상세 권장 폭)
+   섹션마다 data-cut 이 붙어 있어 저장할 때 그 경계에서 여러 장으로 나눈다. */
+.dt-cv{
+  --acc:#FF2D55; --ink:#14161F; --sub:#5B6070; --mute:#9AA0AE; --line:#E7E8EE; --soft:#F6F7FA; --tint:#FFF4F6; --dark:#1E2029;
+  width:860px; background:#fff; color:var(--ink);
+  font-family:'Pretendard Variable','Pretendard',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  letter-spacing:-0.02em; word-break:keep-all; overflow-wrap:anywhere; line-height:1.6;
+}
+.dt-cv *{box-sizing:border-box; margin:0; padding:0;}
+.dt-cv em{font-style:normal; color:var(--acc);}
+.dt-cv img{display:block; width:100%; object-fit:cover;}
+
+/* HERO */
+.dt-hero{position:relative; height:1000px; background:#222; overflow:hidden;}
+.dt-hero > img{position:absolute; inset:0; height:100%;}
+.dt-hero::after{content:''; position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(8,10,18,.55) 0%, rgba(8,10,18,.12) 34%, rgba(8,10,18,0) 55%, rgba(8,10,18,.5) 100%);}
+.dt-hero-in{position:absolute; left:0; right:0; bottom:0; z-index:1; padding:0 56px 72px; color:#fff; text-shadow:0 2px 16px rgba(0,0,0,.3);}
+.dt-brand{position:absolute; left:56px; top:56px; z-index:1; color:#fff; font-size:26px; font-weight:800; letter-spacing:.02em; text-shadow:0 2px 12px rgba(0,0,0,.3);}
+.dt-copy{font-size:32px; font-weight:500; opacity:.95;}
+.dt-hero h1{margin-top:8px; font-size:76px; font-weight:800; line-height:1.2; letter-spacing:-0.04em;}
+
+.dt-period{display:flex; flex-direction:column; gap:12px; padding:40px 56px; background:var(--dark); color:#fff;}
+.dt-period div{display:flex; align-items:center; gap:18px; font-size:28px;}
+.dt-period b{flex:none; padding:4px 16px; border-radius:8px; background:var(--acc); font-size:22px; font-weight:700;}
+
+/* 공통 섹션 */
+.dt-sec{padding:84px 56px 56px;}
+.dt-sec.tint{background:var(--tint);}
+.dt-sec.dark{background:var(--dark); color:#fff;}
+.dt-h{text-align:center; margin-bottom:40px;}
+.dt-h small{display:block; color:var(--acc); font-size:20px; font-weight:800; letter-spacing:.24em;}
+.dt-h h3{margin-top:8px; font-size:46px; font-weight:800; line-height:1.3;}
+.dt-box{padding:34px 38px; border-radius:20px; background:var(--soft);}
+.dt-box + .dt-box{margin-top:16px;}
+.dt-box.warn{background:#fff; border:3px solid var(--acc);}
+.dt-sec.dark .dt-box{background:rgba(255,255,255,.07);}
+.dt-box h4{font-size:26px; font-weight:800; margin:22px 0 10px;}
+.dt-box h4:first-child{margin-top:0;}
+.dt-fine{margin-top:18px; text-align:center; font-size:20px; color:var(--mute);}
+
+/* 줄 목록 */
+.dt-lines li{list-style:none; position:relative; padding-left:24px; font-size:24px; line-height:1.65; color:inherit;}
+.dt-lines li + li{margin-top:6px;}
+.dt-lines li::before{content:''; position:absolute; left:4px; top:.78em; width:7px; height:7px; border-radius:50%; background:currentColor; opacity:.45;}
+.dt-lines li.sub{padding-left:48px; font-size:22px; color:var(--sub);}
+.dt-lines li.sub::before{left:28px; width:9px; height:2px; border-radius:0;}
+.dt-lines li.note{font-size:21px; color:var(--sub);}
+.dt-lines li.note::before{content:'※'; width:auto; height:auto; background:none; top:0; left:0; opacity:.8;}
+.dt-lines li.num{padding-left:0;}
+.dt-lines li.num::before{display:none;}
+.dt-sec.dark .dt-lines li.sub,.dt-sec.dark .dt-lines li.note{color:#B9BCC6;}
+
+/* 상품 구성 */
+.dt-pkgs{display:flex; flex-direction:column; gap:18px;}
+.dt-pkg{position:relative; padding:34px 38px 30px; border-radius:20px; background:#fff; box-shadow:0 6px 22px rgba(20,22,31,.06);}
+.dt-pkg .no{display:inline-block; padding:4px 14px; border-radius:20px; background:var(--ink); color:#fff; font-size:18px; font-weight:800; letter-spacing:.06em;}
+.dt-pkg b{display:block; margin-top:14px; font-size:34px; font-weight:800; line-height:1.35;}
+.dt-pkg p{margin-top:8px; font-size:22px; color:var(--sub);}
+.dt-pkg .pr{margin-top:20px; padding-top:18px; border-top:1px dashed var(--line); text-align:right; font-size:44px; font-weight:900; color:var(--acc); letter-spacing:-0.03em;}
+.dt-pkg .pr small{font-size:22px; font-weight:700; color:var(--sub); margin:0 4px;}
+
+/* 갤러리 */
+.dt-gal{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.dt-gal img{aspect-ratio:4/3; border-radius:14px;}
+.dt-gal img:first-child,.dt-gal img:last-child:nth-child(even){grid-column:1 / -1; aspect-ratio:16/10;}
+
+/* 카드 (객실·시설) */
+.dt-card{padding:0 56px 56px;}
+.dt-card.tint{background:var(--tint);}
+.dt-card img{aspect-ratio:16/10; border-radius:18px;}
+.dt-card-t{padding-top:24px;}
+.dt-card-t b{display:block; font-size:34px; font-weight:800; line-height:1.35;}
+.dt-card-t p{margin-top:10px; font-size:23px; color:var(--sub); white-space:pre-line; line-height:1.7;}
+.dt-fac + .dt-fac{margin-top:30px;}
+.dt-fac h4{font-size:26px; font-weight:800; margin-bottom:14px;}
+.dt-fac .chips{display:flex; flex-wrap:wrap; gap:10px;}
+.dt-fac .chips span{padding:10px 20px; border-radius:30px; background:#fff; border:1px solid #F3D3DA; font-size:22px; font-weight:600;}
+
+/* 예약 방법 */
+.dt-steps{display:flex; flex-direction:column; gap:14px;}
+.dt-steps li{list-style:none; display:flex; align-items:center; gap:20px; padding:26px 30px; border-radius:18px; background:var(--soft); font-size:25px; font-weight:600; line-height:1.5;}
+.dt-steps i{flex:none; width:52px; height:52px; border-radius:50%; background:var(--acc); color:#fff; font-style:normal; font-size:24px; font-weight:800; display:flex; align-items:center; justify-content:center;}
+
+/* 이용 안내 블록 */
+.dt-blk{margin:0 56px 20px; padding:32px 38px; border-radius:20px; background:var(--soft);}
+.dt-blk h4{font-size:27px; font-weight:800; margin-bottom:12px;}
+
+.dt-kv{display:flex; gap:20px; font-size:24px; padding:6px 0;}
+.dt-kv b{flex:none; width:150px; font-weight:800;}
+
+.dt-foot{margin-top:36px; padding:36px 56px 44px; font-size:19px; line-height:1.65; color:#C4C7CF; background:#34363C;}
