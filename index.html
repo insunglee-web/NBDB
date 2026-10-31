@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="sogu/sogu.css?v=20261019b">
 <script src="sogu/sogu.js?v=20261019b"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
 <link rel="stylesheet" href="detail/detail.css?v=20261031c">
-<script src="detail/detail.js?v=20261031e"></script>
+<script src="detail/detail.js?v=20261031f"></script>
 <link rel="stylesheet" href="report/report.css?v=20261031b">
 <script src="report/report.js?v=20261031b"></script>
 <style>
@@ -1129,13 +1129,13 @@ tr:hover td{background:rgba(47,211,196,0.04);}
             <textarea id="dtNotice" placeholder="한 줄에 하나 — 비우면 놀발 안내 맨 앞 문구, 없음이면 빼기&#10;예) 2박 이상은 1박씩 각각 구매해주세요"></textarea>
 
             <h4>⑤ 상품 구성</h4>
-            <textarea id="dtPkgs" placeholder="한 줄에 하나 · 상품명 | 구성·객실 | 가격 — 비우면 판매 중인 상품 자동, 없음이면 빼기&#10;예) 스파 2인 패키지 | 객실 1박 + 해브나인 스파 2인 | 236000"></textarea>
+            <textarea id="dtPkgs" placeholder="한 줄에 하나 · 상품명 / 구성·객실 / 가격 — 비우면 판매 중인 상품 자동, 없음이면 빼기&#10;예) 스파 2인 패키지 / 객실 1박 + 해브나인 스파 2인 / 236000"></textarea>
             <button class="btn dt-panel-btn" id="dtPkgsAuto" type="button">자동 상품을 칸에 채워 고치기</button>
 
             <h4>⑥ 객실 안내</h4>
-            <textarea id="dtRooms" placeholder="한 줄에 하나 · 객실명 | 설명 | 사진번호 — 비우면 놀발 객실 정보 자동, 없음이면 빼기&#10;설명 안의 / 는 줄바꿈. 예) 디럭스 패밀리 | 기준 2인 / 최대 4인 / 퀸 침대 1 | 7, 8, 9"></textarea>
+            <textarea id="dtRooms" placeholder="한 줄에 하나 · 객실명 / 설명 / 사진번호 — 비우면 놀발 객실 정보 자동, 없음이면 빼기&#10;예) 프리미엄 패밀리 / 2인기준 / 5,15&#10;예) 디럭스 패밀리 / 기준 4인 // 최대 6인 // 퀸 침대 2 / 2,10"></textarea>
             <button class="btn dt-panel-btn" id="dtRoomsAuto" type="button">자동 객실을 칸에 채워 고치기</button>
-            <p class="su-hint">사진번호는 ③의 번호. 여러 장이면 <code>7, 8, 9</code> — 첫 장이 크게, 나머지는 두 칸씩 들어가요.</p>
+            <p class="su-hint">칸은 <code>/</code> 하나, 설명 안에서 줄을 바꾸려면 <code>//</code> 두 개. 사진번호는 ③의 번호(<code>5,15</code> · <code>내1</code>) — 첫 장이 크게, 나머지는 두 칸씩 들어가요.</p>
 
             <h4>⑦ 부대시설 (넣을 시설 고르기 · 사진번호)</h4>
             <div class="dt-facph" id="dtFacPhotos"></div>
@@ -1145,7 +1145,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
               <button class="btn" id="dtFacAdd" type="button">추가</button>
             </div>
             <p class="su-hint">체크를 끄면 그 시설은 빠져요(예: 비즈니스센터). 사진번호(예: <code>12</code>, <code>내1</code>)를 넣으면 사진 타일로, 비우면 이름만 아래에 작게 나와요.</p>
-            <textarea id="dtFac" placeholder="(선택) 크게 소개할 시설 카드 · 시설명 | 위치·운영시간·요금 | 사진번호&#10;예) 해브나인 스파 | 실내 09:00~18:00 / 실외 10:00~18:00 | 12, 13" style="margin-top:8px"></textarea>
+            <textarea id="dtFac" placeholder="(선택) 크게 소개할 시설 카드 · 시설명 / 위치·운영시간·요금 / 사진번호&#10;예) 해브나인 스파 / 실내 09:00~18:00 // 실외 10:00~18:00 / 12,13" style="margin-top:8px"></textarea>
 
             <h4>⑧ 예약 및 이용 방법 (선택)</h4>
             <textarea id="dtSteps" placeholder="한 줄에 한 단계&#10;예) 원하는 날짜·객실 옵션을 골라 결제"></textarea>
@@ -4524,13 +4524,13 @@ loadData();
 
   $('dtPkgsAuto').addEventListener('click', () => {
     if (!data) return;
-    $('dtPkgs').value = Detail.build(data, {}).packages.map(p => `${p.tag} | ${p.desc} | ${p.price}`).join('\n');
+    $('dtPkgs').value = Detail.build(data, {}).packages.map(p => `${p.tag} / ${p.desc} / ${p.price}`).join('\n');
     save(); draw();
   });
   $('dtRoomsAuto').addEventListener('click', () => {
     if (!data) return;
     // 사진번호를 안 적으면 같은 이름 객실의 놀발 객실 사진이 그대로 쓰여요
-    $('dtRooms').value = Detail.build(data, {}).rooms.map(r => `${r.title} | ${r.desc.replace(/\n/g, ' / ')}`).join('\n');
+    $('dtRooms').value = Detail.build(data, {}).rooms.map(r => `${r.title} / ${r.desc.replace(/\n/g, ' // ')}`).join('\n');
     save(); draw();
   });
   $('dtReset').addEventListener('click', () => {

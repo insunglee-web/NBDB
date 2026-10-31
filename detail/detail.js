@@ -47,20 +47,26 @@
   const PHOTO = /^(\d+|내\d+)$/;
   const photoNos = (s) => (/^(없음|none)$/.test(String(s).trim()) ? [] : String(s).replace(/내\s+(\d)/g, '내$1').split(/[,\s]+/).filter((x) => PHOTO.test(x)));
 
-  // 구분자 | 대신 비슷하게 생긴 글자를 쓴 경우(앞뒤 띄어 쓴 l · I · ㅣ, 전각 ｜)도 | 로
-  const normSep = (text) => String(text || '').replace(/｜/g, '|').replace(/[ \t]+[lIㅣ][ \t]+/g, ' | ');
+  // 입력 줄 구분: 칸은 / (예전 입력의 | ·｜도 됨), 설명 안의 줄바꿈은 //
+  //  "프리미엄 패밀리 / 기준 2인 // 최대 4인 / 5,15" → ['프리미엄 패밀리', '기준 2인\n최대 4인', '5,15']
+  const BR = '\u0001';
+  const fieldsOf = (line) =>
+    line.replace(/\/\//g, BR).replace(/｜/g, '|').split(/[/|]/).map((s) => s.trim());
+  // 상품 구성처럼 | 로 읽는 기존 파서에 넘길 때 (설명 안 줄바꿈은 · 로)
+  const normSep = (text) =>
+    String(text || '').split('\n').map((l) => fieldsOf(l).join(' | ').replace(new RegExp(BR, 'g'), ' · ')).join('\n');
 
-  // "제목 | 설명 | 사진번호" 줄 → 카드 (사진번호: 숫자 여러 개 "5, 6" 가능 · '없음')
+  // "제목 / 설명 / 사진번호" 줄 → 카드 (사진번호: 숫자 여러 개 "5,15" 가능 · '내1' · '없음')
   function parseCards(text) {
-    return normSep(text)
+    return String(text || '')
       .split('\n')
       .map((l) => l.trim())
       .filter(Boolean)
       .map((l) => {
-        const parts = l.split('|').map((s) => s.trim());
+        const parts = fieldsOf(l);
         let img;
         if (parts.length >= 2 && /^((\d+|내\s*\d+)(\s*,\s*(\d+|내\s*\d+))*|없음|none)$/.test(parts[parts.length - 1])) img = photoNos(parts.pop());
-        return { title: parts[0], desc: parts.slice(1).join(' | ').replace(/\s*\/\s*/g, '\n'), img };
+        return { title: parts[0], desc: parts.slice(1).join(' / ').split(BR).map((s) => s.trim()).join('\n'), img };
       });
   }
 
