@@ -11,6 +11,8 @@
 <script src="sogu/sogu.js?v=20261019b"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
 <link rel="stylesheet" href="detail/detail.css?v=20261031b">
 <script src="detail/detail.js?v=20261031b"></script>
+<link rel="stylesheet" href="report/report.css?v=20261031">
+<script src="report/report.js?v=20261031"></script>
 <style>
 :root{
   --bg:#0A0F1A;
@@ -519,6 +521,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
     <div class="tab" data-tab="promo">프로모션 관리</div>
     <div class="tab" data-tab="sogu">특가 소구 이미지</div>
     <div class="tab" data-tab="detail">상세페이지</div>
+    <div class="tab" data-tab="report">마케팅 보고서</div>
   </div>
 
   <div class="wrap">
@@ -1152,6 +1155,68 @@ tr:hover td{background:rgba(47,211,196,0.04);}
         </div>
       </div>
       <div id="dtRender" aria-hidden="true"></div>
+    </div>
+
+    <!-- 마케팅 결과 보고서 (엔진: report/report.js, 템플릿: report/report.css, 데이터: 판매내역 시트 + 프로모션 관리 + MD 입력) -->
+    <div class="section" id="sec-report">
+      <div class="section-title"><span class="num">16</span>마케팅 결과 보고서 (숙소 담당자용 PDF)</div>
+      <style>
+        #sec-report [hidden]{display:none !important;}
+        #sec-report input[type=text],#sec-report input[type=date],#sec-report textarea,#sec-report select{width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+          border-radius:7px; padding:8px 10px; font-size:13px; font-family:var(--body);}
+        #sec-report textarea{resize:vertical; min-height:84px; line-height:1.5;}
+        #sec-report input:focus,#sec-report textarea:focus,#sec-report select:focus{outline:none; border-color:var(--teal);}
+        #sec-report :focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+        .rp-prev{width:480px; max-height:1500px; overflow:auto; border-radius:10px; border:1px solid var(--line); background:#fff;}
+        .rp-prev .rp-scale{zoom:.6;}
+        #rpRender{position:fixed; left:-12000px; top:0; width:794px; pointer-events:none;}
+      </style>
+      <div class="su-app">
+        <form class="su-panel" id="rpForm" autocomplete="off" onsubmit="return false">
+          <h4>① 프로모션 고르기</h4>
+          <select id="rpPromo" aria-label="프로모션 관리 일정"><option value="">프로모션 관리에서 고르기 (탭을 열면 불러와요)</option></select>
+          <div class="su-row" style="margin-top:6px">
+            <input type="text" id="rpPk" class="su-pk" inputmode="numeric" placeholder="숙소 PK" aria-label="숙소 PK">
+            <input type="text" id="rpType" placeholder="구분 예: 공동구매" aria-label="프로모션 구분">
+          </div>
+          <div class="su-row" style="margin-top:6px">
+            <input type="date" id="rpFrom" aria-label="시작일">
+            <input type="date" id="rpEnd" aria-label="종료일">
+          </div>
+          <input type="text" id="rpProduct" placeholder="상품안 (선택) 예: 스파 2인 패키지" aria-label="상품안" style="margin-top:6px">
+          <div class="su-actions" style="margin-top:10px"><button class="btn su-btn-main" id="rpMake" type="button">보고서 만들기</button></div>
+          <p class="su-hint">판매 성과는 대시보드 판매내역에서 <b>예약 생성일이 기간 안인 예약</b>을 PK의 숙소명으로 모아요(프로모션 관리의 기간 거래액과 같은 기준). 수수료·정산 숫자는 넣지 않아요.</p>
+          <p class="su-msg" id="rpMsg" role="status"></p>
+
+          <div id="rpFields" hidden>
+            <h4>② 표지</h4>
+            <input type="text" id="rpTitle" placeholder="보고서 제목 — 비우면 「OO 마케팅 결과 보고서」" aria-label="보고서 제목">
+            <div class="su-row" style="margin-top:6px">
+              <input type="text" id="rpMd" placeholder="작성 MD 예: 숙박사업실 홍길동" aria-label="작성 MD">
+              <input type="text" id="rpTo" placeholder="받는 분 (선택)" aria-label="받는 분">
+            </div>
+
+            <h4>③ 내부 마케팅 (놀이의발견 앱·웹)</h4>
+            <textarea id="rpInt" placeholder="한 줄에 하나 · 지면 | 내용 | 기간 | 노출수(발송수) | 클릭수(오픈수)&#10;예) 메인 상단 배너 | 레스트리 리솜 3일 특가 | 10.23~10.25 | 120000 | 3400&#10;예) 앱 푸시 | 단 3일 공동구매 오픈 | 10.23 | 50000 | 2100"></textarea>
+            <p class="su-hint">클릭률은 자동 계산. 비우면 이 섹션은 빠져요. (개발팀 조회 API가 나오면 자동으로 채우게 바꿀 예정)</p>
+
+            <h4>④ 외부 마케팅 (SNS·블로그·제휴)</h4>
+            <textarea id="rpExt" placeholder="한 줄에 하나 · 채널 | 내용 | 게시일 | 조회수 | 반응 | 링크(선택)&#10;예) 네이버 블로그 | 제천 스파 여행 추천 | 10.22 | 3200 | 공감 45 · 댓글 12 | https://blog.naver.com/…"></textarea>
+
+            <h4>⑤ 담당 MD 의견 (선택)</h4>
+            <textarea id="rpComment" placeholder="성과 요약, 다음 행사 제안 등"></textarea>
+
+            <div class="su-actions">
+              <button class="btn su-btn-main" id="rpPdf" type="button">PDF 다운로드</button>
+            </div>
+            <p class="su-msg" id="rpMsg2" role="status"></p>
+          </div>
+        </form>
+        <div class="su-panel">
+          <div id="rpStage"><div class="su-empty">프로모션을 고르고 「보고서 만들기」를 누르면 미리보기가 나와요.</div></div>
+        </div>
+      </div>
+      <div id="rpRender" aria-hidden="true"></div>
     </div>
 
     <!-- PROMOTIONS -->
@@ -4393,6 +4458,163 @@ loadData();
       msg(m, '저장 실패: ' + escH(why) + ' — PK와 함께 Claude에게 알려주세요.', true);
     } finally {
       $('dtDown').disabled = false;
+    }
+  });
+})();
+
+// ---------------- 마케팅 결과 보고서 (엔진: report/report.js) ----------------
+// 판매 성과는 판매내역(DERIVED)에서 자동, 내부·외부 마케팅 실적과 의견은 MD 입력(이 브라우저에 프로모션별 저장).
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const KEY = 'nbdb-report-';
+  const FIELDS = ['rpTitle','rpMd','rpTo','rpInt','rpExt','rpComment'];
+  document.body.append($('rpRender'));
+  let promos = null, pkNames = null, base = null, model = null, t = null;
+
+  function msg(el, html, err){ el.className = 'su-msg' + (err ? ' err' : ''); el.innerHTML = html; }
+  const escH = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  const facKey = (n) => ypFacilityName(n).toLowerCase().replace(/[\s()\[\]{}·.,\/_\-]/g, '');
+  const keyOf = () => `${$('rpPk').value.trim()}_${$('rpFrom').value}_${$('rpEnd').value}`;
+
+  // 프로모션 관리 일정 (PK 있는 것, 최근 시작 순)
+  async function loadPromos(){
+    if (promos) return;
+    promos = [];
+    try {
+      const j = await (await fetch(Sogu.API + '/promotions')).json();
+      promos = (j.items || []).filter(x => x.pk && x.start && !/불가|취소/.test(x.confirm || '')).sort((a, b) => b.start.localeCompare(a.start));
+    } catch (e) { msg($('rpMsg'), '프로모션 목록을 못 불러왔어요. PK와 기간을 직접 넣어도 돼요.', true); }
+    $('rpPromo').innerHTML = '<option value="">프로모션 관리에서 고르기</option>' + promos.map((x, i) =>
+      `<option value="${i}">${escH(x.start)} ~ ${escH(x.end || x.start)} · ${escH(x.facility || '')} · ${escH(x.type || '')}</option>`).join('');
+  }
+  document.getElementById('tabs').addEventListener('click', (e) => {
+    const tb = e.target.closest('.tab');
+    if (tb && tb.dataset.tab === 'report') loadPromos();
+  });
+  $('rpPromo').addEventListener('change', () => {
+    const x = promos && promos[+$('rpPromo').value];
+    if (!x) return;
+    $('rpPk').value = String(x.pk).split(/[,\s]+/)[0];
+    $('rpType').value = x.type || '';
+    $('rpFrom').value = x.start;
+    $('rpEnd').value = x.end || x.start;
+    $('rpProduct').value = x.product || '';
+  });
+
+  async function names(pk){
+    if (!pkNames) {
+      const j = await (await fetch(FACILITIES_API)).json();
+      pkNames = {};
+      for (const f of j.facilities || []) pkNames[String(f.id)] = f.name;
+    }
+    return pkNames[pk] || null;
+  }
+
+  function save(){
+    if (!base) return;
+    const f = {};
+    FIELDS.forEach(id => { f[id] = $(id).value; });
+    try { localStorage.setItem(KEY + base.key, JSON.stringify(f)); localStorage.setItem(KEY + 'md', $('rpMd').value); } catch (e) { /* 저장 못 해도 만들기는 됨 */ }
+  }
+  function restore(key){
+    let st = null;
+    try { st = JSON.parse(localStorage.getItem(KEY + key) || 'null'); } catch (e) { st = null; }
+    FIELDS.forEach(id => { $(id).value = (st && st[id]) || ''; });
+    if (!$('rpMd').value) { try { $('rpMd').value = localStorage.getItem(KEY + 'md') || ''; } catch (e) { /* 무시 */ } }
+  }
+
+  function draw(){
+    if (!base) return;
+    model = { ...base,
+      title: $('rpTitle').value.trim() || `${base.type ? base.type + ' ' : ''}마케팅 결과 보고서`,
+      md: $('rpMd').value.trim(), to2: $('rpTo').value.trim(),
+      internal: Report.parseLines($('rpInt').value, 'int'), external: Report.parseLines($('rpExt').value, 'ext'),
+      comment: $('rpComment').value.trim() };
+    const cv = Report.render($('rpRender'), model);
+    $('rpStage').innerHTML = '<div class="rp-prev"><div class="rp-scale"></div></div>';
+    $('rpStage').querySelector('.rp-scale').append(cv.cloneNode(true));
+  }
+  FIELDS.forEach(id => $(id).addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { save(); draw(); }, 400); }));
+
+  $('rpMake').addEventListener('click', async () => {
+    const m = $('rpMsg');
+    const pk = $('rpPk').value.trim(), from = $('rpFrom').value, to = $('rpEnd').value;
+    if (!/^\d+$/.test(pk) || !from || !to || to < from) { msg(m, '숙소 PK와 시작일·종료일을 확인해 주세요.', true); return; }
+    if (typeof DERIVED === 'undefined' || !DERIVED.length) { msg(m, '판매내역을 아직 못 불러왔어요. 대시보드 데이터가 뜬 뒤 다시 눌러 주세요.', true); return; }
+    msg(m, '만드는 중…');
+    $('rpMake').disabled = true;
+    try {
+      // 숙소명·표지 사진: 놀발 숙소 상세 → 없으면 놀발 숙소 목록의 이름
+      let hero = '', detailName = null;
+      try {
+        const d = await (await fetch(`${Sogu.API}/stay-detail?id=${pk}&days=1`)).json();
+        if (d.detail) { detailName = d.detail.name; hero = (d.detail.images && d.detail.images[0]) || ''; }
+        // 공급사 이미지 서버는 CORS 가 없어 PDF 변환이 실패 → price-scraper 중계로 (놀발 CDN 은 그대로)
+        if (hero && !/^https:\/\/cdn\.nolbal\.com\//.test(hero)) hero = `${Sogu.API}/img?url=${encodeURIComponent(hero)}`;
+      } catch (e) { /* 목록 이름으로 */ }
+      const name = detailName || await names(pk);
+      if (!name) throw new Error(`PK ${pk}의 숙소를 놀발에서 못 찾았어요.`);
+      const k = facKey(name);
+      const rows = DERIVED.filter(d => facKey(d.stay) === k);
+      const stats = Report.stats(rows, from, to);
+      const sel = promos && promos[+$('rpPromo').value];
+      base = { key: keyOf(), pk, name: ypFacilityName(name), type: $('rpType').value.trim(), product: $('rpProduct').value.trim(),
+        from, to, today: new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10), hero, stats };
+      restore(base.key);
+      msg(m, `<b>${escH(base.name)}</b> · ${escH(Report.dot(from))} ~ ${escH(Report.dot(to))} · 결제 ${stats.all.n}건 / 취소 ${stats.cancel.n}건 / 최종 ${stats.keep.n}건`
+        + (!rows.length ? '<br>⚠ 판매내역에서 이 숙소 이름을 못 찾았어요 (숙소명이 다르게 들어갔을 수 있어요).' : '')
+        + (sel && String(sel.pk).split(/[,\s]+/).length > 1 ? '<br>⚠ 이 일정은 PK가 여러 개예요 — 첫 번째 PK로만 만들었어요.' : ''), !rows.length);
+      $('rpFields').hidden = false;
+      draw();
+    } catch (e) {
+      msg(m, escH(e.message || e), true);
+    } finally {
+      $('rpMake').disabled = false;
+    }
+  });
+
+  function loadScript(src, ok){
+    if (ok()) return Promise.resolve();
+    return new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = res; s.onerror = () => rej(new Error('PDF 도구를 불러오지 못했어요.'));
+      document.head.append(s);
+    });
+  }
+
+  // A4(794×1123px) 한 쪽에 위아래 여백 40px, 섹션 경계에서 쪽을 나눠 PDF로
+  $('rpPdf').addEventListener('click', async () => {
+    const m = $('rpMsg2');
+    if (!base) return;
+    msg(m, 'PDF 만드는 중…');
+    $('rpPdf').disabled = true;
+    try {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js', () => window.htmlToImage);
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf);
+      draw();
+      await Sogu.ready($('rpRender'));
+      const cv = $('rpRender').firstElementChild;
+      const W = 794, PAGE = 1123, M = 40, R = 2;
+      const all = await htmlToImage.toCanvas(cv, { includeQueryParams: true, pixelRatio: R, backgroundColor: '#ffffff', width: W, height: cv.offsetHeight });
+      const parts = Report.pages(cv, PAGE - M * 2);
+      const pdf = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+      const mm = 210 / W;
+      parts.forEach(([y0, y1], i) => {
+        if (i) pdf.addPage();
+        const c = document.createElement('canvas');
+        c.width = W * R; c.height = (y1 - y0) * R;
+        c.getContext('2d').drawImage(all, 0, y0 * R, W * R, (y1 - y0) * R, 0, 0, W * R, (y1 - y0) * R);
+        // 첫 쪽은 표지 사진이 위에 꽉 차게, 나머지는 위 여백
+        pdf.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', 0, i ? M * mm : 0, 210, (y1 - y0) * mm);
+        pdf.setFontSize(8); pdf.setTextColor(150);
+        pdf.text(`${i + 1} / ${parts.length}`, 105, 290, { align: 'center' });
+      });
+      pdf.save(`${model.name.replace(/[\\/:*?"<>|\s]+/g,'_')}_마케팅보고서_${model.from}_${model.to}.pdf`);
+      msg(m, `PDF ${parts.length}쪽을 저장했어요.` + (!model.internal.length ? '<br>※ 내부 마케팅 실적이 비어 있어서 그 섹션은 빠졌어요.' : ''));
+    } catch (e) {
+      msg(m, 'PDF 실패: ' + escH(e.message || e) + ' — 프로모션과 함께 Claude에게 알려주세요.', true);
+    } finally {
+      $('rpPdf').disabled = false;
     }
   });
 })();

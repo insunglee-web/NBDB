@@ -1,0 +1,77 @@
+/* 마케팅 결과 보고서 템플릿 (A4 폭 794px @96dpi → PDF 210mm) */
+.rp-cv{
+  --acc:#FF2D55; --ink:#14161F; --sub:#5B6070; --mute:#9AA0AE; --line:#E7E8EE; --soft:#F6F7FA;
+  width:794px; background:#fff; color:var(--ink);
+  font-family:'Pretendard Variable','Pretendard',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  letter-spacing:-0.01em; word-break:keep-all; line-height:1.55; font-size:14px;
+}
+.rp-cv *{box-sizing:border-box; margin:0; padding:0;}
+.rp-cv img{display:block; width:100%; height:100%; object-fit:cover;}
+
+/* 표지 */
+.rp-cover{padding:0 0 28px;}
+.rp-hero{height:220px; overflow:hidden; background:#ddd;}
+.rp-cover-t{padding:28px 48px 0;}
+.rp-eyebrow{color:var(--acc); font-size:13px; font-weight:800; letter-spacing:.24em;}
+.rp-cover h1{margin-top:8px; font-size:36px; font-weight:900; line-height:1.25; letter-spacing:-0.03em;}
+.rp-sub{margin-top:4px; font-size:18px; font-weight:600; color:var(--sub);}
+.rp-meta{margin-top:22px; border-top:2px solid var(--ink);}
+.rp-meta div{display:flex; padding:10px 0; border-bottom:1px solid var(--line); font-size:14px;}
+.rp-meta dt{width:110px; flex:none; color:var(--sub); font-weight:700;}
+.rp-meta dd{font-weight:600;}
+
+/* 섹션 */
+.rp-sec{padding:26px 48px 22px;}
+.rp-sec h2{display:flex; align-items:baseline; gap:10px; padding-bottom:12px; margin-bottom:18px; border-bottom:2px solid var(--ink); font-size:22px; font-weight:900;}
+.rp-sec h2 span{color:var(--acc); font-size:20px;}
+.rp-sec h2 small{font-size:13px; font-weight:600; color:var(--mute);}
+.rp-sec h3{font-size:17px; font-weight:800; margin-bottom:12px;}
+
+.rp-kpis{display:flex; gap:10px; margin-bottom:16px;}
+.rp-kpis div{flex:1; padding:14px 16px; border-radius:12px; background:var(--soft);}
+.rp-kpis div.wide{flex:1.5;}
+.rp-kpis small{display:block; font-size:12px; color:var(--sub); font-weight:700;}
+.rp-kpis b{display:block; margin-top:2px; font-size:24px; font-weight:900; letter-spacing:-0.02em;}
+.rp-kpis i{font-style:normal; font-size:13px; font-weight:700; margin-left:2px; color:var(--sub);}
+
+.rp-tbl{width:100%; border-collapse:collapse; font-size:13px;}
+/* 대시보드 전역 th/td 스타일(어두운 배경·고정폭 글꼴·대문자)이 섞이지 않게 되돌린다 */
+.rp-tbl th,.rp-tbl td{padding:9px 10px; border-bottom:1px solid var(--line); text-align:right; vertical-align:top;
+  background:none; color:inherit; font-family:inherit; font-size:13px; text-transform:none; letter-spacing:inherit; position:static; cursor:default; white-space:normal;}
+.rp-tbl th:hover{color:inherit;}
+.rp-tbl thead th{background:var(--soft); color:var(--sub); font-weight:700; font-size:12px; border-bottom:1px solid #D9DBE2;}
+.rp-tbl tbody th{text-align:left; font-weight:700;}
+.rp-tbl thead th:first-child{text-align:left;}
+.rp-tbl td.t{text-align:left;}
+.rp-tbl td.t small{display:block; color:var(--mute); font-size:11px; word-break:break-all;}
+.rp-sum td{font-size:15px; font-weight:700;}
+.rp-sum tr.cx td,.rp-sum tr.cx th{color:var(--mute);}
+.rp-sum tr.fin th,.rp-sum tr.fin td{color:var(--acc); font-weight:900; border-bottom:2px solid var(--ink);}
+.rp-prod tbody th{max-width:300px;}
+.rp-tbl thead th{white-space:nowrap;}
+.rp-mk td,.rp-mk th{white-space:nowrap;}
+.rp-prod tbody th{font-weight:600; font-size:12px;}
+.rp-cmp-wrap{padding:0 48px 18px;}
+.rp-cmp-wrap .rp-cmp{margin-top:0;}
+.rp-mk td.t{white-space:normal;}
+
+.rp-note{margin-top:8px; font-size:11.5px; color:var(--mute);}
+.rp-cmp{margin-top:14px; padding:14px 16px; border:1px solid var(--line); border-radius:12px;}
+.rp-cmp p{font-size:12px; color:var(--sub); font-weight:700; margin-bottom:6px;}
+.rp-cmp div{display:flex; align-items:center; gap:10px; padding:3px 0; font-size:14px;}
+.rp-cmp span{width:90px; color:var(--sub);}
+.rp-cmp b{font-weight:800;}
+.rp-cmp .dl{width:auto; margin-left:auto; font-weight:900;}
+.rp-cmp .dl.up{color:var(--acc);}
+.rp-cmp .dl.down{color:#3D6FE0;}
+
+.rp-chart{display:block; width:100%; height:auto;}
+.rp-chart .v{font-size:11px; font-weight:700; fill:#5B6070;}
+.rp-chart .l{font-size:11px; fill:#9AA0AE;}
+.rp-legend{margin-top:6px; display:flex; gap:14px; align-items:center; font-size:12px; color:var(--sub);}
+.rp-legend i{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:-1px;}
+.rp-legend i.a{background:var(--acc);}
+.rp-legend i.c{background:#C9CCD5;}
+
+.rp-comment{padding:16px 18px; border-radius:12px; background:var(--soft); font-size:14px; white-space:pre-line; line-height:1.7;}
+.rp-foot{margin:14px 48px 0; padding:14px 0 30px; border-top:1px solid var(--line); font-size:11px; color:var(--mute);}
