@@ -1397,10 +1397,50 @@ function parseCSV(text){
   return rows.filter(r => !(r.length===1 && r[0]===''));
 }
 
-function loadData(){
-  document.getElementById('loading').innerHTML = `<div class="spinner"></div><div class="lt">데이터 불러오는 중… (<span id="loadElapsed">0</span>초 경과)</div>`;
-  document.getElementById('loading').style.display='flex';
-  document.getElementById('app').style.display='none';
+// ---------- 판매내역 불러오기 (속도) ----------
+// 1) 대시보드가 실제로 쓰는 열만 받는다 (49열 → 19열). 헤더가 옮겨져 필요한 이름이 빠지면 전체 열로 다시 받는다.
+// 2) 마지막으로 받은 데이터를 이 브라우저(IndexedDB)에 저장 → 다음에 열면 바로 보여 주고, 새 데이터는 뒤에서 받아 바꾼다.
+const SHEET_SELECT = 'select A,B,D,T,U,W,X,Z,AD,AE,AF,AG,AH,AI,AK,AL,AM,AN,AV';
+const NEEDED_HEADERS = ['진행상태','생성일','취소일','공급사','로컬1','숙소명','객실수','예약자 연락처','투숙인원','체크인','체크아웃','박수','상품명','판매가','놀발 수수료'];
+let LETTER_POS = null; // 원본 열 문자 → RAW 안의 위치 (일부 열만 받을 때 colL 이 쓰는 표)
+let COL_IDS = [];      // RAW 위치 → 원본 열 문자
+const sheetCache = {
+  open(){ return new Promise((ok, bad) => { const r = indexedDB.open('nbdb', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => ok(r.result); r.onerror = () => bad(r.error); }); },
+  async get(){ try { const db = await this.open(); return await new Promise((ok) => { const q = db.transaction('kv').objectStore('kv').get('sheet'); q.onsuccess = () => ok(q.result || null); q.onerror = () => ok(null); }); } catch(e){ return null; } },
+  async put(v){ try { const db = await this.open(); db.transaction('kv', 'readwrite').objectStore('kv').put(v, 'sheet'); } catch(e){ /* 저장 못 해도 다음에 새로 받으면 됨 */ } },
+};
+function applyTable(t){
+  COLS = {}; t.labels.forEach((l,i)=>{ if(l) COLS[l]=i; });
+  COL_IDS = t.ids; LETTER_POS = {}; t.ids.forEach((id,i)=>{ if(id) LETTER_POS[id]=i; });
+  RAW = t.rows;
+}
+function setSyncStatus(kind, text, title){
+  document.getElementById('statusDot').className = 'status-dot' + (kind === 'live' ? ' live' : kind === 'err' ? ' err' : '');
+  const st = document.getElementById('statusText'); st.textContent = text; st.title = title || '';
+  document.getElementById('rowCount').textContent = fmtNum(RAW.length)+' rows';
+}
+
+function loadData(full){
+  const hasData = RAW.length > 0; // 새로고침 버튼: 지금 화면은 그대로 두고 뒤에서 받는다
+  let freshDone = false;
+  if(hasData){
+    setSyncStatus('sync', '새로 받는 중…');
+  } else {
+    document.getElementById('loading').innerHTML = `<div class="spinner"></div><div class="lt">데이터 불러오는 중… (<span id="loadElapsed">0</span>초 경과)</div>`;
+    document.getElementById('loading').style.display='flex';
+    document.getElementById('app').style.display='none';
+    // 저장해 둔 지난 데이터가 있으면 먼저 보여 준다
+    sheetCache.get().then(c => {
+      if(!c || freshDone || RAW.length) return;
+      try{
+        applyTable(c); deriveRows(); buildAll();
+        document.getElementById('loading').style.display='none';
+        document.getElementById('app').style.display='block';
+        setSyncStatus('cache', '저장본 · 새로 받는 중…', '마지막으로 받은 데이터: ' + new Date(c.at).toLocaleString('ko-KR'));
+        document.getElementById('lastSync').textContent = '저장본: ' + new Date(c.at).toLocaleString('ko-KR', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
+      }catch(e){ RAW = []; DERIVED = []; }
+    });
+  }
   clearTimeout(_loadTimeoutId);
   clearInterval(_loadTickerId);
   const _loadStartedAt = Date.now();
@@ -1409,7 +1449,12 @@ function loadData(){
     if(el) el.textContent = Math.floor((Date.now()-_loadStartedAt)/1000);
   }, 1000);
 
+  // 이미 화면에 데이터(저장본 포함)가 있으면 오류 화면으로 덮지 않고 상태 표시만 바꾼다
   function showError(message){
+    if(RAW.length){ clearInterval(_loadTickerId); setSyncStatus('err', '새로 못 받음 · 저장본 표시 중', message); return; }
+    showErrorScreen(message);
+  }
+  function showErrorScreen(message){
     clearInterval(_loadTickerId);
     document.getElementById('loading').innerHTML = `
       <div class="err-box">
@@ -1449,15 +1494,21 @@ function loadData(){
       if(json.status === 'error'){ throw new Error('(STAGE: gviz_status) ' + (json.errors?.[0]?.detailed_message || 'Google Sheets 오류 응답')); }
       const table = json.table;
       if(!table || !table.cols){ throw new Error('(STAGE: gviz_table) 시트 테이블 구조를 읽지 못했습니다. 시트 공유 설정 또는 gid를 확인해주세요.'); }
-      const labels = table.cols.map(c => (c && c.label || '').trim());
-      COLS = {};
-      labels.forEach((l,i)=>{ if(l) COLS[l]=i; });
-      RAW = (table.rows||[]).map(r => (r.c||[]).map(c => c ? (c.f ?? c.v) : null));
+      const t = {
+        labels: table.cols.map(c => (c && c.label || '').trim()),
+        ids: table.cols.map(c => (c && c.id) || ''),
+        rows: (table.rows||[]).map(r => (r.c||[]).map(c => c ? (c.f ?? c.v) : null)),
+      };
+      // 일부 열만 받았는데 필요한 헤더가 없으면(시트 열이 옮겨짐) 전체 열로 다시
+      if(!full && NEEDED_HEADERS.some(h => !t.labels.includes(h))){ cleanup(); loadData(true); return; }
+      freshDone = true;
       cleanup();
-      document.getElementById('statusDot').className='status-dot live';
-      document.getElementById('statusText').textContent='LIVE';
-      document.getElementById('rowCount').textContent = fmtNum(RAW.length)+' rows';
+      var firstRender = !DERIVED.length;
+      applyTable(t);
+      setSyncStatus('live', 'LIVE');
       document.getElementById('lastSync').textContent = '동기화: '+new Date().toLocaleTimeString('ko-KR');
+      // 다음에 열 때 바로 보여 줄 저장본 (화면 그린 뒤에)
+      setTimeout(() => sheetCache.put({ ...t, at: Date.now() }), 1500);
     }catch(err){
       showError('(STAGE: 데이터 수신/파싱) ' + err.message + (err.stack? '\n\n['+err.stack.split('\n').slice(0,3).join(' | ')+']':''));
       return;
@@ -1469,7 +1520,8 @@ function loadData(){
       return;
     }
     try{
-      buildAll();
+      // 처음이면 전체 구성, 저장본·이전 데이터가 이미 그려져 있으면 숫자만 다시
+      if(firstRender) buildAll(); else refreshAll();
     }catch(err){
       showError('(STAGE: buildAll — 화면 렌더링 중 오류) ' + err.message + (err.stack? '\n\n['+err.stack.split('\n').slice(0,3).join(' | ')+']':''));
       return;
@@ -1480,7 +1532,7 @@ function loadData(){
 
   const script = document.createElement('script');
   script.id = 'gvizScript';
-  const gvizUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&gid=${GID}&t=${Date.now()}`;
+  const gvizUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&gid=${GID}${full ? '' : '&tq=' + encodeURIComponent(SHEET_SELECT)}&t=${Date.now()}`;
   script.src = gvizUrl;
   script.onerror = () => showError('(STAGE: script_load) 시트에 접근할 수 없습니다 (스크립트 로드 실패). 링크 공유 설정, SHEET_ID/gid, 또는 이 파일을 열고 있는 환경(사내망/사내 프록시/샌드박스 미리보기 등)의 외부 네트워크 차단 여부를 확인해주세요.');
   document.body.appendChild(script);
@@ -1520,7 +1572,7 @@ function colLetterIndex(letter){
   for(let i=0;i<s.length;i++){ idx = idx*26 + (s.charCodeAt(i)-64); }
   return idx-1;
 }
-function colL(row, letter){ const i = colLetterIndex(letter); return (i>=0 && i<row.length) ? row[i] : null; }
+function colL(row, letter){ const i = LETTER_POS ? LETTER_POS[letter.toUpperCase()] : colLetterIndex(letter); return (i!=null && i>=0 && i<row.length) ? row[i] : null; }
 function indexToColLetter(i){
   let n = i+1, s = '';
   while(n>0){ const rem=(n-1)%26; s = String.fromCharCode(65+rem)+s; n = Math.floor((n-1)/26); }
@@ -1533,7 +1585,7 @@ function renderFieldMapping(){
   if(!el) return;
   const report = (label, headerName) => {
     const idx = COLS[headerName];
-    return idx!=null ? `${label}: "${headerName}"열(현재 ${indexToColLetter(idx)}열) 자동 인식` : `${label}: "${headerName}" 헤더를 못 찾음 ⚠`;
+    return idx!=null ? `${label}: "${headerName}"열(현재 ${COL_IDS[idx] || indexToColLetter(idx)}열) 자동 인식` : `${label}: "${headerName}" 헤더를 못 찾음 ⚠`;
   };
   el.innerHTML = '현재 필드 매핑(헤더명 기준 자동 인식 — 열 위치가 바뀌어도 이 텍스트가 자동으로 따라갑니다): ' +
     [report('거래액 기준','판매가'), report('매출(순이익) 기준','놀발 수수료'), report('매출 집계 기준일','체크아웃'), report('박수','박수')].join(' · ');
@@ -1751,17 +1803,29 @@ function safeRun(fnName, fn){
   catch(err){ console.error(`[대시보드] ${fnName} 렌더링 중 오류:`, err); }
 }
 
+// 탭별 그리기. 필터·데이터가 바뀌면 모든 탭을 "다시 그려야 함"으로 표시하고, 지금 보는 탭만 바로 그린다.
+// 나머지 탭은 처음 열 때 그린다 (5만 행 기준 전 탭을 한 번에 그리면 2초 가까이 걸림).
+const TAB_RENDER = {
+  exec: [['computeAndRenderExec', computeAndRenderExec], ['computeAndRenderAnomaly', computeAndRenderAnomaly]],
+  partner: [['computeAndRenderPartner', computeAndRenderPartner]],
+  kpi: [['computeAndRenderMonthlyKpi', computeAndRenderMonthlyKpi]],
+  sales: [['computeAndRenderSales', computeAndRenderSales]],
+  product: [['computeAndRenderProduct', computeAndRenderProduct]],
+  region: [['computeAndRenderRegionChannel', computeAndRenderRegionChannel]],
+  customer: [['computeAndRenderCustomer', computeAndRenderCustomer]],
+  coupon: [['computeAndRenderCoupon', computeAndRenderCoupon]],
+};
+let TAB_DIRTY = new Set();
+function renderTab(tab){
+  if(!TAB_DIRTY.has(tab)) return;
+  TAB_DIRTY.delete(tab);
+  (TAB_RENDER[tab] || []).forEach(([n, fn]) => safeRun(n, fn));
+}
 function refreshAll(){
   applyFilters();
-  safeRun('computeAndRenderExec', computeAndRenderExec);
-  safeRun('computeAndRenderPartner', computeAndRenderPartner);
-  safeRun('computeAndRenderMonthlyKpi', computeAndRenderMonthlyKpi);
-  safeRun('computeAndRenderSales', computeAndRenderSales);
-  safeRun('computeAndRenderProduct', computeAndRenderProduct);
-  safeRun('computeAndRenderRegionChannel', computeAndRenderRegionChannel);
-  safeRun('computeAndRenderCustomer', computeAndRenderCustomer);
-  safeRun('computeAndRenderCoupon', computeAndRenderCoupon);
-  safeRun('computeAndRenderAnomaly', computeAndRenderAnomaly);
+  TAB_DIRTY = new Set(Object.keys(TAB_RENDER));
+  const active = document.querySelector('.tab.active');
+  renderTab(active ? active.dataset.tab : 'exec');
 }
 
 
@@ -3418,6 +3482,7 @@ document.getElementById('tabs').addEventListener('click', e=>{
   document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
   t.classList.add('active');
   document.getElementById('sec-'+t.dataset.tab).classList.add('active');
+  renderTab(t.dataset.tab); // 이 탭 차트는 처음 열 때(또는 필터·데이터가 바뀐 뒤) 그린다
 });
 
 loadData();
