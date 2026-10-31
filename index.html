@@ -9,8 +9,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" crossorigin="anonymous"><!-- crossorigin 필수: 없으면 소구 이미지 JPG 다운로드(html-to-image)가 이 폰트를 못 읽어 맑은 고딕으로 나옴 -->
 <link rel="stylesheet" href="sogu/sogu.css?v=20261019b">
 <script src="sogu/sogu.js?v=20261019b"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
-<link rel="stylesheet" href="detail/detail.css?v=20261031b">
-<script src="detail/detail.js?v=20261031b"></script>
+<link rel="stylesheet" href="detail/detail.css?v=20261031c">
+<script src="detail/detail.js?v=20261031c"></script>
 <link rel="stylesheet" href="report/report.css?v=20261031">
 <script src="report/report.js?v=20261031"></script>
 <style>
@@ -1077,7 +1077,7 @@ tr:hover td{background:rgba(47,211,196,0.04);}
       <div class="section-title"><span class="num">15</span>스마트스토어 상세페이지 (놀발 숙소 정보 → 상세 이미지)</div>
       <style>
         #sec-detail [hidden]{display:none !important;}
-        #sec-detail input[type=text],#sec-detail textarea{width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+        #sec-detail input[type=text],#sec-detail textarea,#sec-detail select{width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
           border-radius:7px; padding:8px 10px; font-size:13px; font-family:var(--body);}
         #sec-detail textarea{resize:vertical; min-height:84px; line-height:1.5;}
         #sec-detail input:focus,#sec-detail textarea:focus{outline:none; border-color:var(--teal);}
@@ -1088,6 +1088,9 @@ tr:hover td{background:rgba(47,211,196,0.04);}
         .dt-blocks label small{display:block; color:var(--sub); font-size:11.5px;}
         .dt-facph{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 10px;}
         .dt-facph label{display:flex; align-items:center; gap:6px; font-size:12.5px;}
+        .dt-facph label.off span{text-decoration:line-through; color:var(--sub) !important;}
+        .dt-facph .x{flex:none; padding:0 6px; border:0; background:none; color:var(--sub); cursor:pointer;}
+        #sec-detail .su-row select{width:auto; flex:none;}
         .dt-facph label span{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
         #sec-detail .dt-facph input{width:56px; flex:none; padding:4px 6px; font-family:var(--mono); text-align:center;}
         .dt-facph label.miss span{color:var(--coral);}
@@ -1114,7 +1117,13 @@ tr:hover td{background:rgba(47,211,196,0.04);}
 
             <h4>③ 사진 (눌러서 대표 사진 고르기)</h4>
             <div class="su-thumbs" id="dtThumbs"></div>
-            <input type="text" id="dtGallery" placeholder="갤러리 사진 번호 예: 1, 2, 5, 8 — 비우면 대표 다음 6장" aria-label="갤러리 사진 번호" style="margin-top:8px">
+            <label class="su-drop" id="dtDrop">
+              <b>내 사진 올리기</b><span>여기로 끌어 놓거나 눌러서 고르기 · 여러 장 가능 · 「내1」「내2」… 번호로 써요</span>
+              <input type="file" id="dtUpload" accept="image/*" multiple hidden>
+            </label>
+            <p class="su-msg" id="dtUpMsg" role="status"></p>
+            <input type="text" id="dtGallery" placeholder="갤러리 사진 번호 예: 1, 2, 5, 내1 — 비우면 대표 다음 6장" aria-label="갤러리 사진 번호" style="margin-top:8px">
+            <p class="su-hint">내 사진은 이 PK에 서버로 저장돼서 소구 이미지 탭에서도 같이 보여요. 사진 위 ✕로 삭제.</p>
 
             <h4>④ 구매 전 꼭 확인</h4>
             <textarea id="dtNotice" placeholder="한 줄에 하나 — 비우면 놀발 안내 맨 앞 문구, 없음이면 빼기&#10;예) 2박 이상은 1박씩 각각 구매해주세요"></textarea>
@@ -1128,9 +1137,14 @@ tr:hover td{background:rgba(47,211,196,0.04);}
             <button class="btn dt-panel-btn" id="dtRoomsAuto" type="button">자동 객실을 칸에 채워 고치기</button>
             <p class="su-hint">사진번호는 ③의 번호. 여러 장이면 <code>7, 8, 9</code> — 첫 장이 크게, 나머지는 두 칸씩 들어가요.</p>
 
-            <h4>⑦ 부대시설 사진</h4>
+            <h4>⑦ 부대시설 (넣을 시설 고르기 · 사진번호)</h4>
             <div class="dt-facph" id="dtFacPhotos"></div>
-            <p class="su-hint">시설마다 ③의 사진번호를 넣으면 사진 타일로 들어가요. 비운 시설은 이름만 아래에 작게 나와요.</p>
+            <div class="su-row" style="margin-top:8px">
+              <input type="text" id="dtFacNew" placeholder="시설 추가 예: 해브나인 스파" aria-label="추가할 시설명">
+              <select id="dtFacSec" aria-label="넣을 묶음"></select>
+              <button class="btn" id="dtFacAdd" type="button">추가</button>
+            </div>
+            <p class="su-hint">체크를 끄면 그 시설은 빠져요(예: 비즈니스센터). 사진번호(예: <code>12</code>, <code>내1</code>)를 넣으면 사진 타일로, 비우면 이름만 아래에 작게 나와요.</p>
             <textarea id="dtFac" placeholder="(선택) 크게 소개할 시설 카드 · 시설명 | 위치·운영시간·요금 | 사진번호&#10;예) 해브나인 스파 | 실내 09:00~18:00 / 실외 10:00~18:00 | 12, 13" style="margin-top:8px"></textarea>
 
             <h4>⑧ 예약 및 이용 방법 (선택)</h4>
@@ -4276,9 +4290,11 @@ loadData();
   const KEY = 'nbdb-detail-';
   const FIELDS = ['dtName','dtCopy','dtSale','dtStay','dtGallery','dtNotice','dtPkgs','dtRooms','dtFac','dtSteps','dtContact'];
   document.body.append($('dtRender')); // 캡처용 원본(860px)은 탭이 숨겨져도 크기가 잡히도록 body 바로 아래에
-  let data = null, model = null, heroIdx = 0, t = null;
+  let data = null, model = null, heroIdx = 0, t = null; // heroIdx: 놀발 사진 번호 또는 '내N'
   const hideBlocks = new Set();
-  const facPhotos = {}; // 시설명 → 사진번호
+  const facPhotos = {}; // 시설명 → 사진번호 ('12' · '내1')
+  const facHide = new Set(); // 뺀 시설
+  const facAdd = [];         // 직접 추가한 시설 [{name, section}]
 
   function msg(el, html, err){ el.className = 'su-msg' + (err ? ' err' : ''); el.innerHTML = html; }
   const escH = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
@@ -4287,12 +4303,12 @@ loadData();
 
   function over(){
     const v = (id) => $(id).value.trim();
-    const o = { heroIndex: heroIdx, hideBlocks: [...hideBlocks], facilityPhotos: { ...facPhotos } };
+    const o = { heroIndex: heroIdx, hideBlocks: [...hideBlocks], facilityPhotos: { ...facPhotos }, facilityHide: [...facHide], facilityAdd: facAdd.map(a => ({ ...a })) };
     if (v('dtName')) o.name = v('dtName');
     if (v('dtCopy')) o.copy = isNone(v('dtCopy')) ? '' : v('dtCopy');
     if (v('dtSale')) o.salePeriod = v('dtSale');
     if (v('dtStay')) o.stayPeriod = isNone(v('dtStay')) ? '' : v('dtStay');
-    if (v('dtGallery')) o.gallery = isNone(v('dtGallery')) ? [] : v('dtGallery').split(/[,\s]+/).filter(x => /^\d+$/.test(x));
+    if (v('dtGallery')) o.gallery = Detail.photoNos(v('dtGallery'));
     if (v('dtNotice')) o.notice = isNone(v('dtNotice')) ? [] : linesOf('dtNotice');
     if (v('dtPkgs')) o.packages = Sogu.parsePackages(v('dtPkgs')); // '없음' 한 줄 = 섹션 빼기
     if (v('dtRooms')) o.rooms = isNone(v('dtRooms')) ? [] : Detail.parseCards(v('dtRooms'));
@@ -4306,7 +4322,7 @@ loadData();
     if (!data) return;
     const fields = {};
     FIELDS.forEach(id => { fields[id] = $(id).value; });
-    try { localStorage.setItem(KEY + data.pk, JSON.stringify({ fields, heroIdx, hide: [...hideBlocks], facPhotos })); } catch (e) { /* 저장 못 해도 만들기는 됨 */ }
+    try { localStorage.setItem(KEY + data.pk, JSON.stringify({ fields, heroIdx, hide: [...hideBlocks], facPhotos, facHide: [...facHide], facAdd })); } catch (e) { /* 저장 못 해도 만들기는 됨 */ }
   }
   function restore(pk){
     let st = null;
@@ -4317,36 +4333,140 @@ loadData();
     ((st && st.hide) || []).forEach(k => hideBlocks.add(k));
     Object.keys(facPhotos).forEach(k => delete facPhotos[k]);
     Object.assign(facPhotos, (st && st.facPhotos) || {});
+    facHide.clear();
+    ((st && st.facHide) || []).forEach(n => facHide.add(n));
+    facAdd.length = 0;
+    ((st && st.facAdd) || []).forEach(a => facAdd.push(a));
     return !!st;
   }
 
+  const mine = () => data.saved.photos; // 소구 이미지 탭과 같은 저장소 (PK별)
   function fillSide(){
-    $('dtThumbs').innerHTML = data.detail.images.map((u, i) =>
-      `<div class="su-th"><button type="button" data-i="${i}" aria-pressed="${i === heroIdx}" aria-label="사진 ${i}${i === heroIdx ? ' (대표)' : ''}"><img src="${escH(u)}" alt="" loading="lazy"><i>${i}</i></button></div>`).join('');
+    const th = (ref, url, label, del) =>
+      `<div class="su-th"><button type="button" data-i="${escH(ref)}" aria-pressed="${String(ref) === String(heroIdx)}" aria-label="사진 ${escH(label)}"><img src="${escH(url)}" alt="" loading="lazy"><i>${escH(label)}</i></button>`
+      + (del ? `<button type="button" class="su-th-del" data-del="${escH(del)}" aria-label="내 사진 ${escH(label)} 삭제">✕</button>` : '') + '</div>';
+    $('dtThumbs').innerHTML = data.detail.images.map((u, i) => th(i, u, String(i))).join('')
+      + mine().map((p, k) => th('내' + (k + 1), p.url, '내' + (k + 1), p.id)).join('');
     const all = Detail.build(data, {}).blocks;
     $('dtBlocks').innerHTML = all.length ? all.map(b =>
       `<label><input type="checkbox" data-k="${b.key}" ${hideBlocks.has(b.key) ? '' : 'checked'}><span>${escH(b.title || '(제목 없는 맨 앞 안내)')}<small>${escH(b.lines[0].slice(0, 60))}</small></span></label>`).join('')
       : '<p class="su-hint">놀발에 등록된 안내 문구가 없어요.</p>';
+    // 부대시설: 놀발 시설 + 직접 추가한 시설. 체크 끄면 빠짐, 사진번호 넣으면 사진 타일
+    const secs = (data.detail.facilitySections || []).map(s => s.title || '부대시설');
     const facs = [...new Set((data.detail.facilitySections || []).flatMap(s => s.items || []))];
-    $('dtFacPhotos').innerHTML = facs.length ? facs.map(n =>
-      `<label class="${facPhotos[n] ? '' : 'miss'}"><span title="${escH(n)}">${escH(n)}</span><input type="text" inputmode="numeric" data-f="${escH(n)}" value="${escH(facPhotos[n] || '')}" placeholder="번호" aria-label="${escH(n)} 사진번호"></label>`).join('')
-      : '<p class="su-hint">놀발에 등록된 부대시설이 없어요.</p>';
+    const row = (n, added) => `<label class="${facHide.has(n) ? 'off' : facPhotos[n] ? '' : 'miss'}">
+      <input type="checkbox" data-show="${escH(n)}" ${facHide.has(n) ? '' : 'checked'} aria-label="${escH(n)} 넣기">
+      <span title="${escH(n)}">${escH(n)}</span>
+      <input type="text" data-f="${escH(n)}" value="${escH(facPhotos[n] || '')}" placeholder="번호" aria-label="${escH(n)} 사진번호">
+      ${added ? `<button type="button" class="x" data-rm="${escH(n)}" aria-label="${escH(n)} 삭제">✕</button>` : ''}</label>`;
+    $('dtFacPhotos').innerHTML = facs.map(n => row(n, false)).join('') + facAdd.filter(a => !facs.includes(a.name)).map(a => row(a.name, true)).join('')
+      || '<p class="su-hint">놀발에 등록된 부대시설이 없어요. 아래에서 추가하세요.</p>';
+    $('dtFacSec').innerHTML = [...new Set([...secs, '그 밖의 시설'])].map(s => `<option>${escH(s)}</option>`).join('');
   }
   $('dtFacPhotos').addEventListener('input', (e) => {
     const f = e.target.dataset.f;
     if (f == null) return;
-    const v = e.target.value.replace(/\D/g, '');
+    const v = e.target.value.trim().replace(/^내\s*/, '내').replace(/[^\d내]/g, '');
     if (v) facPhotos[f] = v; else delete facPhotos[f];
-    e.target.closest('label').classList.toggle('miss', !v);
+    e.target.closest('label').classList.toggle('miss', !v && !facHide.has(f));
     later();
   });
+  $('dtFacPhotos').addEventListener('change', (e) => {
+    const n = e.target.dataset.show;
+    if (n == null) return;
+    e.target.checked ? facHide.delete(n) : facHide.add(n);
+    fillSide(); save(); draw();
+  });
+  $('dtFacPhotos').addEventListener('click', (e) => {
+    const n = e.target.dataset && e.target.dataset.rm;
+    if (n == null) return;
+    e.preventDefault();
+    const k = facAdd.findIndex(a => a.name === n);
+    if (k >= 0) facAdd.splice(k, 1);
+    delete facPhotos[n]; facHide.delete(n);
+    fillSide(); save(); draw();
+  });
+  function addFacility(){
+    const n = $('dtFacNew').value.trim();
+    if (!n || !data) return;
+    if (!facAdd.some(a => a.name === n)) facAdd.push({ name: n, section: $('dtFacSec').value });
+    facHide.delete(n);
+    $('dtFacNew').value = '';
+    fillSide(); save(); draw();
+  }
+  $('dtFacAdd').addEventListener('click', addFacility);
+  $('dtFacNew').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); addFacility(); } });
+
   $('dtThumbs').addEventListener('click', (e) => {
+    const del = e.target.closest('button[data-del]');
+    if (del) { deleteMine(del.dataset.del); return; }
     const b = e.target.closest('button[data-i]');
     if (!b) return;
-    heroIdx = +b.dataset.i;
-    $('dtThumbs').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.i === heroIdx)));
+    heroIdx = /^\d+$/.test(b.dataset.i) ? +b.dataset.i : b.dataset.i;
+    $('dtThumbs').querySelectorAll('button[data-i]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.i === String(heroIdx))));
     save(); draw();
   });
+
+  // ---- 내 사진: 폭 1000px JPEG 로 줄여 price-scraper /api/sogu 에 PK별 저장 (소구 이미지 탭과 공유) ----
+  function writeKey(){ try { return localStorage.getItem('pm-key') || ''; } catch (e) { return ''; } }
+  async function post(body){
+    const r = await fetch(Sogu.API + '/sogu', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-promo-key': writeKey() }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({ ok: false, error: `저장 서버 오류 (${r.status})` }));
+    if (!j.ok) throw new Error(j.code === 'bad_key' ? '편집 비밀번호가 필요해요 — 프로모션 관리 탭에서 한 번 저장하면 여기도 저장돼요.' : j.error);
+    return j;
+  }
+  function shrink(file){
+    return new Promise((ok, bad) => {
+      const url = URL.createObjectURL(file);
+      const im = new Image();
+      im.onload = () => {
+        const w = Math.min(1000, im.naturalWidth), h = Math.round(im.naturalHeight * w / im.naturalWidth);
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(im, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        ok(c.toDataURL('image/jpeg', 0.86));
+      };
+      im.onerror = () => { URL.revokeObjectURL(url); bad(new Error(file.name + ' 을(를) 열 수 없어요')); };
+      im.src = url;
+    });
+  }
+  async function addMine(files){
+    const list = [...files].filter(f => /^image\//.test(f.type));
+    if (!list.length || !data) return;
+    const m = $('dtUpMsg'), first = mine().length + 1;
+    let done = 0;
+    for (const f of list) {
+      msg(m, `사진 저장 중… (${done + 1}/${list.length})`);
+      try {
+        const j = await post({ action: 'addPhoto', pk: data.pk, data: await shrink(f) });
+        mine().push({ id: j.photo.id, url: j.photo.url });
+        done++;
+      } catch (e) { msg(m, escH(f.name) + ': ' + escH(e.message || e), true); await new Promise(r => setTimeout(r, 1500)); }
+    }
+    if (done) msg(m, `내 사진 ${done}장 저장 · 「내${first}」부터예요. 갤러리·객실·시설 사진번호에 그대로 쓰세요.`);
+    fillSide(); draw();
+  }
+  async function deleteMine(id){
+    const k = mine().findIndex(p => p.id === id);
+    if (k < 0) return;
+    const n = k + 1;
+    if (!confirm(`내 사진 ${n}을(를) 지울까요? 서버에서 삭제돼서 되돌릴 수 없고, 소구 이미지 탭에서도 없어져요.`)) return;
+    try { await post({ action: 'deletePhoto', pk: data.pk, id }); }
+    catch (e) { msg($('dtUpMsg'), '삭제 실패: ' + escH(e.message || e), true); return; }
+    mine().splice(k, 1);
+    // 뒤 번호를 한 칸씩 당기고, 지운 사진을 쓰던 곳은 비운다
+    const shift = (s) => String(s).replace(/내\s*(\d+)/g, (all, d) => (+d === n ? '' : +d > n ? `내${+d - 1}` : all));
+    if (heroIdx === '내' + n) heroIdx = 0; else heroIdx = /^내/.test(String(heroIdx)) ? shift(heroIdx) : heroIdx;
+    for (const f in facPhotos) { const v = shift(facPhotos[f]); if (v) facPhotos[f] = v; else delete facPhotos[f]; }
+    ['dtGallery','dtRooms','dtFac'].forEach(id => { $(id).value = shift($(id).value).replace(/,\s*,/g, ',').replace(/\|\s*,\s*/g, '| ').replace(/,\s*$/gm, ''); });
+    msg($('dtUpMsg'), `내 사진 ${n}을(를) 지웠어요.`);
+    fillSide(); save(); draw();
+  }
+  $('dtUpload').addEventListener('change', (e) => { addMine(e.target.files); e.target.value = ''; });
+  const dtDrop = $('dtDrop');
+  ['dragenter','dragover'].forEach(tp => dtDrop.addEventListener(tp, (e) => { e.preventDefault(); dtDrop.classList.add('over'); }));
+  ['dragleave','drop'].forEach(tp => dtDrop.addEventListener(tp, (e) => { e.preventDefault(); dtDrop.classList.remove('over'); }));
+  dtDrop.addEventListener('drop', (e) => addMine(e.dataTransfer.files));
   $('dtBlocks').addEventListener('change', (e) => {
     const k = e.target.dataset.k;
     if (!k) return;

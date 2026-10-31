@@ -43,8 +43,9 @@
   const NOLBAL_CS = '1566-0286';
   const NOLBAL_CS_HOURS = '오전 10:00 ~ 19:00 / 연중무휴';
 
-  // "5, 6" → ['5','6'] · '없음' → []
-  const photoNos = (s) => (/^(없음|none)$/.test(String(s).trim()) ? [] : String(s).split(/[,\s]+/).filter((x) => /^\d+$/.test(x)));
+  // "5, 6, 내1" → ['5','6','내1'] · '없음' → []   (내N = 직접 올린 사진 N)
+  const PHOTO = /^(\d+|내\d+)$/;
+  const photoNos = (s) => (/^(없음|none)$/.test(String(s).trim()) ? [] : String(s).replace(/내\s+(\d)/g, '내$1').split(/[,\s]+/).filter((x) => PHOTO.test(x)));
 
   // "제목 | 설명 | 사진번호" 줄 → 카드 (사진번호: 숫자 여러 개 "5, 6" 가능 · '없음')
   function parseCards(text) {
@@ -55,7 +56,7 @@
       .map((l) => {
         const parts = l.split('|').map((s) => s.trim());
         let img;
-        if (parts.length >= 2 && /^(\d+(\s*,\s*\d+)*|없음|none)$/.test(parts[parts.length - 1])) img = photoNos(parts.pop());
+        if (parts.length >= 2 && /^((\d+|내\s*\d+)(\s*,\s*(\d+|내\s*\d+))*|없음|none)$/.test(parts[parts.length - 1])) img = photoNos(parts.pop());
         return { title: parts[0], desc: parts.slice(1).join(' | ').replace(/\s*\/\s*/g, '\n'), img };
       });
   }
@@ -78,7 +79,13 @@
     over = over || {};
     const d = data.detail;
     const images = (d.images || []).map(viaProxy);
-    const pick = (i) => (i == null || i === '없음' || i === 'none' ? null : images[+i] || null);
+    // 직접 올린 사진 (소구 이미지 탭과 같은 저장소: price-scraper /api/sogu, PK별)
+    const mine = ((data.saved && data.saved.photos) || []).map((p) => viaProxy(p.url));
+    const pick = (i) => {
+      if (i == null || i === '없음' || i === 'none' || i === '') return null;
+      const m = String(i).match(/^내\s*(\d+)$/);
+      return m ? mine[+m[1] - 1] || null : images[+i] || null;
+    };
     const name = over.name || cleanName(d.name);
     const sales = data.sales || {};
 
@@ -102,10 +109,19 @@
 
     const facilityCards = (over.facilityCards || []).map((c) => ({ title: c.title, desc: c.desc, images: (c.img || []).map(pick).filter(Boolean) }));
     // 놀발 시설 목록 → 시설마다 사진 타일 (사진은 탭에서 시설별 번호로 고름: facilityPhotos { 시설명: '12' })
+    // 탭에서 뺀 시설(facilityHide)은 빼고, 직접 추가한 시설(facilityAdd: [{name, section}])은 그 묶음 끝에
     const fp = over.facilityPhotos || {};
-    const facilitySections = (d.facilitySections || [])
-      .filter((s) => s.items && s.items.length)
-      .map((s) => ({ title: s.title, items: s.items.map((n) => ({ name: n, image: fp[n] != null && fp[n] !== '' ? pick(fp[n]) : null })) }));
+    const hideF = new Set(over.facilityHide || []);
+    const secs = (d.facilitySections || []).map((s) => ({ title: s.title || '부대시설', items: [...(s.items || [])] }));
+    for (const a of over.facilityAdd || []) {
+      if (!a.name) continue;
+      let sec = secs.find((s) => s.title === a.section);
+      if (!sec) secs.push((sec = { title: a.section || '그 밖의 시설', items: [] }));
+      if (!sec.items.includes(a.name)) sec.items.push(a.name);
+    }
+    const facilitySections = secs
+      .map((s) => ({ title: s.title, items: s.items.filter((n) => !hideF.has(n)).map((n) => ({ name: n, image: pick(fp[n]) })) }))
+      .filter((s) => s.items.length);
 
     // 이용 안내: 놀발 상세의 체크인·추가요금·안내·공통 유의사항 블록 (취소/문의 블록은 따로)
     const all = [
@@ -124,7 +140,8 @@
     const contacts = shown.filter(isContact);
 
     // 대표 사진 + 갤러리(기본: 대표 다음 6장)
-    const heroIdx = Math.min(Math.max(+over.heroIndex || 0, 0), Math.max(images.length - 1, 0));
+    const heroMine = /^내\d+$/.test(String(over.heroIndex || '')) ? pick(over.heroIndex) : null;
+    const heroIdx = heroMine ? -1 : Math.min(Math.max(+over.heroIndex || 0, 0), Math.max(images.length - 1, 0));
     const gallery = over.gallery != null
       ? over.gallery.map(pick).filter(Boolean)
       : images.filter((_, i) => i !== heroIdx).slice(0, 6);
@@ -143,7 +160,7 @@
       address: d.address || '',
       contact: d.contact || '',
       copy: over.copy != null ? over.copy : [d.region, d.type].filter(Boolean).join(' · '),
-      hero: over.heroImage || images[heroIdx] || '',
+      hero: over.heroImage || heroMine || images[heroIdx] || '',
       images,
       periods,
       notice,
@@ -276,5 +293,5 @@
     return out;
   }
 
-  root.Detail = { build, render, blocks, parseCards, cuts, ymdDot };
+  root.Detail = { build, render, blocks, parseCards, photoNos, cuts, ymdDot };
 })(typeof window !== 'undefined' ? window : globalThis);
