@@ -274,24 +274,5 @@
     return el.firstElementChild;
   }
 
-  // 나눠 저장할 위치: 섹션 경계에서, 한 장이 max 를 넘지 않게 (긴 섹션 하나는 그대로 한 장)
-  function cuts(cv, max) {
-    const top = cv.getBoundingClientRect().top;
-    const marks = [...cv.querySelectorAll('[data-cut]')].map((s) => Math.round(s.getBoundingClientRect().top - top));
-    const end = cv.offsetHeight;
-    const out = [];
-    let start = 0;
-    let last = 0;
-    for (const y of [...marks.slice(1), end]) {
-      if (y - start > max && last > start) {
-        out.push([start, last]);
-        start = last;
-      }
-      last = y;
-    }
-    out.push([start, end]);
-    return out;
-  }
-
-  root.Detail = { build, render, blocks, parseCards, photoNos, cuts, ymdDot };
+  root.Detail = { build, render, blocks, parseCards, photoNos, ymdDot };
 })(typeof window !== 'undefined' ? window : globalThis);

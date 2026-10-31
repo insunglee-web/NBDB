@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="sogu/sogu.css?v=20261019b">
 <script src="sogu/sogu.js?v=20261019b"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
 <link rel="stylesheet" href="detail/detail.css?v=20261031c">
-<script src="detail/detail.js?v=20261031c"></script>
+<script src="detail/detail.js?v=20261031d"></script>
 <link rel="stylesheet" href="report/report.css?v=20261031b">
 <script src="report/report.js?v=20261031b"></script>
 <style>
@@ -4550,7 +4550,7 @@ loadData();
     });
   }
 
-  // 한 장으로 그린 뒤 섹션 경계에서 최대 3000px씩 나눠 저장 (긴 이미지 한 장은 스마트스토어 편집기에서 다루기 어려움)
+  // 전체를 이어 붙인 JPG 한 장으로 저장
   $('dtDown').addEventListener('click', async () => {
     const m = $('dtMsg2');
     if (!data) return;
@@ -4563,24 +4563,16 @@ loadData();
       const cv = $('dtRender').firstElementChild;
       const W = 860, H = cv.offsetHeight;
       const all = await htmlToImage.toCanvas(cv, { includeQueryParams: true, pixelRatio: 1, backgroundColor: '#ffffff', width: W, height: H });
-      const parts = Detail.cuts(cv, 3000);
       const noPhoto = [...model.rooms.filter(r => !r.images.length).map(r => `객실 ${r.title}`),
         ...model.facilitySections.flatMap(s => s.items).filter(x => !x.image).map(x => x.name)];
       const day = new Date(Date.now() + 9*3600e3).toISOString().slice(0,10).replace(/-/g,'');
-      const base = `${model.pk}_${model.name.replace(/[\\/:*?"<>|\s]+/g,'_')}_상세_${day}`;
-      for (let i = 0; i < parts.length; i++) {
-        const [y0, y1] = parts[i];
-        const c = document.createElement('canvas');
-        c.width = W; c.height = y1 - y0;
-        c.getContext('2d').drawImage(all, 0, y0, W, y1 - y0, 0, 0, W, y1 - y0);
-        const a = document.createElement('a');
-        a.href = c.toDataURL('image/jpeg', 0.92);
-        a.download = `${base}_${String(i + 1).padStart(2, '0')}.jpg`;
-        document.body.append(a); a.click(); a.remove();
-        await new Promise(r => setTimeout(r, 400)); // 연속 다운로드가 막히지 않게
-      }
-      msg(m, `${parts.length}장 저장했어요 (폭 860px, 전체 높이 ${H}px). 스마트스토어 상세 편집에서 _01부터 순서대로 올리세요.`
-        + (parts.length > 1 ? '<br>브라우저가 「여러 파일 다운로드」를 물으면 허용해 주세요.' : '')
+      const blob = await new Promise((ok, bad) => all.toBlob(b => (b ? ok(b) : bad(new Error('이미지가 너무 커서 만들지 못했어요.'))), 'image/jpeg', 0.92));
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${model.pk}_${model.name.replace(/[\\/:*?"<>|\s]+/g,'_')}_상세_${day}.jpg`;
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      msg(m, `한 장으로 저장했어요 (폭 860px × 높이 ${H}px, ${(blob.size / 1048576).toFixed(1)}MB).`
         + (failed.length ? `<br>⚠ 사진 ${failed.length}장을 못 읽어서 빼고 만들었어요.` : '')
         + (noPhoto.length ? `<br>⚠ 사진 없이 들어간 곳: ${escH(noPhoto.join(', '))}` : ''));
     } catch (e) {
