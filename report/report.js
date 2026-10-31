@@ -1,6 +1,6 @@
 // 마케팅 결과 보고서 엔진 — NBDB "마케팅 보고서" 탭이 쓴다.
 //  Report.stats(rows, from, to)  → 판매내역(DERIVED 중 이 숙소 행)으로 결제·취소·최종 건수/박수/거래액, 일별·상품별 집계
-//  Report.parseLines(text, kind) → MD가 넣은 내부/외부 마케팅 실적 줄
+//  Report.SLOTS / slotOf(kind, 구좌) → 놀발 노출 구좌 목록(내부 int · 외부 ext)과 숫자 이름(노출·발송·조회 / 클릭·오픈)
 //  Report.render(el, model)      → A4 폭(794px) 보고서 HTML (report.css 필요). 섹션마다 data-cut → PDF 쪽 나누기 위치
 // 수수료·정산 등 내부 숫자는 넣지 않는다(받는 사람이 숙소 담당자).
 (function (root) {
@@ -58,21 +58,38 @@
     };
   }
 
-  const toN = (s) => { const v = String(s || '').replace(/[^\d.]/g, ''); return v ? Number(v) : null; };
-  // 내부: 지면 | 내용 | 기간 | 노출(발송) | 클릭(오픈)
-  // 외부: 채널 | 내용 | 게시일 | 조회수 | 반응(좋아요·댓글 등) | 링크
-  function parseLines(text, kind) {
-    return String(text || '')
-      .split('\n')
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .map((l) => {
-        const p = l.split('|').map((s) => s.trim());
-        return kind === 'ext'
-          ? { ch: p[0] || '', title: p[1] || '', date: p[2] || '', views: toN(p[3]), react: p[4] || '', link: p[5] || '' }
-          : { ch: p[0] || '', title: p[1] || '', period: p[2] || '', imp: toN(p[3]), clk: toN(p[4]) };
-      });
-  }
+  const toN = (s) => { const v = String(s == null ? '' : s).replace(/[^\d.]/g, ''); return v ? Number(v) : null; };
+
+  // 노출 구좌 (놀발_노출구좌소개 기준). label = 보고서에 쓰는 이름, imp/clk = 그 구좌의 숫자 이름
+  const SLOTS = {
+    int: [
+      { label: '메인화면 · 메인배너(빅배너)', imp: '노출', clk: '클릭' },
+      { label: '메인화면 · 퀵메뉴', imp: '노출', clk: '클릭' },
+      { label: '메인화면 · 띠배너', imp: '노출', clk: '클릭' },
+      { label: '메인화면 · 타임특가', imp: '노출', clk: '클릭' },
+      { label: '메인화면 · 아이가 좋아해요', imp: '노출', clk: '클릭' },
+      { label: '메인화면 · 실시간 랭킹', imp: '노출', clk: '클릭' },
+      { label: '앱 팝업', imp: '노출', clk: '클릭' },
+      { label: '퀵메뉴(숙박) · 특가', imp: '노출', clk: '클릭' },
+      { label: '퀵메뉴(숙박) · 인기베스트', imp: '노출', clk: '클릭' },
+      { label: '퀵메뉴(레저) · 특가', imp: '노출', clk: '클릭' },
+      { label: '퀵메뉴(레저) · 키즈테마파크', imp: '노출', clk: '클릭' },
+      { label: '기획전 페이지', imp: '노출', clk: '클릭' },
+      { label: '상품상세 배너', imp: '노출', clk: '클릭' },
+      { label: '앱푸시', imp: '발송', clk: '오픈' },
+    ],
+    ext: [
+      { label: '네이버 파워링크 광고', imp: '노출', clk: '클릭' },
+      { label: '네이버 지식쇼핑 광고', imp: '노출', clk: '클릭' },
+      { label: '공동구매 (인스타그램)', imp: '조회', clk: '클릭' },
+      { label: '유튜버 (또떠남)', imp: '조회', clk: '클릭' },
+      { label: '맘카페 바이럴', imp: '조회', clk: '클릭' },
+      { label: '메타 광고', imp: '노출', clk: '클릭' },
+      { label: '웅진북클럽 라운지톡', imp: '발송', clk: '클릭' },
+      { label: '네이버 블로그', imp: '조회', clk: '클릭' },
+    ],
+  };
+  const slotOf = (kind, ch) => SLOTS[kind].find((s) => s.label === ch) || { label: ch, imp: kind === 'ext' ? '조회' : '노출', clk: '클릭' };
 
   // 일별 거래액 막대 (결제 전체 = 진한색, 그중 취소 = 회색)
   function chart(daily) {
@@ -165,40 +182,45 @@
       </section>`);
     }
 
-    // 내부 마케팅
-    if (m.internal.length) {
-      const imp = m.internal.reduce((a, x) => a + (x.imp || 0), 0);
-      const clk = m.internal.reduce((a, x) => a + (x.clk || 0), 0);
+    // 내부·외부 마케팅: 요약 표 + 구좌마다 캡처 이미지와 성과 카드
+    const mkSection = (kind, no, title, sub, items) => {
+      const imp = items.reduce((a, x) => a + (toN(x.imp) || 0), 0);
+      const clk = items.reduce((a, x) => a + (toN(x.clk) || 0), 0);
       h.push(`<section class="rp-sec" data-cut>
-        <h2><span>02</span>내부 마케팅 <small>놀이의발견 앱·웹 노출</small></h2>
-        <div class="rp-kpis">
-          <div><small>노출 지면</small><b>${m.internal.length}<i>개</i></b></div>
-          <div><small>총 노출·발송</small><b>${num(imp)}<i>회</i></b></div>
+        <h2><span>${no}</span>${title} <small>${sub}</small></h2>
+        ${items.length ? `<div class="rp-kpis">
+          <div><small>진행 구좌</small><b>${items.length}<i>개</i></b></div>
+          <div><small>총 ${kind === 'ext' ? '노출·조회' : '노출·발송'}</small><b>${num(imp)}<i>회</i></b></div>
           <div><small>총 클릭·오픈</small><b>${num(clk)}<i>회</i></b></div>
-          <div><small>클릭률</small><b>${imp ? ((clk / imp) * 100).toFixed(2) : '-'}<i>%</i></b></div>
+          <div><small>클릭률</small><b>${imp && clk ? ((clk / imp) * 100).toFixed(2) : '-'}<i>%</i></b></div>
         </div>
         <table class="rp-tbl rp-mk">
-          <thead><tr><th>지면</th><th>내용</th><th>기간</th><th>노출·발송</th><th>클릭·오픈</th><th>클릭률</th></tr></thead>
-          <tbody>${m.internal.map((x) => `<tr><th>${esc(x.ch)}</th><td class="t">${esc(x.title)}</td><td>${esc(x.period)}</td><td>${x.imp != null ? num(x.imp) : '-'}</td><td>${x.clk != null ? num(x.clk) : '-'}</td><td>${x.imp && x.clk != null ? pct(x.clk, x.imp) : '-'}</td></tr>`).join('')}</tbody>
-        </table>
+          <thead><tr><th>구좌</th><th>내용</th><th>기간</th><th>노출·조회</th><th>클릭·오픈</th><th>클릭률</th></tr></thead>
+          <tbody>${items.map((x) => { const i = toN(x.imp), c = toN(x.clk); return `<tr><th>${esc(x.ch)}</th><td class="t">${esc(x.title)}</td><td>${esc(x.period)}</td><td>${i != null ? num(i) : '-'}</td><td>${c != null ? num(c) : '-'}</td><td>${i && c != null ? pct(c, i) : '-'}</td></tr>`; }).join('')}</tbody>
+        </table>` : `<p class="rp-empty">이번 프로모션 기간에 진행한 ${title} 내역이 없습니다.</p>`}
       </section>`);
-    }
-
-    // 외부 마케팅
-    if (m.external.length) {
-      const views = m.external.reduce((a, x) => a + (x.views || 0), 0);
-      h.push(`<section class="rp-sec" data-cut>
-        <h2><span>${m.internal.length ? '03' : '02'}</span>외부 마케팅 <small>SNS·블로그·제휴 채널</small></h2>
-        <div class="rp-kpis">
-          <div><small>게시·발행</small><b>${m.external.length}<i>건</i></b></div>
-          <div class="wide"><small>총 조회수</small><b>${num(views)}<i>회</i></b></div>
-        </div>
-        <table class="rp-tbl rp-mk">
-          <thead><tr><th>채널</th><th>내용</th><th>게시일</th><th>조회수</th><th>반응</th></tr></thead>
-          <tbody>${m.external.map((x) => `<tr><th>${esc(x.ch)}</th><td class="t">${esc(x.title)}${x.link ? `<small>${esc(x.link)}</small>` : ''}</td><td>${esc(x.date)}</td><td>${x.views != null ? num(x.views) : '-'}</td><td>${esc(x.react || '-')}</td></tr>`).join('')}</tbody>
-        </table>
-      </section>`);
-    }
+      items.forEach((x) => {
+        const s = slotOf(kind, x.ch), i = toN(x.imp), c = toN(x.clk);
+        h.push(`<section class="rp-card" data-cut>
+          ${x.img ? `<div class="rp-shot"><img src="${esc(x.img)}" alt=""></div>` : ''}
+          <div class="rp-card-t">
+            <p class="rp-slot">${esc(x.ch)}</p>
+            <h4>${esc(x.title || x.ch)}</h4>
+            ${x.period ? `<p class="rp-when">${esc(x.period)}</p>` : ''}
+            <div class="rp-mets">
+              ${i != null ? `<div><small>${s.imp}</small><b>${num(i)}</b></div>` : ''}
+              ${c != null ? `<div><small>${s.clk}</small><b>${num(c)}</b></div>` : ''}
+              ${i && c != null ? `<div><small>${s.clk}률</small><b>${pct(c, i)}</b></div>` : ''}
+              ${x.react ? `<div class="w"><small>반응</small><b>${esc(x.react)}</b></div>` : ''}
+            </div>
+            ${x.memo ? `<p class="rp-memo">${esc(x.memo)}</p>` : ''}
+            ${x.link ? `<p class="rp-link">${esc(x.link)}</p>` : ''}
+          </div>
+        </section>`);
+      });
+    };
+    mkSection('int', '02', '내부 마케팅', '놀이의발견 앱·웹 노출', m.internal);
+    mkSection('ext', '03', '외부 마케팅', '광고·SNS·바이럴·제휴', m.external);
 
     if (m.comment) {
       h.push(`<section class="rp-sec" data-cut><h3>담당 MD 의견</h3><div class="rp-comment">${esc(m.comment)}</div></section>`);
@@ -229,5 +251,5 @@
     return out;
   }
 
-  root.Report = { stats, parseLines, render, pages, dot };
+  root.Report = { stats, render, pages, dot, SLOTS, slotOf };
 })(typeof window !== 'undefined' ? window : globalThis);

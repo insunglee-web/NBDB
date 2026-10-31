@@ -11,8 +11,8 @@
 <script src="sogu/sogu.js?v=20261019b"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
 <link rel="stylesheet" href="detail/detail.css?v=20261031c">
 <script src="detail/detail.js?v=20261031c"></script>
-<link rel="stylesheet" href="report/report.css?v=20261031">
-<script src="report/report.js?v=20261031"></script>
+<link rel="stylesheet" href="report/report.css?v=20261031b">
+<script src="report/report.js?v=20261031b"></script>
 <style>
 :root{
   --bg:#0A0F1A;
@@ -1181,6 +1181,13 @@ tr:hover td{background:rgba(47,211,196,0.04);}
         #sec-report textarea{resize:vertical; min-height:84px; line-height:1.5;}
         #sec-report input:focus,#sec-report textarea:focus,#sec-report select:focus{outline:none; border-color:var(--teal);}
         #sec-report :focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+        .rp-it{display:flex; flex-direction:column; gap:6px; margin-bottom:10px; padding:10px; border:1px dashed var(--line); border-radius:8px;}
+        .rp-it .su-row input{min-width:0;}
+        .rp-it-top{display:flex; gap:6px; align-items:center;}
+        .rp-it-top button{flex:none; padding:4px 8px;}
+        .rp-it-img{display:flex; gap:8px; align-items:center; font-size:12px; color:var(--sub);}
+        .rp-it-img img{width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--line);}
+        .rp-it-img label{cursor:pointer; color:var(--teal); font-weight:600;}
         .rp-prev{width:480px; max-height:1500px; overflow:auto; border-radius:10px; border:1px solid var(--line); background:#fff;}
         .rp-prev .rp-scale{zoom:.6;}
         #rpRender{position:fixed; left:-12000px; top:0; width:794px; pointer-events:none;}
@@ -1211,11 +1218,14 @@ tr:hover td{background:rgba(47,211,196,0.04);}
             </div>
 
             <h4>③ 내부 마케팅 (놀이의발견 앱·웹)</h4>
-            <textarea id="rpInt" placeholder="한 줄에 하나 · 지면 | 내용 | 기간 | 노출수(발송수) | 클릭수(오픈수)&#10;예) 메인 상단 배너 | 레스트리 리솜 3일 특가 | 10.23~10.25 | 120000 | 3400&#10;예) 앱 푸시 | 단 3일 공동구매 오픈 | 10.23 | 50000 | 2100"></textarea>
-            <p class="su-hint">클릭률은 자동 계산. 비우면 이 섹션은 빠져요. (개발팀 조회 API가 나오면 자동으로 채우게 바꿀 예정)</p>
+            <div class="rp-items" id="rpIntList"></div>
+            <button class="btn dt-panel-btn" id="rpIntAdd" type="button">+ 내부 마케팅 추가 (빅배너·팝업·푸시 등)</button>
 
-            <h4>④ 외부 마케팅 (SNS·블로그·제휴)</h4>
-            <textarea id="rpExt" placeholder="한 줄에 하나 · 채널 | 내용 | 게시일 | 조회수 | 반응 | 링크(선택)&#10;예) 네이버 블로그 | 제천 스파 여행 추천 | 10.22 | 3200 | 공감 45 · 댓글 12 | https://blog.naver.com/…"></textarea>
+            <h4>④ 외부 마케팅 (광고·SNS·바이럴·제휴)</h4>
+            <div class="rp-items" id="rpExtList"></div>
+            <button class="btn dt-panel-btn" id="rpExtAdd" type="button">+ 외부 마케팅 추가</button>
+            <p class="su-hint">구좌는 「놀발 노출구좌 소개」 목록에서 고르거나 직접 써요. 캡처 이미지는 보고서에 크게 들어가요. 노출·클릭을 넣으면 클릭률은 자동 계산. (개발팀 조회 API가 나오면 숫자는 자동으로 채울 예정)</p>
+            <datalist id="rpSlotsInt"></datalist><datalist id="rpSlotsExt"></datalist>
 
             <h4>⑤ 담당 MD 의견 (선택)</h4>
             <textarea id="rpComment" placeholder="성과 요약, 다음 행사 제안 등"></textarea>
@@ -4587,9 +4597,13 @@ loadData();
 (function(){
   const $ = (id) => document.getElementById(id);
   const KEY = 'nbdb-report-';
-  const FIELDS = ['rpTitle','rpMd','rpTo','rpInt','rpExt','rpComment'];
+  const FIELDS = ['rpTitle','rpMd','rpTo','rpComment'];
   document.body.append($('rpRender'));
   let promos = null, pkNames = null, base = null, model = null, t = null;
+  // 마케팅 구좌별 실적 {ch 구좌, title 내용, period 기간, imp 노출·발송·조회, clk 클릭·오픈, react 반응, link, memo 성과 설명, img 캡처(dataURL)}
+  const items = { int: [], ext: [] };
+  $('rpSlotsInt').innerHTML = Report.SLOTS.int.map(s => `<option value="${s.label}">`).join('');
+  $('rpSlotsExt').innerHTML = Report.SLOTS.ext.map(s => `<option value="${s.label}">`).join('');
 
   function msg(el, html, err){ el.className = 'su-msg' + (err ? ' err' : ''); el.innerHTML = html; }
   const escH = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
@@ -4634,21 +4648,102 @@ loadData();
     if (!base) return;
     const f = {};
     FIELDS.forEach(id => { f[id] = $(id).value; });
-    try { localStorage.setItem(KEY + base.key, JSON.stringify(f)); localStorage.setItem(KEY + 'md', $('rpMd').value); } catch (e) { /* 저장 못 해도 만들기는 됨 */ }
+    f.items = items;
+    try { localStorage.setItem(KEY + 'md', $('rpMd').value); localStorage.setItem(KEY + base.key, JSON.stringify(f)); }
+    catch (e) { msg($('rpMsg2'), '캡처 이미지가 많아 이 브라우저에 다 저장하지 못했어요. 지금 PDF는 그대로 만들 수 있어요.', true); }
   }
   function restore(key){
     let st = null;
     try { st = JSON.parse(localStorage.getItem(KEY + key) || 'null'); } catch (e) { st = null; }
     FIELDS.forEach(id => { $(id).value = (st && st[id]) || ''; });
     if (!$('rpMd').value) { try { $('rpMd').value = localStorage.getItem(KEY + 'md') || ''; } catch (e) { /* 무시 */ } }
+    items.int = (st && st.items && st.items.int) || [];
+    items.ext = (st && st.items && st.items.ext) || [];
+    drawItems();
+  }
+
+  // ---- 마케팅 구좌 편집 (구좌·내용·기간·숫자·반응·링크·성과 설명·캡처) ----
+  function drawItems(){
+    ['int', 'ext'].forEach(kind => {
+      const box = $(kind === 'int' ? 'rpIntList' : 'rpExtList');
+      box.innerHTML = items[kind].map((x, i) => {
+        const s = Report.slotOf(kind, x.ch || '');
+        const f = (k, ph, extra) => `<input type="text" data-f="${k}" value="${escH(x[k] || '')}" placeholder="${ph}" aria-label="${ph}" ${extra || ''}>`;
+        return `<div class="rp-it" data-k="${kind}" data-i="${i}">
+          <div class="rp-it-top">${f('ch', kind === 'int' ? '구좌 고르기 (예: 메인배너, 앱 팝업)' : '채널 고르기 (예: 메타 광고)', `list="${kind === 'int' ? 'rpSlotsInt' : 'rpSlotsExt'}"`)}
+            <button type="button" class="btn" data-act="up" aria-label="위로">↑</button><button type="button" class="btn" data-act="down" aria-label="아래로">↓</button><button type="button" class="btn" data-act="del" aria-label="삭제">✕</button></div>
+          ${f('title', kind === 'int' ? '내용 (배너 문구·푸시 문구)' : '내용 (게시물·광고 제목)')}
+          <div class="su-row">${f('period', kind === 'int' ? '기간 예: 10.23~10.25' : '게시일 예: 10.22')}${f('imp', s.imp + '수', 'inputmode="numeric"')}${f('clk', s.clk + '수', 'inputmode="numeric"')}</div>
+          ${kind === 'ext' ? `<div class="su-row">${f('react', '반응 (선택) 예: 좋아요 320 · 댓글 45')}${f('link', '링크 (선택)')}</div>` : ''}
+          <textarea data-f="memo" placeholder="성과 설명 (선택) 예: 노출 첫날 예약 16건으로 기간 중 최다" aria-label="성과 설명" style="min-height:52px">${escH(x.memo || '')}</textarea>
+          <div class="rp-it-img">${x.img ? `<img src="${x.img}" alt="캡처"><button type="button" class="btn" data-act="noimg">캡처 빼기</button>` : '<span>캡처 없음</span>'}
+            <label>캡처 올리기<input type="file" accept="image/*" data-act="img" hidden></label></div>
+        </div>`;
+      }).join('');
+    });
+  }
+  ['rpIntAdd', 'rpExtAdd'].forEach(id => $(id).addEventListener('click', () => {
+    const kind = id === 'rpIntAdd' ? 'int' : 'ext';
+    items[kind].push({ ch: '', title: '', period: '', imp: '', clk: '', react: '', link: '', memo: '', img: '' });
+    drawItems(); save(); draw();
+    const last = $(kind === 'int' ? 'rpIntList' : 'rpExtList').lastElementChild;
+    if (last) last.querySelector('input').focus();
+  }));
+  const itemOf = (el) => { const b = el.closest('.rp-it'); return b ? { kind: b.dataset.k, i: +b.dataset.i } : null; };
+  ['rpIntList', 'rpExtList'].forEach(id => {
+    $(id).addEventListener('input', (e) => {
+      const at = itemOf(e.target), k = e.target.dataset.f;
+      if (!at || !k) return;
+      items[at.kind][at.i][k] = e.target.value;
+      clearTimeout(t); t = setTimeout(() => { save(); draw(); }, 400);
+    });
+    // 구좌를 고르면 숫자 칸 이름(노출/발송/조회…)을 맞춘다
+    $(id).addEventListener('change', async (e) => {
+      const at = itemOf(e.target);
+      if (!at) return;
+      if (e.target.dataset.f === 'ch') { drawItems(); return; }
+      if (e.target.dataset.act === 'img' && e.target.files[0]) {
+        try { items[at.kind][at.i].img = await shrinkShot(e.target.files[0]); }
+        catch (err) { msg($('rpMsg2'), escH(err.message || err), true); return; }
+        drawItems(); save(); draw();
+      }
+    });
+    $(id).addEventListener('click', (e) => {
+      const act = e.target.dataset && e.target.dataset.act, at = itemOf(e.target);
+      if (!at || !act || act === 'img') return;
+      const list = items[at.kind];
+      if (act === 'del') { if (!confirm('이 마케팅 항목을 지울까요?')) return; list.splice(at.i, 1); }
+      if (act === 'up' && at.i > 0) [list[at.i - 1], list[at.i]] = [list[at.i], list[at.i - 1]];
+      if (act === 'down' && at.i < list.length - 1) [list[at.i + 1], list[at.i]] = [list[at.i], list[at.i + 1]];
+      if (act === 'noimg') list[at.i].img = '';
+      drawItems(); save(); draw();
+    });
+  });
+  // 캡처는 폭 900px JPEG 로 줄여 이 브라우저에 저장 (세로로 긴 앱 화면은 높이 1600px까지)
+  function shrinkShot(file){
+    return new Promise((ok, bad) => {
+      const url = URL.createObjectURL(file);
+      const im = new Image();
+      im.onload = () => {
+        const r = Math.min(1, 900 / im.naturalWidth, 1600 / im.naturalHeight);
+        const c = document.createElement('canvas');
+        c.width = Math.round(im.naturalWidth * r); c.height = Math.round(im.naturalHeight * r);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        ok(c.toDataURL('image/jpeg', 0.82));
+      };
+      im.onerror = () => { URL.revokeObjectURL(url); bad(new Error(file.name + ' 을(를) 열 수 없어요')); };
+      im.src = url;
+    });
   }
 
   function draw(){
     if (!base) return;
+    const filled = (x) => x.ch || x.title || x.img || x.imp || x.clk;
     model = { ...base,
       title: $('rpTitle').value.trim() || `${base.type ? base.type + ' ' : ''}마케팅 결과 보고서`,
       md: $('rpMd').value.trim(), to2: $('rpTo').value.trim(),
-      internal: Report.parseLines($('rpInt').value, 'int'), external: Report.parseLines($('rpExt').value, 'ext'),
+      internal: items.int.filter(filled), external: items.ext.filter(filled),
       comment: $('rpComment').value.trim() };
     const cv = Report.render($('rpRender'), model);
     $('rpStage').innerHTML = '<div class="rp-prev"><div class="rp-scale"></div></div>';
@@ -4706,6 +4801,11 @@ loadData();
   $('rpPdf').addEventListener('click', async () => {
     const m = $('rpMsg2');
     if (!base) return;
+    draw();
+    // 내부·외부 마케팅은 숙소 보고서의 핵심이라 비어 있으면 한 번 묻는다
+    const empty = [!model.internal.length && '내부 마케팅', !model.external.length && '외부 마케팅'].filter(Boolean);
+    if (empty.length && !confirm(`${empty.join('·')} 내역이 비어 있어요. 보고서에는 「진행 내역 없음」으로 나가요. 그대로 만들까요?`)) return;
+    const noShot = [...model.internal, ...model.external].filter(x => !x.img).map(x => x.ch || x.title);
     msg(m, 'PDF 만드는 중…');
     $('rpPdf').disabled = true;
     try {
@@ -4730,7 +4830,7 @@ loadData();
         pdf.text(`${i + 1} / ${parts.length}`, 105, 290, { align: 'center' });
       });
       pdf.save(`${model.name.replace(/[\\/:*?"<>|\s]+/g,'_')}_마케팅보고서_${model.from}_${model.to}.pdf`);
-      msg(m, `PDF ${parts.length}쪽을 저장했어요.` + (!model.internal.length ? '<br>※ 내부 마케팅 실적이 비어 있어서 그 섹션은 빠졌어요.' : ''));
+      msg(m, `PDF ${parts.length}쪽을 저장했어요.` + (noShot.length ? `<br>※ 캡처 없이 들어간 구좌: ${escH(noShot.join(', '))}` : ''));
     } catch (e) {
       msg(m, 'PDF 실패: ' + escH(e.message || e) + ' — 프로모션과 함께 Claude에게 알려주세요.', true);
     } finally {

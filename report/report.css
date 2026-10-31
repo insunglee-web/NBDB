@@ -73,5 +73,21 @@
 .rp-legend i.a{background:var(--acc);}
 .rp-legend i.c{background:#C9CCD5;}
 
+.rp-empty{padding:16px 18px; border-radius:12px; border:1px dashed #D9DBE2; color:var(--mute); font-size:13px;}
+/* 구좌 카드: 왼쪽 캡처, 오른쪽 성과 */
+.rp-card{display:flex; gap:22px; margin:0 48px 16px; padding:18px; border:1px solid var(--line); border-radius:14px;}
+.rp-shot{flex:none; width:250px; max-height:420px; border-radius:10px; overflow:hidden; background:var(--soft); display:flex; align-items:flex-start; justify-content:center;}
+.rp-shot img{width:100%; height:auto; max-height:420px; object-fit:contain;}
+.rp-card-t{flex:1; min-width:0;}
+.rp-slot{display:inline-block; padding:3px 10px; border-radius:20px; background:var(--ink); color:#fff; font-size:11px; font-weight:800;}
+.rp-card-t h4{margin-top:8px; font-size:18px; font-weight:900; line-height:1.35;}
+.rp-when{margin-top:2px; font-size:12.5px; color:var(--sub);}
+.rp-mets{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+.rp-mets div{min-width:96px; padding:10px 12px; border-radius:10px; background:var(--soft);}
+.rp-mets div.w{flex-basis:100%;}
+.rp-mets small{display:block; font-size:11px; color:var(--sub); font-weight:700;}
+.rp-mets b{font-size:18px; font-weight:900;}
+.rp-memo{margin-top:12px; font-size:13px; line-height:1.65; white-space:pre-line;}
+.rp-link{margin-top:6px; font-size:11px; color:var(--mute); word-break:break-all;}
 .rp-comment{padding:16px 18px; border-radius:12px; background:var(--soft); font-size:14px; white-space:pre-line; line-height:1.7;}
 .rp-foot{margin:14px 48px 0; padding:14px 0 30px; border-top:1px solid var(--line); font-size:11px; color:var(--mute);}
