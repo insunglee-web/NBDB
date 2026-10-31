@@ -9,8 +9,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" crossorigin="anonymous"><!-- crossorigin 필수: 없으면 소구 이미지 JPG 다운로드(html-to-image)가 이 폰트를 못 읽어 맑은 고딕으로 나옴 -->
 <link rel="stylesheet" href="sogu/sogu.css?v=20261019b">
 <script src="sogu/sogu.js?v=20261019b"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
-<link rel="stylesheet" href="detail/detail.css?v=20261031">
-<script src="detail/detail.js?v=20261031"></script>
+<link rel="stylesheet" href="detail/detail.css?v=20261031b">
+<script src="detail/detail.js?v=20261031b"></script>
 <style>
 :root{
   --bg:#0A0F1A;
@@ -1083,6 +1083,11 @@ tr:hover td{background:rgba(47,211,196,0.04);}
         .dt-blocks label{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:6px 0; border-bottom:1px dashed var(--line); cursor:pointer;}
         .dt-blocks label span{flex:1; line-height:1.45;}
         .dt-blocks label small{display:block; color:var(--sub); font-size:11.5px;}
+        .dt-facph{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 10px;}
+        .dt-facph label{display:flex; align-items:center; gap:6px; font-size:12.5px;}
+        .dt-facph label span{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+        #sec-detail .dt-facph input{width:56px; flex:none; padding:4px 6px; font-family:var(--mono); text-align:center;}
+        .dt-facph label.miss span{color:var(--coral);}
         .dt-prev{width:430px; max-height:1600px; overflow:auto; border-radius:10px; border:1px solid var(--line); background:#fff;}
         .dt-prev .dt-scale{zoom:.5;}
         #dtRender{position:fixed; left:-12000px; top:0; width:860px; pointer-events:none;}
@@ -1116,12 +1121,14 @@ tr:hover td{background:rgba(47,211,196,0.04);}
             <button class="btn dt-panel-btn" id="dtPkgsAuto" type="button">자동 상품을 칸에 채워 고치기</button>
 
             <h4>⑥ 객실 안내</h4>
-            <textarea id="dtRooms" placeholder="한 줄에 하나 · 객실명 | 설명 | 사진번호 — 비우면 놀발 객실 정보 자동, 없음이면 빼기&#10;설명 안의 / 는 줄바꿈. 예) 디럭스 패밀리 | 기준 2인 / 최대 4인 / 퀸 침대 1 | 7"></textarea>
+            <textarea id="dtRooms" placeholder="한 줄에 하나 · 객실명 | 설명 | 사진번호 — 비우면 놀발 객실 정보 자동, 없음이면 빼기&#10;설명 안의 / 는 줄바꿈. 예) 디럭스 패밀리 | 기준 2인 / 최대 4인 / 퀸 침대 1 | 7, 8, 9"></textarea>
             <button class="btn dt-panel-btn" id="dtRoomsAuto" type="button">자동 객실을 칸에 채워 고치기</button>
+            <p class="su-hint">사진번호는 ③의 번호. 여러 장이면 <code>7, 8, 9</code> — 첫 장이 크게, 나머지는 두 칸씩 들어가요.</p>
 
-            <h4>⑦ 부대시설 카드 (선택)</h4>
-            <textarea id="dtFac" placeholder="한 줄에 하나 · 시설명 | 위치·운영시간·요금 | 사진번호&#10;예) 해브나인 스파 | 실내 09:00~18:00 / 실외 10:00~18:00 | 12"></textarea>
-            <p class="su-hint">시설 목록(놀발 '아이와 함께 하는 시설' 등)은 자동으로 들어가요. 사진과 함께 크게 보여 줄 시설만 여기에 적어요.</p>
+            <h4>⑦ 부대시설 사진</h4>
+            <div class="dt-facph" id="dtFacPhotos"></div>
+            <p class="su-hint">시설마다 ③의 사진번호를 넣으면 사진 타일로 들어가요. 비운 시설은 이름만 아래에 작게 나와요.</p>
+            <textarea id="dtFac" placeholder="(선택) 크게 소개할 시설 카드 · 시설명 | 위치·운영시간·요금 | 사진번호&#10;예) 해브나인 스파 | 실내 09:00~18:00 / 실외 10:00~18:00 | 12, 13" style="margin-top:8px"></textarea>
 
             <h4>⑧ 예약 및 이용 방법 (선택)</h4>
             <textarea id="dtSteps" placeholder="한 줄에 한 단계&#10;예) 원하는 날짜·객실 옵션을 골라 결제"></textarea>
@@ -4206,6 +4213,7 @@ loadData();
   document.body.append($('dtRender')); // 캡처용 원본(860px)은 탭이 숨겨져도 크기가 잡히도록 body 바로 아래에
   let data = null, model = null, heroIdx = 0, t = null;
   const hideBlocks = new Set();
+  const facPhotos = {}; // 시설명 → 사진번호
 
   function msg(el, html, err){ el.className = 'su-msg' + (err ? ' err' : ''); el.innerHTML = html; }
   const escH = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
@@ -4214,7 +4222,7 @@ loadData();
 
   function over(){
     const v = (id) => $(id).value.trim();
-    const o = { heroIndex: heroIdx, hideBlocks: [...hideBlocks] };
+    const o = { heroIndex: heroIdx, hideBlocks: [...hideBlocks], facilityPhotos: { ...facPhotos } };
     if (v('dtName')) o.name = v('dtName');
     if (v('dtCopy')) o.copy = isNone(v('dtCopy')) ? '' : v('dtCopy');
     if (v('dtSale')) o.salePeriod = v('dtSale');
@@ -4233,7 +4241,7 @@ loadData();
     if (!data) return;
     const fields = {};
     FIELDS.forEach(id => { fields[id] = $(id).value; });
-    try { localStorage.setItem(KEY + data.pk, JSON.stringify({ fields, heroIdx, hide: [...hideBlocks] })); } catch (e) { /* 저장 못 해도 만들기는 됨 */ }
+    try { localStorage.setItem(KEY + data.pk, JSON.stringify({ fields, heroIdx, hide: [...hideBlocks], facPhotos })); } catch (e) { /* 저장 못 해도 만들기는 됨 */ }
   }
   function restore(pk){
     let st = null;
@@ -4242,6 +4250,8 @@ loadData();
     heroIdx = (st && st.heroIdx) || 0;
     hideBlocks.clear();
     ((st && st.hide) || []).forEach(k => hideBlocks.add(k));
+    Object.keys(facPhotos).forEach(k => delete facPhotos[k]);
+    Object.assign(facPhotos, (st && st.facPhotos) || {});
     return !!st;
   }
 
@@ -4252,7 +4262,19 @@ loadData();
     $('dtBlocks').innerHTML = all.length ? all.map(b =>
       `<label><input type="checkbox" data-k="${b.key}" ${hideBlocks.has(b.key) ? '' : 'checked'}><span>${escH(b.title || '(제목 없는 맨 앞 안내)')}<small>${escH(b.lines[0].slice(0, 60))}</small></span></label>`).join('')
       : '<p class="su-hint">놀발에 등록된 안내 문구가 없어요.</p>';
+    const facs = [...new Set((data.detail.facilitySections || []).flatMap(s => s.items || []))];
+    $('dtFacPhotos').innerHTML = facs.length ? facs.map(n =>
+      `<label class="${facPhotos[n] ? '' : 'miss'}"><span title="${escH(n)}">${escH(n)}</span><input type="text" inputmode="numeric" data-f="${escH(n)}" value="${escH(facPhotos[n] || '')}" placeholder="번호" aria-label="${escH(n)} 사진번호"></label>`).join('')
+      : '<p class="su-hint">놀발에 등록된 부대시설이 없어요.</p>';
   }
+  $('dtFacPhotos').addEventListener('input', (e) => {
+    const f = e.target.dataset.f;
+    if (f == null) return;
+    const v = e.target.value.replace(/\D/g, '');
+    if (v) facPhotos[f] = v; else delete facPhotos[f];
+    e.target.closest('label').classList.toggle('miss', !v);
+    later();
+  });
   $('dtThumbs').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-i]');
     if (!b) return;
@@ -4347,6 +4369,8 @@ loadData();
       const W = 860, H = cv.offsetHeight;
       const all = await htmlToImage.toCanvas(cv, { includeQueryParams: true, pixelRatio: 1, backgroundColor: '#ffffff', width: W, height: H });
       const parts = Detail.cuts(cv, 3000);
+      const noPhoto = [...model.rooms.filter(r => !r.images.length).map(r => `객실 ${r.title}`),
+        ...model.facilitySections.flatMap(s => s.items).filter(x => !x.image).map(x => x.name)];
       const day = new Date(Date.now() + 9*3600e3).toISOString().slice(0,10).replace(/-/g,'');
       const base = `${model.pk}_${model.name.replace(/[\\/:*?"<>|\s]+/g,'_')}_상세_${day}`;
       for (let i = 0; i < parts.length; i++) {
@@ -4362,7 +4386,8 @@ loadData();
       }
       msg(m, `${parts.length}장 저장했어요 (폭 860px, 전체 높이 ${H}px). 스마트스토어 상세 편집에서 _01부터 순서대로 올리세요.`
         + (parts.length > 1 ? '<br>브라우저가 「여러 파일 다운로드」를 물으면 허용해 주세요.' : '')
-        + (failed.length ? `<br>⚠ 사진 ${failed.length}장을 못 읽어서 빼고 만들었어요.` : ''));
+        + (failed.length ? `<br>⚠ 사진 ${failed.length}장을 못 읽어서 빼고 만들었어요.` : '')
+        + (noPhoto.length ? `<br>⚠ 사진 없이 들어간 곳: ${escH(noPhoto.join(', '))}` : ''));
     } catch (e) {
       const why = e && e.message ? e.message : '이미지 변환 중 오류 (' + String(e && e.type || e) + ')';
       msg(m, '저장 실패: ' + escH(why) + ' — PK와 함께 Claude에게 알려주세요.', true);

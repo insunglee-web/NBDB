@@ -39,7 +39,14 @@
   const isCancel = (b) => /취소|환불/.test(b.title || '');
   const isContact = (b) => /고객센터|문의|연락처/.test(b.title || '');
 
-  // "제목 | 설명 | 사진번호" 줄 → 카드 (사진번호: 숫자 · '없음')
+  // 놀이의발견 고객센터 (nolbal.com 하단 사업자 정보 기준)
+  const NOLBAL_CS = '1566-0286';
+  const NOLBAL_CS_HOURS = '오전 10:00 ~ 19:00 / 연중무휴';
+
+  // "5, 6" → ['5','6'] · '없음' → []
+  const photoNos = (s) => (/^(없음|none)$/.test(String(s).trim()) ? [] : String(s).split(/[,\s]+/).filter((x) => /^\d+$/.test(x)));
+
+  // "제목 | 설명 | 사진번호" 줄 → 카드 (사진번호: 숫자 여러 개 "5, 6" 가능 · '없음')
   function parseCards(text) {
     return String(text || '')
       .split('\n')
@@ -48,7 +55,7 @@
       .map((l) => {
         const parts = l.split('|').map((s) => s.trim());
         let img;
-        if (parts.length >= 3 && /^(\d+|없음|none)$/.test(parts[parts.length - 1])) img = parts.pop();
+        if (parts.length >= 2 && /^(\d+(\s*,\s*\d+)*|없음|none)$/.test(parts[parts.length - 1])) img = photoNos(parts.pop());
         return { title: parts[0], desc: parts.slice(1).join(' | ').replace(/\s*\/\s*/g, '\n'), img };
       });
   }
@@ -63,7 +70,7 @@
         if (r.standard || r.max) desc.push(`투숙 인원: ${[r.standard ? `기준 ${r.standard}인` : '', r.max ? `최대 ${r.max}인` : ''].filter(Boolean).join(' / ')}`);
         if (r.bed) desc.push(`침대: ${r.bed}`);
         if (r.size) desc.push(`면적: ${r.size}${/\d$/.test(String(r.size)) ? '㎡' : ''}`);
-        return { title: cleanName(r.name), desc: desc.join('\n'), image: (r.images || [])[0] || null };
+        return { title: cleanName(r.name), desc: desc.join('\n'), images: (r.images || []).map(viaProxy).slice(0, 3) };
       });
   }
 
@@ -89,12 +96,16 @@
     const rooms = over.rooms != null
       ? over.rooms.map((c) => {
           const same = autoRm.find((r) => r.title === c.title);
-          return { title: c.title, desc: c.desc, image: c.img != null ? pick(c.img) : same ? same.image : null };
+          return { title: c.title, desc: c.desc, images: c.img != null ? c.img.map(pick).filter(Boolean) : same ? same.images : [] };
         })
       : autoRm;
 
-    const facilityCards = (over.facilityCards || []).map((c) => ({ title: c.title, desc: c.desc, image: c.img != null ? pick(c.img) : null }));
-    const facilitySections = (d.facilitySections || []).filter((s) => s.items && s.items.length);
+    const facilityCards = (over.facilityCards || []).map((c) => ({ title: c.title, desc: c.desc, images: (c.img || []).map(pick).filter(Boolean) }));
+    // 놀발 시설 목록 → 시설마다 사진 타일 (사진은 탭에서 시설별 번호로 고름: facilityPhotos { 시설명: '12' })
+    const fp = over.facilityPhotos || {};
+    const facilitySections = (d.facilitySections || [])
+      .filter((s) => s.items && s.items.length)
+      .map((s) => ({ title: s.title, items: s.items.map((n) => ({ name: n, image: fp[n] != null && fp[n] !== '' ? pick(fp[n]) : null })) }));
 
     // 이용 안내: 놀발 상세의 체크인·추가요금·안내·공통 유의사항 블록 (취소/문의 블록은 따로)
     const all = [
@@ -147,6 +158,7 @@
       contacts,
       steps: over.steps || [],
       contactNote: over.contactNote || '',
+      cs: over.cs != null ? over.cs : `${NOLBAL_CS} (${NOLBAL_CS_HOURS})`,
     };
   }
 
@@ -162,7 +174,15 @@
       .join('')}</ul>`;
   }
   const head = (en, ko) => `<div class="dt-h"><small>${esc(en)}</small><h3>${esc(ko)}</h3></div>`;
-  const cardImg = (u) => (u ? `<img src="${esc(u)}" alt="">` : '');
+  // 카드 사진: 첫 장 크게, 나머지는 두 칸씩
+  const cardImgs = (list) =>
+    !list || !list.length
+      ? ''
+      : `<img src="${esc(list[0])}" alt="">${list.length > 1 ? `<div class="dt-sub">${list.slice(1).map((u) => `<img src="${esc(u)}" alt="">`).join('')}</div>` : ''}`;
+  const csBox = (cs) => {
+    const [, no, rest] = String(cs).match(/^([^(]+?)\s*(\(.*\))?$/) || [null, cs, ''];
+    return `<div class="dt-cs"><b>놀이의발견 고객센터</b><strong>${esc(no)}</strong>${rest ? `<span>${esc(rest.replace(/^\(|\)$/g, ''))}</span>` : ''}</div>`;
+  };
 
   function render(el, m) {
     const h = [];
@@ -195,17 +215,21 @@
     if (m.rooms.length) {
       h.push(`<section class="dt-sec" data-cut>${head('ROOM', '객실 안내')}</section>`);
       m.rooms.forEach((r) => {
-        h.push(`<section class="dt-card" data-cut>${cardImg(r.image)}<div class="dt-card-t"><b>${mark(r.title)}</b>${r.desc ? `<p>${esc(r.desc)}</p>` : ''}</div></section>`);
+        h.push(`<section class="dt-card" data-cut>${cardImgs(r.images)}<div class="dt-card-t"><b>${mark(r.title)}</b>${r.desc ? `<p>${esc(r.desc)}</p>` : ''}</div></section>`);
       });
     }
     if (m.facilityCards.length || m.facilitySections.length) {
-      h.push(`<section class="dt-sec tint" data-cut>${head('FACILITY', '부대시설')}`);
+      h.push(`<section class="dt-sec tint" data-cut>${head('FACILITY', '부대시설')}</section>`);
+      // 시설 목록: 사진을 고른 시설은 사진 타일, 안 고른 시설은 아래 이름 칩
       m.facilitySections.forEach((s) => {
-        h.push(`<div class="dt-fac"><h4>${esc(s.title || '부대시설')}</h4><div class="chips">${s.items.map((x) => `<span>${esc(x)}</span>`).join('')}</div></div>`);
+        const withImg = s.items.filter((x) => x.image);
+        const rest = s.items.filter((x) => !x.image);
+        h.push(`<section class="dt-fac" data-cut><h4>${esc(s.title || '부대시설')}</h4>
+          ${withImg.length ? `<div class="dt-tiles">${withImg.map((x) => `<figure><img src="${esc(x.image)}" alt=""><figcaption>${esc(x.name)}</figcaption></figure>`).join('')}</div>` : ''}
+          ${rest.length ? `<div class="chips">${rest.map((x) => `<span>${esc(x.name)}</span>`).join('')}</div>` : ''}</section>`);
       });
-      h.push(`</section>`);
       m.facilityCards.forEach((c) => {
-        h.push(`<section class="dt-card tint" data-cut>${cardImg(c.image)}<div class="dt-card-t"><b>${mark(c.title)}</b>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}</div></section>`);
+        h.push(`<section class="dt-card tint" data-cut>${cardImgs(c.images)}<div class="dt-card-t"><b>${mark(c.title)}</b>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}</div></section>`);
       });
     }
     if (m.steps.length) {
@@ -216,15 +240,16 @@
       m.infos.forEach((b) => h.push(`<section class="dt-blk" data-cut><h4>${esc(b.title)}</h4>${lines(b.lines)}</section>`));
     }
     if (m.cancel.length) {
-      h.push(`<section class="dt-sec dark" data-cut>${head('CANCEL', '취소 · 환불 규정')}${m.cancel.map((b) => `<div class="dt-box">${m.cancel.length > 1 ? `<h4>${esc(b.title)}</h4>` : ''}${lines(b.lines)}</div>`).join('')}</section>`);
+      h.push(`<section class="dt-sec dark" data-cut>${head('CANCELLATION POLICY', '취소 · 환불 규정')}${m.cancel.map((b) => `<div class="dt-box">${m.cancel.length > 1 ? `<h4>${esc(b.title)}</h4>` : ''}${lines(b.lines)}</div>`).join('')}
+        ${m.cs ? csBox(m.cs) : ''}</section>`);
     }
-    if (m.address || m.contact || m.contacts.length || m.contactNote) {
+    if (m.address || m.contact || m.contacts.length || m.contactNote || (!m.cancel.length && m.cs)) {
       h.push(`<section class="dt-sec" data-cut>${head('LOCATION', '오시는 길 · 문의')}<div class="dt-box">
         ${m.address ? `<p class="dt-kv"><b>주소</b><span>${esc(m.address)}</span></p>` : ''}
         ${m.contact ? `<p class="dt-kv"><b>숙소 연락처</b><span>${esc(m.contact)}</span></p>` : ''}
         ${m.contactNote ? `<p class="dt-kv"><b>예약 문의</b><span>${esc(m.contactNote)}</span></p>` : ''}
         ${m.contacts.map((b) => `<h4>${esc(b.title)}</h4>${lines(b.lines)}`).join('')}
-      </div></section>`);
+      </div>${!m.cancel.length && m.cs ? csBox(m.cs) : ''}</section>`);
     }
     h.push(`<p class="dt-foot" data-cut>사진은 이해를 돕기 위한 이미지로 실제와 다를 수 있습니다. 표시 정보는 숙소 사정에 따라 변경될 수 있습니다.</p>`);
     h.push(`</div>`);
