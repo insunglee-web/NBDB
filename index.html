@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="sogu/sogu.css?v=20261019b">
 <script src="sogu/sogu.js?v=20261019b"></script><!-- 엔진 수정 시 v 값을 바꿔야 브라우저 캐시를 안 탐 -->
 <link rel="stylesheet" href="detail/detail.css?v=20261031c">
-<script src="detail/detail.js?v=20261031d"></script>
+<script src="detail/detail.js?v=20261031e"></script>
 <link rel="stylesheet" href="report/report.css?v=20261031b">
 <script src="report/report.js?v=20261031b"></script>
 <style>
@@ -4320,7 +4320,7 @@ loadData();
     if (v('dtStay')) o.stayPeriod = isNone(v('dtStay')) ? '' : v('dtStay');
     if (v('dtGallery')) o.gallery = Detail.photoNos(v('dtGallery'));
     if (v('dtNotice')) o.notice = isNone(v('dtNotice')) ? [] : linesOf('dtNotice');
-    if (v('dtPkgs')) o.packages = Sogu.parsePackages(v('dtPkgs')); // '없음' 한 줄 = 섹션 빼기
+    if (v('dtPkgs')) o.packages = Sogu.parsePackages(Detail.normSep(v('dtPkgs'))); // '없음' 한 줄 = 섹션 빼기
     if (v('dtRooms')) o.rooms = isNone(v('dtRooms')) ? [] : Detail.parseCards(v('dtRooms'));
     if (v('dtFac')) o.facilityCards = Detail.parseCards(v('dtFac'));
     if (v('dtSteps')) o.steps = linesOf('dtSteps');

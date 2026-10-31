@@ -47,9 +47,12 @@
   const PHOTO = /^(\d+|내\d+)$/;
   const photoNos = (s) => (/^(없음|none)$/.test(String(s).trim()) ? [] : String(s).replace(/내\s+(\d)/g, '내$1').split(/[,\s]+/).filter((x) => PHOTO.test(x)));
 
+  // 구분자 | 대신 비슷하게 생긴 글자를 쓴 경우(앞뒤 띄어 쓴 l · I · ㅣ, 전각 ｜)도 | 로
+  const normSep = (text) => String(text || '').replace(/｜/g, '|').replace(/[ \t]+[lIㅣ][ \t]+/g, ' | ');
+
   // "제목 | 설명 | 사진번호" 줄 → 카드 (사진번호: 숫자 여러 개 "5, 6" 가능 · '없음')
   function parseCards(text) {
-    return String(text || '')
+    return normSep(text)
       .split('\n')
       .map((l) => l.trim())
       .filter(Boolean)
@@ -274,5 +277,5 @@
     return el.firstElementChild;
   }
 
-  root.Detail = { build, render, blocks, parseCards, photoNos, ymdDot };
+  root.Detail = { build, render, blocks, parseCards, normSep, photoNos, ymdDot };
 })(typeof window !== 'undefined' ? window : globalThis);
